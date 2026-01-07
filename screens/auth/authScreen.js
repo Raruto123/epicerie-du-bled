@@ -1,117 +1,422 @@
-import { useState } from "react";
+import {
+  ActivityIndicator,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
 import { signUpWithSellerFlag, signIn } from "../../services/authService";
-import { Button, StyleSheet, TextInput, View, Text, Pressable } from "react-native";
-import { resetOnboardingForTest } from "../../services/onboardingService";
+import { LogoMark } from "../onboarding/onboardingScreen";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { MaterialIcons } from "@expo/vector-icons";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
-export default function AuthScreen({navigation}) {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [name, setName] = useState("");
-    const [mode, setMode] = useState("login"); // "login" | "signup"
+export default function AuthScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
+  const scrollRef = useRef(null);
 
-    //rôle à l'inscription
-    const [isSeller, setIsSeller] = useState(false);
+  const [mode, setMode] = useState("login"); //login|signup
+  const [isSeller, setIsSeller] = useState(false); //buyer|seller
 
-    const submit = async () => {
-        if (mode === "signup") {
-            await signUpWithSellerFlag({name, email, password, isSeller});
-        } else {
-            await signIn({email, password});
-        }
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [secure, setSecure] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const title = useMemo(
+    () => (mode === "login" ? "Bienvenue !" : "Créer un compte"),
+    [mode]
+  );
+
+  const subtitle = useMemo(
+    () =>
+      mode === "login"
+        ? "Connectez-vous pour découvrir les épiceries africaines près de chez vous."
+        : "Créez votre compte pour acheter ou vendre des produits africains",
+    [mode]
+  );
+
+  useEffect(() => {
+    // When switching between login/signup, reset form and dismiss keyboard
+    Keyboard.dismiss();
+    setError("");
+    setName("");
+    setEmail("");
+    setPassword("");
+    if (mode === "login") setIsSeller(false);
+    // Scroll back to top for a clean UX
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, [mode]);
+
+  const submit = async () => {
+    setError("");
+    setBusy(true);
+    try {
+      if (mode === "login") {
+        await signIn({ email, password });
+      } else {
+        if (!name.trim()) throw new Error("Veuillez entrer votre nom");
+        await signUpWithSellerFlag({
+          name: name.trim(),
+          email,
+          password,
+          isSeller,
+        });
+      }
+    } catch (e) {
+      setError(e.message || "Une erreur est survenue");
+    } finally {
+      setBusy(false);
     }
+  };
 
-    console.log(isSeller);
+  return (
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+      <KeyboardAvoidingView
+        style={styles.safe}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <ScrollView
+            ref={scrollRef}
+            contentContainerStyle={[
+              styles.container,
+              { paddingBottom: 24 + insets.bottom, flexGrow: 1 },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Header */}
+            <View style={styles.topBar}>
+              <Pressable
+                onPress={() => navigation.replace("Onboarding")}
+                style={styles.backBtn}
+              >
+                <MaterialIcons
+                  name="arrow-back"
+                  size={22}
+                  color={COLORS.text}
+                ></MaterialIcons>
+              </Pressable>
+              <View style={styles.brand}>
+                <LogoMark></LogoMark>
+                <Text style={styles.brandText}>AfroMarket CA</Text>
+              </View>
+              <View style={styles.spacer}></View>
+            </View>
 
-    return (
-        <View style={styles.authView}>
-            <Text style={styles.loginOrSignUpText}>
-                {mode === "signup" ? "Créer un compte" : "Se connecter"}
-            </Text>
-            {mode === "signup" && (
-                            <TextInput 
-            placeholder="Nom"
-            autoCapitalize="none"
-            value={name}
-            onChangeText={setName}
-            style={styles.textInput}>
-            </TextInput>
-            )}
-            <TextInput 
-            placeholder="E-mail"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
-            style={styles.textInput}>
-            </TextInput>
-            <TextInput 
-            placeholder="Mot de passe"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-            style={styles.textInput}>
-            </TextInput>
+            {/* Hero */}
+            <View style={styles.hero}>
+              <Text style={styles.h1}>{title}</Text>
+              <Text style={styles.p}>{subtitle}</Text>
+            </View>
 
-            {mode === "signup" && (
-                <View style={styles.signUpView}>
-                    <Text style={styles.signUpChoiceText}>Tu es :</Text>
-                    <View style={styles.signUpButtonsView}>
-                        <Button 
-                        title={isSeller ? "Acheteur" : "Acheteur ✅"}
-                        onPress={() => setIsSeller(false)}
-                        ></Button>
-                        <Button 
-                        title={isSeller ? "Vendeur ✅" : "Vendeur"}
-                        onPress={() => setIsSeller(true)}
-                        ></Button>
-                    </View>
-                    <Text style={styles.signUpDisclaimerText}>
-                        Tu pourras acheter comme tout le monde. "Vendeur" ajoute juste l'accès à l'Espace Vendeur.
-                    </Text>
-                </View>
-            )}
-
-            <Button title={mode === "signup" ? "Créer" : "Connexion"} onPress={submit}></Button>
-            <Button title={mode === "signup" ? "J'ai déjà un compte" : "Créer un compte"} onPress={() => setMode((m) => (m === "signup" ? "login" : "signup"))}></Button>
-            <Pressable onPress={async () => {
-                await resetOnboardingForTest();
-                navigation.replace("Onboarding");
-            }}>
-                <Text style={{textAlign : "center", opacity: 0.7, marginTop : 12}}>
-                    Revoir l'onboarding
+            {/* Segmented control */}
+            <View style={styles.segment}>
+              <View
+                style={[
+                  styles.segmentPill,
+                  { left: mode === "login" ? 4 : "50%" },
+                ]}
+              ></View>
+              <Pressable
+                style={styles.segmentBtn}
+                onPress={() => setMode("login")}
+              >
+                <Text
+                  style={[
+                    styles.segmentText,
+                    mode === "login" && styles.segmentTextActive,
+                  ]}
+                >
+                  Se connecter
                 </Text>
-            </Pressable>
-        </View>
-    )
+              </Pressable>
+              <Pressable
+                style={styles.segmentBtn}
+                onPress={() => setMode("signup")}
+              >
+                <Text
+                  style={[
+                    styles.segmentText,
+                    mode === "signup" && styles.segmentTextActive,
+                  ]}
+                >
+                  S'inscrire
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* Form */}
+            <View style={styles.form}>
+              {mode === "signup" && (
+                <View>
+                  <Text style={styles.label}>Nom</Text>
+                  <TextInput
+                    value={name}
+                    onChangeText={setName}
+                    style={styles.input}
+                    placeholder="Votre nom"
+                  ></TextInput>
+                </View>
+              )}
+              <View>
+                <Text style={styles.label}>Email</Text>
+                <TextInput
+                  value={email}
+                  onChangeText={setEmail}
+                  style={styles.input}
+                  placeholder="exemple@email.com"
+                  autoCapitalize="none"
+                ></TextInput>
+              </View>
+              <View>
+                <Text style={styles.label}>Mot de passe</Text>
+                <View style={styles.passwordWrap}>
+                  <TextInput
+                    style={[styles.input, { paddingRight: 44 }]}
+                    value={password}
+                    onChangeText={setPassword}
+                    placeholder="Mot de passe"
+                    secureTextEntry={secure}
+                    onFocus={() => {
+                      // Give time for keyboard to appear, then ensure field is visible
+                      setTimeout(() => {
+                        scrollRef.current?.scrollToEnd({ animated: true });
+                      }, 80);
+                    }}
+                  ></TextInput>
+                  <Pressable
+                    style={styles.eye}
+                    onPress={() => setSecure(!secure)}
+                  >
+                    <MaterialIcons
+                      name={secure ? "visibility-off" : "visibility"}
+                      size={20}
+                      color={COLORS.muted}
+                    ></MaterialIcons>
+                  </Pressable>
+                </View>
+              </View>
+
+              {mode === "signup" && (
+                <View style={styles.roleRow}>
+                  <Pressable
+                    onPress={() => setIsSeller(false)}
+                    style={[
+                      styles.roleChip,
+                      isSeller === false && styles.roleChipActive,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.roleText,
+                        isSeller === false && styles.roleTextActive,
+                      ]}
+                    >
+                      Acheteur
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => setIsSeller(true)}
+                    style={[
+                      styles.roleChip,
+                      isSeller === true && styles.roleChipActive,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.roleText,
+                        isSeller === true && styles.roleTextActive,
+                      ]}
+                    >
+                      Vendeur
+                    </Text>
+                  </Pressable>
+                </View>
+              )}
+
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+
+              <Pressable style={styles.primaryBtn} onPress={submit}>
+                {busy ? (
+                  <ActivityIndicator color="white"></ActivityIndicator>
+                ) : (
+                  <Text style={styles.primaryText}>
+                    {mode === "login" ? "Se connecter" : "Créer le compte"}
+                  </Text>
+                )}
+              </Pressable>
+            </View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
 }
 
+const COLORS = {
+  primary: "#d6561f",
+  bg: "#f8f6f6",
+  surface: "#ffffff",
+  text: "#171311",
+  muted: "#876e64",
+  border: "#e7e1de",
+};
+
 const styles = StyleSheet.create({
-    authView : {
-        padding : 24,
-        gap : 12,
-        justifyContent : "center",
-        flex : 1
-    },
-    loginOrSignUpText : {
-        fontSize : 26,
-        fontWeight : "700"
-    },
-    textInput : {
-        borderWidth : 1,
-        padding : 12,
-        borderRadius : 8
-    },
-    signUpView : {
-        gap : 8,
-    },
-    signUpChoiceText : {
-        fontWeight : "600"
-    },
-    signUpButtonsView : {
-        flexDirection : "row",
-        gap : 10
-    },
-    signUpDisclaimerText : {
-        opacity : 0.2,
-        fontStyle : "italic"
-    }
-})
+  safe: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+  },
+  container: {
+    paddingHorizontal: 20,
+  },
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.7)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  brand: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  brandText: {
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    color: COLORS.primary,
+  },
+  spacer: {
+    width: 40,
+  },
+  hero: {
+    marginVertical: 20,
+    alignItems: "center",
+  },
+  h1: {
+    fontSize: 30,
+    fontWeight: "900",
+    color: COLORS.text,
+  },
+  p: {
+    marginTop: 6,
+    textAlign: "center",
+    color: COLORS.muted,
+  },
+  segment: {
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "#e9e4e2",
+    padding: 4,
+    flexDirection: "row",
+    marginBottom: 20,
+  },
+  segmentPill: {
+    position: "absolute",
+    top: 4,
+    bottom: 4,
+    width: "50%",
+    borderRadius: 12,
+    backgroundColor: COLORS.surface,
+  },
+  segmentBtn: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  segmentText: {
+    fontWeight: "800",
+    color: COLORS.muted,
+  },
+  segmentTextActive: {
+    color: COLORS.text,
+  },
+  form: {
+    gap: 14,
+  },
+  label: {
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  input: {
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 14,
+    backgroundColor: COLORS.surface,
+  },
+  passwordWrap: {
+    position: "relative",
+  },
+  eye: {
+    position: "absolute",
+    right: 12,
+    top: 12,
+  },
+  roleRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 6,
+  },
+  roleChip: {
+    flex: 1,
+    height: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.surface,
+  },
+  roleChipActive: {
+    backgroundColor: `${COLORS.primary}22`,
+    borderColor: COLORS.primary,
+  },
+  roleText: {
+    fontWeight: "800",
+    color: COLORS.muted,
+  },
+  roleTextActive: {
+    color: COLORS.text,
+  },
+  primaryBtn: {
+    marginTop: 10,
+    height: 50,
+    borderRadius: 14,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  primaryText: {
+    color: "white",
+    fontWeight: "900",
+    fontSize: 16,
+  },
+  error: {
+    color: "#b91c1c",
+    fontWeight: "700",
+  },
+});

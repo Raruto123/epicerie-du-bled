@@ -17,7 +17,7 @@ import {
 const { width, height } = Dimensions.get("window");
 //Simple logo placeholder : later you can swap this View with your real logo <Image/>
 
-function LogoMark() {
+export function LogoMark() {
   return (
     <View
       style={{
