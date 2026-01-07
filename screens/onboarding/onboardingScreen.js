@@ -9,23 +9,29 @@ import {
 } from "react-native";
 import { setHasSeenOnboarding } from "../../services/onboardingService";
 import { useMemo, useRef, useState } from "react";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 const { width, height } = Dimensions.get("window");
 //Simple logo placeholder : later you can swap this View with your real logo <Image/>
 
-function LogoMark({ primary }) {
+function LogoMark() {
   return (
     <View
       style={{
-        width: 38,
-        height: 38,
-        borderRadius: 12,
-        backgroundColor: `${primary}1A`, //10% opacity
+        width: 100,
+        height: 30,
+        borderRadius: 17,
+        borderWidth: 1,
+        borderBottomWidth: 1,
+        backgroundColor: "none",
         alignItems: "center",
         justifyContent: "center",
       }}
     >
-      <Text style={{ color: primary, fontWeight: "800" }}>Marketplace</Text>
+      <Text style={{ color: "red", fontWeight: "800" }}>Future Logo</Text>
     </View>
   );
 }
@@ -37,7 +43,7 @@ export default function OnboardingScreen({ navigation }) {
         id: "1",
         title: "Trouver des ingrédients africains...",
         text: "...sans faire 3 magasins, sans être sûr du stock, et sans comparer les prix.",
-        image: require("../../assets/image1epicerie.png"),
+        image: require("../../assets/image1onboarding.png"),
         theme: {
           bg: "#fbfaf9",
           primary: "#d6561f",
@@ -48,7 +54,7 @@ export default function OnboardingScreen({ navigation }) {
         id: "2",
         title: "Tout au même endroit",
         text: "Découvre les épiceries africaines autour de toi, les produits disponibles, les prix et la distance.",
-        image: require("../../assets/image2epicerie.png"),
+        image: require("../../assets/image2onboarding.png"),
         theme: {
           bg: "#FBFAF9",
           primary: "#13ec5b",
@@ -72,6 +78,7 @@ export default function OnboardingScreen({ navigation }) {
 
   const listRef = useRef(null);
   const [index, setIndex] = useState(0);
+  const insets = useSafeAreaInsets();
 
   const isLast = index === slides.length - 1;
   const current = slides[index] ?? slides[0];
@@ -106,10 +113,14 @@ export default function OnboardingScreen({ navigation }) {
         ? {
             height: Math.min(height * 0.52, 420),
             width: "100%",
-            borderBottomLeftRadius: 40,
-            borderBottomRightRadius: 40,
+            borderRadius: 28,
             overflow: "hidden",
             backgroundColor: "#00000010",
+            shadowColor: "#000",
+            shadowOpacity: 0.06,
+            shadowRadius: 18,
+            shadowOffset: { width: 0, height: 10 },
+            elevation: 3,
           }
         : {
             height: Math.min(height * 0.5, 430),
@@ -125,10 +136,10 @@ export default function OnboardingScreen({ navigation }) {
           };
 
     return (
-      <View style={{ width, paddingHorizontal: 24, paddingTop: 16, flex: 1 }}>
+      <View style={{ width, paddingHorizontal: 24, paddingTop: 0, flex: 1 }}>
         {/* HERO */}
         <View
-          style={{ alignItems: "center", marginTop: item.id === "1" ? 4 : 12 }}
+          style={{ alignItems: "center", marginTop: item.id === "1" ? 0 : 0 }}
         >
           <View style={heroOuter}>
             <Image
@@ -143,8 +154,8 @@ export default function OnboardingScreen({ navigation }) {
                 left: 0,
                 right: 0,
                 bottom: 0,
-                top: item.id === "1" ? "35%" : "40%",
-                backgroundColor: "rgba(0, 0, 0, 0.18)",
+                top: item.id === "1" ? "85%" : "75%",
+                backgroundColor: "rgba(119, 17, 17, 0.18)",
               }}
             ></View>
             {/* Slide 2 : floating mini badges + glass price card */}
@@ -206,9 +217,9 @@ export default function OnboardingScreen({ navigation }) {
                     bottom: 14,
                     borderRadius: 16,
                     padding: 14,
-                    backgroundColor: "rgba(16, 34, 22, 0.28",
+                    backgroundColor: "rgba(255, 255, 255, 1)",
                     borderWidth: 1,
-                    borderColor: "rgba(255, 255, 255, 0.18)",
+                    borderColor: "rgba(255,255,255,0.92)",
                   }}
                 >
                   <View
@@ -248,7 +259,7 @@ export default function OnboardingScreen({ navigation }) {
                       <View>
                         <Text
                           style={{
-                            color: "white",
+                            color: "#6b7280",
                             fontWeight: "800",
                             fontSize: 12,
                           }}
@@ -257,7 +268,7 @@ export default function OnboardingScreen({ navigation }) {
                         </Text>
                         <Text
                           style={{
-                            color: "rgba(255,255,255,0.8)",
+                            color: "#111827",
                             fontSize: 10,
                           }}
                         >
@@ -363,26 +374,7 @@ export default function OnboardingScreen({ navigation }) {
           </View>
         </View>
         {/* TEXT */}
-        <View style={{ paddingTop: 22, gap: 10 }}>
-          {/* Slide 1 badge row: Marketplace + (future logo) */}
-          {item.id === "1" && (
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
-            >
-              <LogoMark primary={singleTheme.primary}></LogoMark>
-              <Text
-                style={{
-                  fontSize: 12,
-                  fontWeight: "900",
-                  letterSpacing: 1.2,
-                  textTransform: "uppercase",
-                  color: `${singleTheme.primary}CC`,
-                }}
-              >
-                Marketplace
-              </Text>
-            </View>
-          )}
+        <View style={{ paddingTop: 0, gap: 10 }}>
           <Text
             style={{
               fontSize: item.id === "2" ? 30 : 32,
@@ -409,7 +401,10 @@ export default function OnboardingScreen({ navigation }) {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: bg }}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: bg }}
+      edges={["top", "left", "right"]}
+    >
       <StatusBar barStyle={"dark-content"}></StatusBar>
       {/* Top-right skip pill */}
       <View
@@ -430,9 +425,10 @@ export default function OnboardingScreen({ navigation }) {
             alignItems: "center",
           }}
         >
-          <Text style={{ fontWeight: "900", color: darkText }}>
+          <LogoMark></LogoMark>
+          {/* <Text style={{ fontWeight: "900", color: darkText }}>
             Mon Épicerie
-          </Text>
+          </Text> */}
           {!isLast ? (
             <Pressable
               onPress={skip}
@@ -455,7 +451,15 @@ export default function OnboardingScreen({ navigation }) {
               >
                 Passer
               </Text>
-              <Text style={{fontSize:14, fontWeight:"900", color:`${darkText}B3`}}></Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "900",
+                  color: `${darkText}B3`,
+                }}
+              >
+                →
+              </Text>
             </Pressable>
           ) : (
             <View></View>
@@ -463,7 +467,7 @@ export default function OnboardingScreen({ navigation }) {
         </View>
       </View>
 
-      {/* Slides */}
+      {/* Slides list*/}
       <FlatList
         ref={listRef}
         data={slides}
@@ -471,110 +475,106 @@ export default function OnboardingScreen({ navigation }) {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingTop: 86, paddingBottom: 170 }}
         getItemLayout={(data, i) => ({
           length: width,
-          offset: width * 1,
+          offset: width * i,
           index: i,
         })}
-        onMomentumScrollEnd={(e) => {
+        onScroll={(e) => {
           const newIndex = Math.round(e.nativeEvent.contentOffset.x / width);
-          setIndex(newIndex);
+          if (newIndex !== index) setIndex(newIndex);
         }}
-        renderItem={({ item }) => (
-          <View style={{ width, padding: 24, justifyContent: "center" }}>
-            {/* Tu peux remplacer par une image plus tard */}
-            <View
-              style={{
-                height: 240,
-                borderRadius: 18,
-                backgroundColor: "#F3F4F6",
-                marginBottom: 24,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              {/* <Text style = {{opacity : 0.5}}>Image / Illustration</Text> */}
-              <Image
-                style={{ width: "100%", height: "100%" }}
-                source={item.image}
-                resizeMode="cover"
-              ></Image>
-            </View>
-
-            <Text style={{ fontSize: 28, fontWeight: "800", marginBottom: 12 }}>
-              {item.title}
-            </Text>
-            <Text style={{ fontSize: 16, lineHeight: 22, opacity: 0.8 }}>
-              {item.text}
-            </Text>
-          </View>
-        )}
+        scrollEventThrottle={16}
+        renderItem={renderSlide}
       ></FlatList>
-
-      {/* Dots + CTA */}
-      <View style={{ padding: 20 }}>
-        {/* Dots */}
+      {/* Bottom controls */}
+      <View
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          paddingHorizontal: 20,
+          paddingTop: 12,
+          paddingBottom: 20 + insets.bottom,
+        }}
+      >
+        {/* Pagination indicators */}
         <View
           style={{
             flexDirection: "row",
             justifyContent: "center",
-            marginBottom: 16,
-            gap: 8,
+            gap: 10,
+            marginBottom: 14,
           }}
         >
-          {slides.map((_, i) => (
-            <View
-              key={i}
-              style={{
-                width: i === index ? 18 : 8,
-                height: 8,
-                borderRadius: 99,
-                backgroundColor: i === index ? "#111827" : "#D1D5DB",
-              }}
-            ></View>
-          ))}
+          {slides.map((_, i) => {
+            const active = i === index;
+            return (
+              <View
+                key={i}
+                style={{
+                  width: active ? 32 : 10,
+                  height: active ? 10 : 10,
+                  borderRadius: 999,
+                  backgroundColor: active ? primary : "rgba(0,0,0,0.12)",
+                }}
+              ></View>
+            );
+          })}
         </View>
 
-        {/* Buttons */}
+        {/* Primary action */}
         <Pressable
           onPress={next}
           style={{
-            backgroundColor: "#111827",
-            paddingVertical: 14,
-            borderRadius: 12,
+            height: 56,
+            borderRadius: 16,
+            backgroundColor: primary,
+            justifyContent: "center",
+            shadowColor: primary,
+            shadowOpacity: 0.25,
+            shadowRadius: 18,
+            shadowOffset: { width: 0, height: 10 },
+            elevation: 4,
             alignItems: "center",
           }}
         >
-          <Text style={{ color: "white", fontWeight: "700" }}>
-            {isLast ? "Commencer" : "Suivant"}
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <Text
+              style={{
+                color: isLast ? "black" : "white",
+                fontWeight: "900",
+                fontSize: 16,
+              }}
+            >
+              {isLast ? "Commencer" : "Suivant"}
+            </Text>
+            <Text
+              style={{
+                color: isLast ? "black" : "white",
+                fontWeight: "900",
+                fontSize: 18,
+              }}
+            >
+              →
+            </Text>
+          </View>
         </Pressable>
 
+        {/* Secondary link only on last slide */}
         {isLast && (
           <Pressable
             onPress={skip}
             style={{ paddingVertical: 12, alignItems: "center" }}
           >
-            <Text style={{ opacity: 0.7 }}>J'ai déjà un compte</Text>
+            <Text style={{ opacity: 0.75, fontWeight: "800", color: darkText }}>
+              J'ai déjà un compte
+            </Text>
           </Pressable>
         )}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
-
-// const styles = StyleSheet.create({
-//     container : {
-//         flex : 1,
-//         padding : 24,
-//         justifyContent : "center",
-//         gap : 16
-//     },
-//     mainText : {
-//         fontSize : 28,
-//         fontWeight : 700
-//     },
-//     subtext : {
-//         fontSize : 16
-//     }
-// })
