@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import OnboardingScreen from "../screens/onboarding/onboardingScreen";
 import AuthScreen from "../screens/auth/authScreen";
+import UserApp from "../screens/user/userApp";
 
 const Stack = createNativeStackNavigator();
 
@@ -9,7 +10,7 @@ export default function RootNavigator ({initialRouteName}) {
         <Stack.Navigator initialRouteName={initialRouteName} screenOptions={{headerShown : false}}>
                     <Stack.Screen name="Onboarding" component={OnboardingScreen}></Stack.Screen>
                     <Stack.Screen name="Auth" component={AuthScreen}></Stack.Screen>
-                    {/* Plus Tard : <stack.Screen name="App" component={UserTabs}*/}
+                    <Stack.Screen name="App" component={UserApp}></Stack.Screen>
         </Stack.Navigator>
     )
-}
+};

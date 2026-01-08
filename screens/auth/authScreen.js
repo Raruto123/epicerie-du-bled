@@ -21,6 +21,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import { COLORS } from "../../constants/colors";
 
 export default function AuthScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -69,6 +70,7 @@ export default function AuthScreen({ navigation }) {
     try {
       if (mode === "login") {
         await signIn({ email, password });
+        navigation.replace("App");
       } else {
         if (!name.trim()) throw new Error("Veuillez entrer votre nom");
         await signUpWithSellerFlag({
@@ -290,14 +292,14 @@ export default function AuthScreen({ navigation }) {
   );
 }
 
-const COLORS = {
-  primary: "#d6561f",
-  bg: "#f8f6f6",
-  surface: "#ffffff",
-  text: "#171311",
-  muted: "#876e64",
-  border: "#e7e1de",
-};
+// const COLORS = {
+//   primary: "#d6561f",
+//   bg: "#f8f6f6",
+//   surface: "#ffffff",
+//   text: "#171311",
+//   muted: "#876e64",
+//   border: "#e7e1de",
+// };
 
 const styles = StyleSheet.create({
   safe: {
