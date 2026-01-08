@@ -1,10 +1,12 @@
 import {
   ActivityIndicator,
+  findNodeHandle,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -15,11 +17,15 @@ import { signUpWithSellerFlag, signIn } from "../../services/authService";
 import { LogoMark } from "../onboarding/onboardingScreen";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 export default function AuthScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const scrollRef = useRef(null);
+  const passwordRef = useRef(null);
 
   const [mode, setMode] = useState("login"); //login|signup
   const [isSeller, setIsSeller] = useState(false); //buyer|seller
@@ -81,9 +87,11 @@ export default function AuthScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+      <StatusBar barStyle={"dark-content"}></StatusBar>
       <KeyboardAvoidingView
         style={styles.safe}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
           <ScrollView
@@ -184,16 +192,32 @@ export default function AuthScreen({ navigation }) {
                 <Text style={styles.label}>Mot de passe</Text>
                 <View style={styles.passwordWrap}>
                   <TextInput
+                    ref={passwordRef}
                     style={[styles.input, { paddingRight: 44 }]}
                     value={password}
                     onChangeText={setPassword}
                     placeholder="Mot de passe"
                     secureTextEntry={secure}
                     onFocus={() => {
-                      // Give time for keyboard to appear, then ensure field is visible
+                      // Ensure the password field is visible above the Keyboard (Android & iOS)
                       setTimeout(() => {
-                        scrollRef.current?.scrollToEnd({ animated: true });
-                      }, 80);
+                        const node = findNodeHandle(passwordRef.current);
+                        const responder =
+                          scrollRef.current?.getScrollResponder?.();
+                        if (
+                          node &&
+                          responder?.scrollResponderScrollNativeHandleToKeyboard
+                        ) {
+                          responder.scrollResponderScrollNativeHandleToKeyboard(
+                            node,
+                            90,
+                            true
+                          );
+                        } else {
+                          //Fallback
+                          scrollRef.current?.scrollToEnd({ animated: true });
+                        }
+                      }, 50);
                     }}
                   ></TextInput>
                   <Pressable
