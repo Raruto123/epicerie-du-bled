@@ -16,6 +16,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import * as Location from "expo-location";
 import { MaterialIcons } from "@expo/vector-icons";
+import ProfileScreen from "./profileScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -23,7 +24,7 @@ function CenterScreen({ title }) {
   return (
     <SafeAreaView style={styles.screenSafe} edges={["top", "left", "right"]}>
       <View style={styles.center}>
-        <Text style={styles.screenTitle}></Text>
+        <Text style={styles.screenTitle}>{title}</Text>
       </View>
     </SafeAreaView>
   );
@@ -38,9 +39,9 @@ function SearchScreen() {
 function FavoritesScreen() {
   return <CenterScreen title="FAVORIS"></CenterScreen>;
 }
-function ProfileScreen() {
-  return <CenterScreen title="PROFIL"></CenterScreen>;
-}
+// function ProfileScreen() {
+//   return <CenterScreen title="PROFIL"></CenterScreen>;
+// }
 
 // Modal simple (MVP) :
 // - step "ask" : ton popup qui demande
@@ -83,7 +84,9 @@ function LocationGateModal({ visible, onDone, onLocation }) {
         timestamp: position.timestamp ?? Date.now(),
       });
 
-      console.log(`voici la position de l'utilisateur = ${position.coords.accuracy}`);
+      console.log(
+        `voici la position de l'utilisateur = ${position.coords.accuracy}`
+      );
 
       setStep("granted");
       setBusy(false);
