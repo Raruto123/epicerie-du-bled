@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
@@ -18,22 +18,53 @@ import {
 } from "react-native-safe-area-context";
 import { COLORS } from "../../constants/colors";
 import { MaterialIcons } from "@expo/vector-icons";
+import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { auth, db } from "../../lib/firebase";
+import { getUserProfile } from "../../services/profileService";
 
 export default function ProfileScreen({ navigation }) {
   const insets = useSafeAreaInsets();
 
-  //MVP : user mock (plus tard tu brancheras Firestore / auth.currentUser)
-  const user = useMemo(
-    () => ({
-      name: "Fatou Ndiaye",
-      email: "fatou.ndiaye@example.com",
-      isSeller: true, // <-- c'est ça qui contrôle l'affichage "Espace Vendeur"
-    }),
-    []
-  );
+  const uid = auth.currentUser?.uid;
 
-  const [name, setName] = useState(user.name);
+  const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      try {
+        setLoading(true);
+        const current = auth.currentUser;
+        if (!current?.uid) {
+          if (alive) {
+            setProfile(null);
+            setName("");
+          }
+          return;
+        }
+
+        const p = await getUserProfile(current.uid);
+        if (!alive) return;
+
+        setProfile(p);
+        setName((p?.name ?? "").toString());
+      } catch (e) {
+        if (!alive) return;
+        setProfile(null);
+        setName("");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const goSellerSpace = () => {
     navigation.navigate("SellerBoard"); //à voir si je mets navigate ou replace;
@@ -41,11 +72,19 @@ export default function ProfileScreen({ navigation }) {
 
   const saveName = async () => {
     Keyboard.dismiss();
+    if (!uid) return;
+
+    const nextName = name.trim();
+    if (!nextName) return;
     setSaving(true);
     try {
-      console.log("yeesss");
-      //TODO plus tard : update Firestore user doc
-      //await updateDoc
+      await updateDoc(doc(db, "users", uid), {
+        name: nextName,
+        updatedAt: serverTimestamp(),
+      });
+
+      //keep UI in sync
+      setProfile((prev) => (prev ? { ...prev, name: nextName } : prev));
     } finally {
       setSaving(false);
     }
@@ -68,6 +107,12 @@ export default function ProfileScreen({ navigation }) {
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
+            {loading && (
+                <View style={styles.loadingRow}>
+                    <ActivityIndicator size="small"></ActivityIndicator>
+                    <Text style={styles.loadingText}>Chargement du profil...</Text>
+                </View>
+            )}
           {/* Top Bar */}
           <View style={styles.topBar}>
             <Text style={styles.topTitle}>Mon Profil</Text>
@@ -87,13 +132,13 @@ export default function ProfileScreen({ navigation }) {
             </View>
 
             <View style={styles.profileText}>
-              <Text style={styles.name}>{user.name}</Text>
-              <Text style={styles.email}>{user.email}</Text>
+              <Text style={styles.name}>{profile?.name ?? ""}</Text>
+              <Text style={styles.email}>{profile?.email ?? ""}</Text>
             </View>
           </View>
 
           {/* Seller card (ONLY IF seller) */}
-          {user.isSeller && (
+          {profile?.isSeller && (
             <View style={styles.sellerCard}>
               <View style={styles.sellerCardLeft}>
                 <View style={styles.sellerKickerRow}>
@@ -410,7 +455,33 @@ const styles = StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 8,
   },
-  logoutBtn:{ height:54, borderRadius:14, backgroundColor:"#feece6", flexDirection:"row", alignItems:"center", justifyContent:"center", gap:10},
-  logoutText:{fontWeight:"900", color:"#cf451a"},
-  version :{marginTop:14, textAlign:"center", fontSize:11, color:"#ada29e", fontWeight:"700"}
+  logoutBtn: {
+    height: 54,
+    borderRadius: 14,
+    backgroundColor: "#feece6",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  logoutText: { fontWeight: "900", color: "#cf451a" },
+  version: {
+    marginTop: 14,
+    textAlign: "center",
+    fontSize: 11,
+    color: "#ada29e",
+    fontWeight: "700",
+  },
+  loadingRow:{
+    flexDirection:"row",
+    alignItems:"center",
+    justifyContent:"center",
+    gap:10,
+    paddingVertical:8
+  },
+  loadingText:{
+    fontSize:12,
+    fontWeight:"800",
+    color:COLORS.muted
+  }
 });
