@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
@@ -17,36 +17,128 @@ import {
 } from "react-native-safe-area-context";
 import { COLORS } from "../../constants/colors";
 import { MaterialIcons } from "@expo/vector-icons";
+import { auth } from "../../lib/firebase";
+import { updateSellerProfile } from "../../services/sellerOverviewService";
+import { getUserProfile } from "../../services/profileService";
+import { formatDateFr } from "../../utils/dateFormat";
 
 export default function SellerOverviewScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+  const uid = auth.currentUser?.uid;
 
-  //MVP data (plus tard : Firestore)
-  const initial = useMemo(
-    () => ({
-      storeName: "Épicerie Mapouka Canada",
-      description:
-        "Importateur de produits frais de l'Afrique de l'Ouest. Plaintains, ignames et épices rares disponibles tous les mardis.",
-      address: "7540 Boulevard Pie-IX, Montréal, QC",
-      verified: true,
-    }),
-    []
-  );
+  const [loading, setLoading] = useState(true);
+  const [savingField, setSavingField] = useState(null);
+  const [profile, setProfile] = useState(null);
 
-  const [storeName, setStoreName] = useState(initial.storeName);
-  const [description, setDescription] = useState(initial.description);
-  const [address, setAddress] = useState(initial.address);
-  const [saving, setSaving] = useState(false);
+  const [storeName, setStoreName] = useState("");
+  const [description, setDescription] = useState("");
+  const [addressText, setAddressText] = useState("");
+
+  const lastUpdated = profile?.seller?.updatedAt ?? null;
+
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      try {
+        setLoading(true);
+        const current = auth.currentUser;
+        if (!current?.uid) {
+          if (alive) {
+            setProfile(null);
+            setStoreName("");
+            setDescription("");
+            setAddressText("");
+          }
+          return;
+        }
+
+        const p = await getUserProfile(current.uid);
+        if (!alive) return;
+
+        setProfile(p);
+        // ⚠️ seller peut ne pas exister au début
+        setStoreName((p?.seller?.storeName ?? "").toString());
+        setDescription((p?.seller?.description ?? "").toString());
+        setAddressText((p?.seller?.addressText ?? "").toString());
+      } catch (e) {
+        if (!alive) return;
+        setProfile(null);
+        setStoreName("");
+        setDescription("");
+        setAddressText("");
+        console.log("❌ Failed to load seller profile:", e);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const goBack = () => navigation.goBack?.();
 
-  const save = async () => {
+  const saveField = async (field) => {
     Keyboard.dismiss();
-    setSaving(true);
+    if (!uid) return;
+
+    let nextValue = "";
+    if (field === "storeName") nextValue = storeName.trim();
+    if (field === "description") nextValue = description.trim();
+    if (field === "addressText") nextValue = addressText.trim();
+
+    if (!nextValue) return;
+
+    // Optimistic UI (on garde une copie pour rollback)
+    const prev = {
+      storeName,
+      description,
+      addressText,
+      profile,
+    };
+
+    // optionnel: sync profile local direct
+    setProfile((p) => {
+      if (!p) return p;
+      return {
+        ...p,
+        seller: {
+          ...(p.seller ?? {}),
+          [field]: nextValue,
+        },
+      };
+    });
+
+    setSavingField(field);
+
     try {
-      //TODO update : Firestore seller profile
+      if (field === "storeName")
+        await updateSellerProfile(uid, { storeName: nextValue });
+      if (field === "description")
+        await updateSellerProfile(uid, { description: nextValue });
+      if (field === "addressText")
+        await updateSellerProfile(uid, { addressText: nextValue });
+      // Re-fetch pour être sûr (et récupérer updatedAt etc.)
+      const fresh = await getUserProfile(uid);
+      if (fresh) {
+        setProfile(fresh);
+        setStoreName((fresh?.seller?.storeName ?? "").toString());
+        setDescription((fresh?.seller?.description ?? "").toString());
+        setAddressText((fresh?.seller?.addressText ?? "").toString());
+      }
+
+      console.log(`✅${field} updated in Firestore`);
+    } catch (e) {
+      // Rollback UI
+      setStoreName(prev.storeName);
+      setDescription(prev.description);
+      setAddressText(prev.addressText);
+      setProfile(prev.profile);
+      console.log(`❌ Failed to update ${field} in Firestore`, e);
     } finally {
-      setSaving(false);
+      setSavingField(null);
     }
   };
 
@@ -71,6 +163,14 @@ export default function SellerOverviewScreen({ navigation }) {
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
+          {loading && (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator size="small"></ActivityIndicator>
+              <Text style={styles.loadingText}>
+                Chargement du profil vendeur...
+              </Text>
+            </View>
+          )}
           {/* Top App Bar */}
           <View style={styles.topBar}>
             <Pressable onPress={goBack} style={styles.topBtn} hitSlop={10}>
@@ -85,10 +185,7 @@ export default function SellerOverviewScreen({ navigation }) {
             </Pressable>
 
             <Text style={styles.topTitle}>Modifier le Profil</Text>
-
-            <Pressable onPress={save} style={styles.saveLink} hitSlop={10}>
-              <Text style={styles.saveLinkText}>Enregistrer</Text>
-            </Pressable>
+            <View style={{ width: 110 }}></View>
           </View>
 
           {/* Cover + Logo */}
@@ -119,9 +216,6 @@ export default function SellerOverviewScreen({ navigation }) {
             <Text style={styles.storeTitle}>
               {storeName || "Votre boutique"}
             </Text>
-            {initial.verified && (
-              <Text style={styles.verified}>Vendeur vérifié</Text>
-            )}
           </View>
 
           {/* Identité */}
@@ -135,7 +229,22 @@ export default function SellerOverviewScreen({ navigation }) {
               style={styles.input}
               placeholder="Entrez le nom de votre commerce"
               returnKeyType="done"
+              onSubmitEditing={() => saveField("storeName")}
             ></TextInput>
+            <Pressable
+              onPress={() => saveField("storeName")}
+              disabled={savingField === "storeName"}
+              style={[
+                styles.smallSaveBtn,
+                saveField === "storeName" && { opacity: 0.7 },
+              ]}
+            >
+              {savingField === "storeName" ? (
+                <ActivityIndicator color="white"></ActivityIndicator>
+              ) : (
+                <Text style={styles.smallSaveText}>Enregistrer</Text>
+              )}
+            </Pressable>
           </View>
 
           <View style={styles.card}>
@@ -144,10 +253,25 @@ export default function SellerOverviewScreen({ navigation }) {
               value={description}
               onChangeText={setDescription}
               style={[styles.input, styles.textarea]}
+              onSubmitEditing={() => saveField("description")}
               placeholder="Parlez-nous de vos spécialités africaines"
               multiline
               textAlignVertical="top"
             ></TextInput>
+            <Pressable
+              onPress={() => saveField("description")}
+              disabled={savingField === "description"}
+              style={[
+                styles.smallSaveBtn,
+                savingField === "description" && { opacity: 0.7 },
+              ]}
+            >
+              {savingField === "description" ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text style={styles.smallSaveText}>Enregistrer</Text>
+              )}
+            </Pressable>
           </View>
           {/* Localisation */}
           <Text style={styles.h3}>Localisation</Text>
@@ -162,12 +286,27 @@ export default function SellerOverviewScreen({ navigation }) {
                   color={COLORS.primary}
                 ></MaterialIcons>
                 <TextInput
-                  value={address}
-                  onChangeText={setAddress}
+                  value={addressText}
+                  onChangeText={setAddressText}
                   style={styles.addressInput}
+                  onSubmitEditing={() => saveField("addressText")}
                   placeholder="Numéro, Rue, Ville"
                 ></TextInput>
               </View>
+              <Pressable
+                onPress={() => saveField("addressText")}
+                disabled={savingField === "addressText"}
+                style={[
+                  styles.smallSaveBtn,
+                  savingField === "addressText" && { opacity: 0.7 },
+                ]}
+              >
+                {savingField === "addressText" ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text style={styles.smallSaveText}>Enregistrer</Text>
+                )}
+              </Pressable>
             </View>
 
             <Pressable onPress={updateGps} style={styles.gpsRow}>
@@ -208,19 +347,8 @@ export default function SellerOverviewScreen({ navigation }) {
             </Text>
           </View>
 
-          {/* Save Button */}
-          <Pressable onPress={save} style={styles.bigSaveBtn} disabled={saving}>
-            {saving ? (
-              <ActivityIndicator color="white"></ActivityIndicator>
-            ) : (
-              <Text style={styles.bigSaveText}>
-                Enregistrer les modifications
-              </Text>
-            )}
-          </Pressable>
-
           <Text style={styles.lastUpdate}>
-            Dernière mise à jour : 12 Octobre 2023
+            {lastUpdated ? `Dernière mise à jour : ${formatDateFr(lastUpdated)}`: "Dernière mise à jour : -"}
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -428,4 +556,21 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: COLORS.muted,
   },
+  smallSaveBtn: {
+    marginTop: 12,
+    height: 46,
+    borderRadius: 12,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  smallSaveText: { color: "white", fontWeight: "900" },
+  loadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingVertical: 8,
+  },
+  loadingText: { fontSize: 12, fontWeight: "800", color: COLORS.muted },
 });

@@ -1,21 +1,25 @@
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
 // Update seller fields (storeName/description/logoURL/coverURL/addressText/addressSource)
 export async function updateSellerProfile(uid, patch) {
   const userRef = doc(db, "users", uid);
 
-  await setDoc(
-    userRef,
-    {
-      seller: {
-        ...patch,
-        updatedAt: serverTimestamp(),
-      },
-      updatedAt: serverTimestamp(),
-    },
-    { merge: true }
-  );
+  const payload = {
+    updatedAt: serverTimestamp(),
+    "seller.updatedAt": serverTimestamp(),
+  };
+
+  if (patch.storeName !== undefined)
+    payload["seller.storeName"] = patch.storeName;
+  if (patch.description !== undefined)
+    payload["seller.description"] = patch.description;
+  if (patch.addressText !== undefined) {
+    payload["seller.addressText"] = patch.addressText;
+    payload["seller.addressSource"] = "manual"; //utile + propre
+  }
+
+  await updateDoc(userRef, payload);
 }
 
 // Save GPS coords (you can call this after your LocationGateModal)
@@ -44,20 +48,20 @@ export async function updateSellerGpsLocation(
   );
 }
 
-// If you want the user to be able to type an address manually
-export async function updateSellerManualAddress(uid, addressText) {
-  const userRef = doc(db, "users", uid);
+// // If you want the user to be able to type an address manually
+// export async function updateSellerManualAddress(uid, addressText) {
+//   const userRef = doc(db, "users", uid);
 
-  await setDoc(
-    userRef,
-    {
-      seller: {
-        addressText: addressText ?? "",
-        addressSource: "manual",
-        updatedAt: serverTimestamp(),
-      },
-      updatedAt: serverTimestamp(),
-    },
-    { merge: true }
-  );
-}
+//   await setDoc(
+//     userRef,
+//     {
+//       seller: {
+//         addressText: addressText ?? "",
+//         addressSource: "manual",
+//         updatedAt: serverTimestamp(),
+//       },
+//       updatedAt: serverTimestamp(),
+//     },
+//     { merge: true }
+//   );
+// }

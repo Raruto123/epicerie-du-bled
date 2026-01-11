@@ -18,9 +18,12 @@ import {
 } from "react-native-safe-area-context";
 import { COLORS } from "../../constants/colors";
 import { MaterialIcons } from "@expo/vector-icons";
-import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
+//import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { auth, db } from "../../lib/firebase";
-import { getUserProfile } from "../../services/profileService";
+import {
+  getUserProfile,
+  updateProileName,
+} from "../../services/profileService";
 
 export default function ProfileScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -76,15 +79,28 @@ export default function ProfileScreen({ navigation }) {
 
     const nextName = name.trim();
     if (!nextName) return;
+
+    // Optimistic UI update
+    const prevName = profile?.name ?? "";
+    setProfile((prev) => (prev ? { ...prev, name: nextName } : prev));
+
     setSaving(true);
     try {
-      await updateDoc(doc(db, "users", uid), {
-        name: nextName,
-        updatedAt: serverTimestamp(),
-      });
+      await updateProileName(uid, nextName);
 
-      //keep UI in sync
-      setProfile((prev) => (prev ? { ...prev, name: nextName } : prev));
+      // Re-fetch from Firestore to confirm what was saved
+      const fresh = await getUserProfile(uid);
+      if (fresh) {
+        setProfile(fresh);
+        setName((fresh.name ?? "").toString());
+      }
+
+      console.log("✅ Name updated in Firestore:", nextName);
+    } catch (e) {
+      // Rollback UI if write fails
+      setProfile((prev) => (prev ? { ...prev, name: prevName } : prev));
+      setName(prevName);
+      console.log("❌ Failed to update name in Firestore:", e);
     } finally {
       setSaving(false);
     }
@@ -107,12 +123,12 @@ export default function ProfileScreen({ navigation }) {
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
-            {loading && (
-                <View style={styles.loadingRow}>
-                    <ActivityIndicator size="small"></ActivityIndicator>
-                    <Text style={styles.loadingText}>Chargement du profil...</Text>
-                </View>
-            )}
+          {loading && (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator size="small"></ActivityIndicator>
+              <Text style={styles.loadingText}>Chargement du profil...</Text>
+            </View>
+          )}
           {/* Top Bar */}
           <View style={styles.topBar}>
             <Text style={styles.topTitle}>Mon Profil</Text>
@@ -472,16 +488,16 @@ const styles = StyleSheet.create({
     color: "#ada29e",
     fontWeight: "700",
   },
-  loadingRow:{
-    flexDirection:"row",
-    alignItems:"center",
-    justifyContent:"center",
-    gap:10,
-    paddingVertical:8
+  loadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingVertical: 8,
   },
-  loadingText:{
-    fontSize:12,
-    fontWeight:"800",
-    color:COLORS.muted
-  }
+  loadingText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: COLORS.muted,
+  },
 });
