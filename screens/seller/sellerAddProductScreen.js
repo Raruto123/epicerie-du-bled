@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import {
+  ActivityIndicator,
+  Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -16,6 +18,12 @@ import {
 } from "react-native-safe-area-context";
 import { COLORS } from "../../constants/colors";
 import { MaterialIcons } from "@expo/vector-icons";
+import { auth } from "../../lib/firebase";
+import {
+  createProduct,
+  pickProductImage,
+  uploadProductImage,
+} from "../../services/sellerAddProductService";
 
 export default function SellerAddProductScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -24,7 +32,7 @@ export default function SellerAddProductScreen({ navigation }) {
     () => [
       { key: "Tubercules", icon: "agriculture" },
       { key: "Poissons", icon: "set-meal" },
-      { key: "Épices", icon: "whatsnot" },
+      { key: "Épices", icon: "whatshot" },
       { key: "Légumes", icon: "eco" },
     ],
     []
@@ -33,13 +41,71 @@ export default function SellerAddProductScreen({ navigation }) {
   const [name, setName] = useState("");
   const [cat, setCat] = useState("Tubercules");
   const [price, setPrice] = useState("");
-  const [insStock, setInStock] = useState(true);
+  const [inStock, setInStock] = useState(true);
   const [desc, setDesc] = useState("");
+  const [pictureUri, setPictureUri] = useState("");
+  const [publishing, setPublishing] = useState(false);
 
-  const publish = () => {
+  const publish = async () => {
     Keyboard.dismiss();
-    //TODO : create product in Firestore later
-    navigation.goBack();
+    const sellerId = auth.currentUser?.uid;
+    if (!sellerId) return;
+
+    const productName = name.trim();
+    const productCat = (cat ?? "").toString();
+    const productDesc = desc.trim();
+    // const productPicture = pictureUri.trim();
+
+    const rawPrice = (price ?? "").toString().trim().replace(",", ".");
+    const productPrice = Number(rawPrice);
+
+    if (!productName) return;
+    if (!productCat) return;
+    if (!Number.isFinite(productPrice) || productPrice <= 0) return;
+
+    setPublishing(true);
+    try {
+      let photoURL = null;
+
+      if (pictureUri) {
+        photoURL = await uploadProductImage({
+          sellerId,
+          localUri: pictureUri,
+        });
+      }
+      await createProduct({
+        sellerId,
+        name: productName,
+        cat: productCat,
+        price: productPrice,
+        inStock,
+        desc: productDesc,
+        photoURL
+      });
+
+      //reset form
+      setName("");
+      setPrice("");
+      setDesc("");
+      setCat("Tubercules");
+      setInStock(true);
+      setPictureUri("");
+      navigation.goBack();
+    } catch (e) {
+      console.log("❌ Failed to create product : ", e);
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const pickPhoto = async () => {
+    try {
+      const picked = await pickProductImage();
+      if (!picked?.uri) return;
+      setPictureUri(picked.uri);
+    } catch (e) {
+      console.log("❌ pick photo error : ", e);
+    }
   };
 
   return (
@@ -77,16 +143,28 @@ export default function SellerAddProductScreen({ navigation }) {
             showsVerticalScrollIndicator={false}
           >
             {/* Photo upload (placeholder) */}
-            <Pressable style={styles.photoBox}>
-              <View style={styles.photoIcon}>
-                <MaterialIcons
-                  name="add-a-photo"
-                  size={28}
-                  color={COLORS.primary}
-                ></MaterialIcons>
-              </View>
-              <Text style={styles.photoTitle}>Photo du produit</Text>
-              <Text style={styles.photoSub}>Haute résolution recommandée</Text>
+            <Pressable style={styles.photoBox} onPress={pickPhoto}>
+              {pictureUri ? (
+                <Image
+                resizeMode="cover"
+                  source={{ uri: pictureUri }}
+                  style={styles.photoPreview}
+                ></Image>
+              ) : (
+                <>
+                  <View style={styles.photoIcon}>
+                    <MaterialIcons
+                      name="add-a-photo"
+                      size={28}
+                      color={COLORS.primary}
+                    ></MaterialIcons>
+                  </View>
+                  <Text style={styles.photoTitle}>Photo du produit</Text>
+                  <Text style={styles.photoSub}>
+                    Haute résolution recommandée
+                  </Text>
+                </>
+              )}
             </Pressable>
 
             {/* Details */}
@@ -160,13 +238,13 @@ export default function SellerAddProductScreen({ navigation }) {
                   style={styles.stockBox}
                 >
                   <Text style={styles.stockLabel}>
-                    {insStock ? "En stock" : "Rupture"}
+                    {inStock ? "En stock" : "Rupture"}
                   </Text>
-                  <View style={[styles.switch, insStock && styles.switchOn]}>
+                  <View style={[styles.switch, inStock && styles.switchOn]}>
                     <View
                       style={[
                         styles.switchKnob,
-                        insStock && styles.switchKnobOn,
+                        inStock && styles.switchKnobOn,
                       ]}
                     ></View>
                   </View>
@@ -190,13 +268,23 @@ export default function SellerAddProductScreen({ navigation }) {
 
           {/* Footer fixed */}
           <View style={[styles.footer, { paddingBottom: 14 + insets.bottom }]}>
-            <Pressable onPress={publish} style={styles.publishBtn}>
-              <MaterialIcons
-                name="publish"
-                size={20}
-                color="white"
-              ></MaterialIcons>
-              <Text style={styles.publishText}>Publier le produit</Text>
+            <Pressable
+              onPress={publish}
+              style={[styles.publishBtn, publishing && { opacity: 0.8 }]}
+              disabled={publishing}
+            >
+              {publishing ? (
+                <ActivityIndicator color="white"></ActivityIndicator>
+              ) : (
+                <>
+                  <MaterialIcons
+                    name="publish"
+                    size={20}
+                    color="white"
+                  ></MaterialIcons>
+                  <Text style={styles.publishText}>Publier le produit</Text>
+                </>
+              )}
             </Pressable>
           </View>
         </View>
@@ -339,26 +427,27 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: "white",
   },
-  switchKnobOn:{alignSelf:"flex-end"},
-  footer:{
-    position:"absolute",
-    left:0,
-    right:0,
-    bottom:0,
-    paddingHorizontal:16,
-    paddingTop:10,
-    backgroundColor:"rgba(255,255,255, 0.92)",
-    borderTopWidth:1,
-    borderTopColor:"rgba(0,0,0,0.06)"
+  switchKnobOn: { alignSelf: "flex-end" },
+  footer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    backgroundColor: "rgba(255,255,255, 0.92)",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0,0,0,0.06)",
   },
-  publishBtn:{
-    height:56,
-    borderRadius:14,
-    backgroundColor:COLORS.primary,
-    alignItems:"center",
-    flexDirection:'row',
-    justifyContent:"center",
-    gap:10
+  publishBtn: {
+    height: 56,
+    borderRadius: 14,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 10,
   },
-  publishText:{color:"white", fontSize:15, fontWeight:'900'}
+  publishText: { color: "white", fontSize: 15, fontWeight: "900" },
+  photoPreview:{width:"100%", height:"100%", borderRadius:14}
 });

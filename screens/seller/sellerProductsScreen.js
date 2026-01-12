@@ -1,47 +1,79 @@
-import { useMemo, useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { COLORS } from "../../constants/colors";
 import { MaterialIcons } from "@expo/vector-icons";
+import { auth } from "../../lib/firebase";
+import { listenSellerProducts } from "../../services/sellerAddProductService";
 
 export default function SellerProductsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+  const uid = auth.currentUser?.uid;
+
   const [activeCat, setActiveCat] = useState("Tous");
+  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState([]);
 
+  // ✅ mêmes catégories que ton écran d'ajout (tu peux en ajouter d'autres)
   const categories = useMemo(
-    () => ["Tous", "Épices", "Tubercules", "Surgelés", "Céréales"],
+    () => ["Tous", "Épices", "Tubercules", "Surgelés", "Céréales", "Légumes"],
     []
   );
 
-  const products = useMemo(
-    () => [
-      {
-        id: "1",
-        name: "Huile de Palme(1L)",
-        price: 8.5,
-        cat: "Épices",
-        inStock: true,
-      },
-      {
-        id: "2",
-        name: "Banane Plaintain (Lot de 3)",
-        price: 4.99,
-        cat: "Fruits & Légumes",
-        inStock: false,
-      },
-      {
-        id: "3",
-        name: "Manioc surgelé (1kg)",
-        price: 6.25,
-        cat: "Surgelés",
-        inStock: true,
-      },
-    ],
-    []
-  );
+  // const products = useMemo(
+  //   () => [
+  //     {
+  //       id: "1",
+  //       name: "Huile de Palme(1L)",
+  //       price: 8.5,
+  //       cat: "Épices",
+  //       inStock: true,
+  //     },
+  //     {
+  //       id: "2",
+  //       name: "Banane Plaintain (Lot de 3)",
+  //       price: 4.99,
+  //       cat: "Fruits & Légumes",
+  //       inStock: false,
+  //     },
+  //     {
+  //       id: "3",
+  //       name: "Manioc surgelé (1kg)",
+  //       price: 6.25,
+  //       cat: "Surgelés",
+  //       inStock: true,
+  //     },
+  //   ],
+  //   []
+  // );
+
+  //observe si le seller a des produits si oui il affiche sinon il affiche rien
+  useEffect(() => {
+    if (!uid) {
+      setProducts([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const unsub = listenSellerProducts(uid, (next) => {
+      setProducts(next);
+      setLoading(false);
+    });
+
+    return () => unsub?.();
+  }, [uid]);
 
   const filtered = useMemo(() => {
     if (activeCat === "Tous") return products;
@@ -116,67 +148,77 @@ export default function SellerProductsScreen({ navigation }) {
         <Text style={styles.listKicker}>
           Inventaire actuel ({filtered.length})
         </Text>
-
-        <FlatList
-          data={filtered}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 120 + insets.bottom }}
-          ItemSeparatorComponent={() => <View style={{ height: 12 }}></View>}
-          renderItem={({ item }) => (
-            <View style={styles.productCard}>
-              <View style={styles.productTop}>
-                <View style={styles.thumb}></View>
-
-                <View style={{ flex: 1 }}>
-                  <View style={styles.productTitleRow}>
-                    <Text style={styles.productName}>{item.name}</Text>
-                    <Pressable hitSlop={10}>
-                      <MaterialIcons
-                        name="edit-note"
-                        size={22}
-                        color="#9ca3af"
-                      ></MaterialIcons>
-                    </Pressable>
+        {loading ? (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator size="small"></ActivityIndicator>
+            <Text style={styles.loadingText}>Chargement des produits...</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filtered}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ paddingBottom: 120 + insets.bottom }}
+            ItemSeparatorComponent={() => <View style={{ height: 12 }}></View>}
+            renderItem={({ item }) => (
+              <View style={styles.productCard}>
+                <View style={styles.productTop}>
+                  {item.photoURL ? (
+                    <Image
+                      source={{ uri: item.photoURL }}
+                      style={styles.thumb}
+                    ></Image>
+                  ) : (
+                    <View style={styles.thumb}></View>
+                  )}
+                  <View style={{ flex: 1 }}>
+                    <View style={styles.productTitleRow}>
+                      <Text style={styles.productName}>{item.name}</Text>
+                      <Pressable hitSlop={10}>
+                        <MaterialIcons
+                          name="edit-note"
+                          size={22}
+                          color="#9ca3af"
+                        ></MaterialIcons>
+                      </Pressable>
+                    </View>
+                    <Text style={styles.price}>
+                      ${Number(item.price ?? 0).toFixed(2)}
+                    </Text>
+                    <View style={styles.tag}>
+                      <Text style={styles.tagText}>{item.cat}</Text>
+                    </View>
                   </View>
-
-                  <Text style={styles.price}>${item.price.toFixed(2)}</Text>
-
-                  <View style={styles.tag}>
-                    <Text style={styles.tagText}>{item.cat}</Text>
+                </View>
+                <View style={styles.productBottom}>
+                  <View style={styles.stockRow}>
+                    <View
+                      style={[
+                        styles.dot,
+                        item.inStock ? styles.dotGreen : styles.dotGray,
+                      ]}
+                    ></View>
+                    <Text
+                      style={[
+                        styles.stockText,
+                        item.inStock
+                          ? styles.stockTextGreen
+                          : styles.stockTextGray,
+                      ]}
+                    >
+                      {item.inStock ? "En stock" : "Rupture de stock"}
+                    </Text>
+                  </View>
+                  {/* Toggle mock */}
+                  <View style={styles.toggle}>
+                    <View
+                      style={[styles.knob, item.inStock && styles.knobOn]}
+                    ></View>
                   </View>
                 </View>
               </View>
-
-              <View style={styles.productBottom}>
-                <View style={styles.stockRow}>
-                  <View
-                    style={[
-                      styles.dot,
-                      item.inStock ? styles.dotGreen : styles.dotGray,
-                    ]}
-                  ></View>
-                  <Text
-                    style={[
-                      styles.stockText,
-                      item.inStock
-                        ? styles.stockTextGreen
-                        : styles.stockTextGray,
-                    ]}
-                  >
-                    {item.inStock ? "En stock" : "Rupture de stock"}
-                  </Text>
-                </View>
-
-                {/* Toggle mock */}
-                <View style={styles.toggle}>
-                  <View
-                    style={[styles.knob, item.inStock && styles.knobOn]}
-                  ></View>
-                </View>
-              </View>
-            </View>
-          )}
-        ></FlatList>
+            )}
+          ></FlatList>
+        )}
       </View>
 
       {/* FAB */}
@@ -320,16 +362,40 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   knobOn: { alignSelf: "flex-end", backgroundColor: "white" },
-  fab:{
-    position:"absolute",
-    right:16,
-    width:62,
-    height:62,
-    borderRadius:31,
-    backgroundColor:COLORS.primary,
-    alignItems:"center",
-    justifyContent:"center",
-    borderWidth:1,
-    borderColor:"rgba(0,0,0,0.06)"
-  }
+  fab: {
+    position: "absolute",
+    right: 16,
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.06)",
+  },
+  loadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingVertical: 12,
+  },
+  loadingText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: COLORS.muted,
+  },
+  fab: {
+    position: "absolute",
+    right: 16,
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.06)",
+  },
 });
