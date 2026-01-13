@@ -22,7 +22,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { auth, db } from "../../lib/firebase";
 import {
   getUserProfile,
-  updateProileName,
+  updateProfileName,
 } from "../../services/profileService";
 
 export default function ProfileScreen({ navigation }) {
@@ -86,7 +86,7 @@ export default function ProfileScreen({ navigation }) {
 
     setSaving(true);
     try {
-      await updateProileName(uid, nextName);
+      await updateProfileName(uid, nextName);
 
       // Re-fetch from Firestore to confirm what was saved
       const fresh = await getUserProfile(uid);
