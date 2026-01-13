@@ -5,10 +5,16 @@ import {
   setDoc,
   updateDoc,
 } from "firebase/firestore";
-import { db, storage } from "../lib/firebase";
+import { auth, db, storage } from "../lib/firebase";
 import * as ImagePicker from "expo-image-picker";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import {
+  deleteObject,
+  getDownloadURL,
+  ref,
+  uploadBytes,
+} from "firebase/storage";
 import { Alert, Linking } from "react-native";
+import { signOut } from "firebase/auth";
 
 // Fetch full user doc (use this to decide if you show "Espace vendeur")
 export async function getUserProfile(uid) {
@@ -50,7 +56,7 @@ export async function pickProfilePicture() {
       // 3) Refusé → proposer d’ouvrir les réglages
       Alert.alert(
         "Accès aux photos",
-        "Pour ajouter une photo produit, autorise l'accès à ta galerie dans les réglages.",
+        "Pour ajouter une photo de profil, autorise l'accès à ta galerie dans les réglages.",
         [
           { text: "Annuler", style: "cancel" },
           {
@@ -63,7 +69,7 @@ export async function pickProfilePicture() {
     }
   }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
+  const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ["images"],
     allowsEditing: true,
     quality: 0.85,
@@ -83,7 +89,6 @@ async function uriToBlob(uri) {
   return await resp.blob();
 }
 
-
 export async function uploadPictureImage({ userUid, localUri }) {
   if (!userUid) throw new Error("Missing sellerId");
   if (!localUri) throw new Error("Missing localUri");
@@ -91,7 +96,7 @@ export async function uploadPictureImage({ userUid, localUri }) {
   const blob = await uriToBlob(localUri);
 
   //nom de fichier unique
-  const filename = `products/${userUid}/${Date.now()}-${Math.random()
+  const filename = `usersPicture/${userUid}/${Date.now()}-${Math.random()
     .toString(16)
     .slice(2)}.jpg`;
 
@@ -102,5 +107,69 @@ export async function uploadPictureImage({ userUid, localUri }) {
   });
 
   const downloadURL = await getDownloadURL(storageRef);
+  return { downloadURL, filename };
+}
+
+// export async function updateProfilePhoto(uid, photoURL) {
+//   if (!uid) throw new Error("Missing uid");
+
+//   const userRef = doc(db, "users", uid);
+
+//   await setDoc(
+//     userRef,
+//     {
+//       photoURL: photoURL ?? null,
+//       updatedAt: serverTimestamp(),
+//     },
+//     { merge: true }
+//   );
+// }
+
+export async function replaceProfilePhoto(uid, localUri) {
+  if (!uid) throw new Error("Missing uid");
+  if (!uid) throw new Error("Missing localUri");
+
+  // 1) Lire l'ancienne photo (path) depuis Firestore
+  const userRef = doc(db, "users", uid);
+  const snapshot = await getDoc(userRef);
+
+  const prevFilename = snapshot.exists()
+    ? snapshot.data()?.photoPath ?? null
+    : null;
+  // 2) Upload la nouvelle photo
+  const { downloadURL, filename } = await uploadPictureImage({
+    userUid: uid,
+    localUri,
+  });
+
+  // 3) Sauver new photoURL + photoPath dans Firestore
+  await setDoc(
+    userRef,
+    {
+      photoURL: downloadURL,
+      photoPath: filename,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  // 4) Supprimer l'ancienne photo (best-effort)
+  if (prevFilename && prevFilename !== filename) {
+    try {
+      await deleteObject(ref(storage, prevFilename));
+      console.log("🗑️ Deleted previous photo:", prevFilename);
+    } catch (e) {
+      // on n'empêche pas l'utilisateur: c'est une optimisation
+      console.log("⚠️ Delete previous photo failed:", {
+        code: e?.code,
+        message: e?.message,
+        prevFilename,
+      });
+    }
+  }
   return downloadURL;
+}
+
+export async function logout() {
+  await signOut(auth); 
 }

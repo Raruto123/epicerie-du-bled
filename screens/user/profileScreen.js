@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -22,7 +23,12 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { auth, db } from "../../lib/firebase";
 import {
   getUserProfile,
+  pickProfilePicture,
   updateProfileName,
+  uploadPictureImage,
+  updateProfilePhoto,
+  replaceProfilePhoto,
+  logout,
 } from "../../services/profileService";
 
 export default function ProfileScreen({ navigation }) {
@@ -34,6 +40,7 @@ export default function ProfileScreen({ navigation }) {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
+  const [pictureUri, setPictureUri] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -54,6 +61,7 @@ export default function ProfileScreen({ navigation }) {
         if (!alive) return;
 
         setProfile(p);
+        setPictureUri((p?.photoURL ?? "").toString());
         setName((p?.name ?? "").toString());
       } catch (e) {
         if (!alive) return;
@@ -106,6 +114,36 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
+  const pickAndSavePhoto = async () => {
+    Keyboard.dismiss();
+    if (!uid) return;
+
+    try {
+      const picked = await pickProfilePicture();
+      if (!picked?.uri) return;
+      // ✅ 1) Afficher tout de suite l'image en local (optimistic UI)
+      setPictureUri(picked.uri);
+      // ✅ 2) Upload la photo pickée (PAS pictureUri)
+      const finalURL = await replaceProfilePhoto(uid, picked.uri);
+    // sync UI (afficher l’URL distante après)
+    setPictureUri(finalURL);
+    setProfile((p) => (p ? {...p, photoURL : finalURL} : p));
+
+      console.log("✅ Photo de profile remplacé et sauvegardé dans Firebase : ", finalURL);
+    } catch (e) {
+      console.log("❌pick and saving profile photo error :", e);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigation.replace("Auth"); 
+    } catch (e) {
+      console.log("❌ logout error :", e);
+    }
+  }
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <StatusBar barStyle="dark-content"></StatusBar>
@@ -137,8 +175,19 @@ export default function ProfileScreen({ navigation }) {
           {/* Profile Header */}
           <View style={styles.profileHeader}>
             <View style={styles.avatarWrap}>
-              <View style={styles.avatar}></View>
-              <Pressable style={styles.cameraBtn} hitSlop={10}>
+              <View style={styles.avatar}>
+                {!!pictureUri && (
+                  <Image
+                    source={{ uri: pictureUri }}
+                    style={styles.avatarImg}
+                  ></Image>
+                )}
+              </View>
+              <Pressable
+                style={styles.cameraBtn}
+                hitSlop={10}
+                onPress={pickAndSavePhoto}
+              >
                 <MaterialIcons
                   name="photo-camera"
                   size={18}
@@ -277,7 +326,7 @@ export default function ProfileScreen({ navigation }) {
 
           {/* Logout */}
           <View style={styles.footer}>
-            <Pressable style={styles.logoutBtn}>
+            <Pressable style={styles.logoutBtn} onPress={handleLogout}>
               <MaterialIcons
                 name="logout"
                 size={20}
@@ -287,7 +336,7 @@ export default function ProfileScreen({ navigation }) {
             </Pressable>
 
             <Text style={styles.version}>
-              Version 1.0.0 ⚫️ AfroMarket Canada
+              Version 0.0.1 ⚫️ AfroMarket Canada
             </Text>
           </View>
         </ScrollView>
@@ -320,6 +369,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#e5dfdc",
     borderWidth: 4,
     borderColor: "white",
+    overflow:"hidden",
+  },
+  avatarImg:{
+    width:"100%",
+    height:"100%"
   },
   cameraBtn: {
     position: "absolute",
