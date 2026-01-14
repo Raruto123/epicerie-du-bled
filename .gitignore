@@ -43,3 +43,6 @@ yarn-error.*
 
 # environnement variables
 .env
+
+#api keys
+app.json
