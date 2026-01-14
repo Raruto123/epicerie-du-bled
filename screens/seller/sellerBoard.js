@@ -43,7 +43,7 @@ function SellerTabs() {
   );
 }
 
-export default function SellerBoard({ navigation }) {
+export default function SellerBoard({ }) {
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>

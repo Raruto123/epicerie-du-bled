@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -18,9 +19,15 @@ import {
 import { COLORS } from "../../constants/colors";
 import { MaterialIcons } from "@expo/vector-icons";
 import { auth } from "../../lib/firebase";
-import { updateSellerProfile } from "../../services/sellerOverviewService";
+import {
+  pickSellerLogo,
+  replaceSellerLogo,
+  updateSellerGpsLocation,
+  updateSellerProfile,
+} from "../../services/sellerOverviewService";
 import { getUserProfile } from "../../services/profileService";
 import { formatDateFr } from "../../utils/dateFormat";
+import { useRoute } from "@react-navigation/native";
 
 export default function SellerOverviewScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -29,12 +36,14 @@ export default function SellerOverviewScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [savingField, setSavingField] = useState(null);
   const [profile, setProfile] = useState(null);
-
   const [storeName, setStoreName] = useState("");
   const [description, setDescription] = useState("");
   const [addressText, setAddressText] = useState("");
+  const [logoUri, setLogoUri] = useState("");
+  const [savingLogo, setSavingLogo] = useState(false);
 
   const lastUpdated = profile?.seller?.updatedAt ?? null;
+  const route = useRoute();
 
   useEffect(() => {
     let alive = true;
@@ -49,6 +58,7 @@ export default function SellerOverviewScreen({ navigation }) {
             setStoreName("");
             setDescription("");
             setAddressText("");
+            setLogoUri("");
           }
           return;
         }
@@ -61,12 +71,14 @@ export default function SellerOverviewScreen({ navigation }) {
         setStoreName((p?.seller?.storeName ?? "").toString());
         setDescription((p?.seller?.description ?? "").toString());
         setAddressText((p?.seller?.addressText ?? "").toString());
+        setLogoUri((p?.seller?.logoURL ?? "").toString());
       } catch (e) {
         if (!alive) return;
         setProfile(null);
         setStoreName("");
         setDescription("");
         setAddressText("");
+        setLogoUri("");
         console.log("❌ Failed to load seller profile:", e);
       } finally {
         if (alive) setLoading(false);
@@ -77,6 +89,24 @@ export default function SellerOverviewScreen({ navigation }) {
       alive = false;
     };
   }, []);
+
+  useEffect(() => {
+    const picked = route.params?.pickedLocation;
+    if (!picked || !uid) return;
+
+    (async () => {
+      try {
+        await updateSellerGpsLocation(uid, picked);
+        const fresh = await getUserProfile(uid);
+        if (fresh) {
+          setProfile(fresh);
+        }
+        console.log("📍 Position boutique enregistrée :", picked);
+      } catch (e) {
+        console.log("❌ Failed to save seller GPS location", e);
+      }
+    })();
+  }, [route.params?.pickedLocation]);
 
   const goBack = () => navigation.goBack?.();
 
@@ -142,9 +172,45 @@ export default function SellerOverviewScreen({ navigation }) {
     }
   };
 
+  const pickAndSaveLogo = async () => {
+    Keyboard.dismiss();
+    if (!uid || savingLogo) return;
+
+    const prevLogo = logoUri;
+
+    try {
+      const picked = await pickSellerLogo();
+      if (!picked?.uri) return;
+
+      //show local image imediately
+      setLogoUri(picked.uri);
+      setSavingLogo(true);
+
+      //upload + replace and delete previous in Firebase Storage
+      const newLogoURl = await replaceSellerLogo(uid, picked.uri);
+
+      //update local UI to the remote URL
+      setLogoUri(newLogoURl);
+
+      //re-fetch to keep local state aligned
+      const fresh = await getUserProfile(uid);
+      if (fresh) {
+        setProfile(fresh);
+        setLogoUri((fresh?.seller?.logoURL ?? newLogoURl ?? "").toString());
+      }
+      console.log("✅ Seller logo replaced and saved :", newLogoURl);
+    } catch (e) {
+      setLogoUri(prevLogo);
+      console.log("❌ Failed to pick/upload seller logo :", e);
+    } finally {
+      setSavingLogo(false);
+    }
+  };
+
   const updateGps = () => {
-    // TODO: ouvrir une logique GPS plus tard
-    // Là on garde juste le design
+    navigation.navigate("SellerLocationPicker", {
+      initialLocation : profile?.seller?.gps ?? null
+    });
   };
 
   return (
@@ -188,21 +254,28 @@ export default function SellerOverviewScreen({ navigation }) {
             <View style={{ width: 110 }}></View>
           </View>
 
-          {/* Cover + Logo */}
+          {/*Logo */}
           <View style={styles.visualWrap}>
-            <View style={styles.cover}>
-              <Pressable style={styles.coverCamBtn} hitSlop={10}>
-                <MaterialIcons
-                  name="photo-camera"
-                  size={20}
-                  color="white"
-                ></MaterialIcons>
-              </Pressable>
-            </View>
-
             <View style={styles.logoWrap}>
-              <View style={styles.logo}></View>
-              <Pressable style={styles.logoEditBtn} hitSlop={10}>
+              <View style={styles.logo}>
+                {!!logoUri && (
+                  <Image
+                    source={{ uri: logoUri }}
+                    style={styles.logoImg}
+                  ></Image>
+                )}
+                {savingLogo && (
+                  <View style={styles.logoLoadingOverlay}>
+                    <ActivityIndicator size="small"></ActivityIndicator>
+                  </View>
+                )}
+              </View>
+              <Pressable
+                style={[styles.logoEditBtn, savingLogo && { opacity: 0.7 }]}
+                hitSlop={10}
+                onPress={pickAndSaveLogo}
+                disabled={savingLogo}
+              >
                 <MaterialIcons
                   name="edit"
                   size={16}
@@ -236,7 +309,7 @@ export default function SellerOverviewScreen({ navigation }) {
               disabled={savingField === "storeName"}
               style={[
                 styles.smallSaveBtn,
-                saveField === "storeName" && { opacity: 0.7 },
+                savingField === "storeName" && { opacity: 0.7 },
               ]}
             >
               {savingField === "storeName" ? (
@@ -348,7 +421,9 @@ export default function SellerOverviewScreen({ navigation }) {
           </View>
 
           <Text style={styles.lastUpdate}>
-            {lastUpdated ? `Dernière mise à jour : ${formatDateFr(lastUpdated)}`: "Dernière mise à jour : -"}
+            {lastUpdated
+              ? `Dernière mise à jour : ${formatDateFr(lastUpdated)}`
+              : "Dernière mise à jour : -"}
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -385,29 +460,18 @@ const styles = StyleSheet.create({
     height: 40,
   },
   saveLinkText: { fontSize: 15, fontWeight: "900", color: COLORS.primary },
-  visualWrap: { marginTop: 6, marginBottom: 54 },
-  cover: {
-    height: 180,
-    borderRadius: 16,
-    backgroundColor: "#e5dfdc",
-    overflow: "hidden",
+  visualWrap: {
+    marginTop: 10,
     alignItems: "center",
     justifyContent: "center",
-  },
-  coverCamBtn: {
-    width: 46,
-    height: 46,
-    backgroundColor: "rgba(0,0,0,0.35)",
-    borderRadius: 23,
-    alignItems: "center",
-    justifyContent: "center",
+    paddingBottom: 12,
   },
   logoWrap: {
-    position: "absolute",
-    bottom: -52,
-    left: 0,
-    right: 0,
+    position: "relative",
+    width: 128,
+    height: 128,
     alignItems: "center",
+    justifyContent: "center",
   },
   logo: {
     width: 128,
@@ -416,18 +480,34 @@ const styles = StyleSheet.create({
     borderWidth: 4,
     borderColor: COLORS.bg,
     borderRadius: 999,
+    overflow: "hidden",
   },
   logoEditBtn: {
     position: "absolute",
-    right: 16,
-    bottom: 6,
+    right: -4,
+    bottom: -4,
     width: 36,
     height: 36,
     borderRadius: 18,
     backgroundColor: COLORS.primary,
     alignItems: "center",
+    justifyContent: "center",
     borderWidth: 2,
     borderColor: COLORS.bg,
+  },
+  logoImg: {
+    width: "100%",
+    height: "100%",
+  },
+  logoLoadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.55)",
   },
   centerHeader: { alignItems: "center", marginTop: 8, marginTop: 16 },
   storeTitle: {
@@ -540,15 +620,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: COLORS.muted,
   },
-  bigSaveBtn: {
-    marginTop: 16,
-    height: 54,
-    backgroundColor: COLORS.primary,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bigSaveText: { color: "white", fontWeight: "900", fontSize: 16 },
   lastUpdate: {
     marginTop: 10,
     textAlign: "center",

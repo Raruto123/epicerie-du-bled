@@ -12,15 +12,26 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "plugins": [
+      [
+        "react-native-maps",
+        {
+          "iosGoogleMapsApiKey": "AIzaSyAmbx062nZ4rJvkhcg1GvKzo1rokb_Ub80",
+          "androidGoogleMapsApiKey": "AIzaSyAmbx062nZ4rJvkhcg1GvKzo1rokb_Ub80"
+        }
+      ]
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.monepiceriedubled"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.anonymous.monepiceriedubled"
     },
     "web": {
       "favicon": "./assets/favicon.png"
