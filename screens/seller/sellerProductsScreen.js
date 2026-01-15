@@ -3,9 +3,11 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  Keyboard,
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import {
@@ -24,39 +26,22 @@ export default function SellerProductsScreen({ navigation }) {
   const [activeCat, setActiveCat] = useState("Tous");
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState("");
 
   // ✅ mêmes catégories que ton écran d'ajout (tu peux en ajouter d'autres)
   const categories = useMemo(
-    () => ["Tous", "Épices", "Tubercules", "Surgelés", "Céréales", "Légumes"],
+    () => [
+      "Tous",
+      "Épices",
+      "Tubercules",
+      "Surgelés",
+      "Céréales",
+      "Légumes",
+      "Poissons",
+    ],
     []
   );
-
-  // const products = useMemo(
-  //   () => [
-  //     {
-  //       id: "1",
-  //       name: "Huile de Palme(1L)",
-  //       price: 8.5,
-  //       cat: "Épices",
-  //       inStock: true,
-  //     },
-  //     {
-  //       id: "2",
-  //       name: "Banane Plaintain (Lot de 3)",
-  //       price: 4.99,
-  //       cat: "Fruits & Légumes",
-  //       inStock: false,
-  //     },
-  //     {
-  //       id: "3",
-  //       name: "Manioc surgelé (1kg)",
-  //       price: 6.25,
-  //       cat: "Surgelés",
-  //       inStock: true,
-  //     },
-  //   ],
-  //   []
-  // );
 
   //observe si le seller a des produits si oui il affiche sinon il affiche rien
   useEffect(() => {
@@ -76,9 +61,23 @@ export default function SellerProductsScreen({ navigation }) {
   }, [uid]);
 
   const filtered = useMemo(() => {
-    if (activeCat === "Tous") return products;
-    return products.filter((p) => p.cat === activeCat);
-  }, [activeCat, products]);
+    const aQuery = query.trim().toLowerCase();
+
+    return products.filter((p) => {
+      const matchCat = activeCat === "Tous" || p.cat === activeCat;
+
+      if (!aQuery) return matchCat;
+
+      const name = (p?.name ?? "").toString().toLowerCase();
+      const cat = (p?.cat ?? "").toString().toLowerCase();
+      const desc = (p?.desc ?? "").toString().toLowerCase();
+
+      const matchQuery =
+        name.includes(aQuery) || cat.includes(aQuery) || desc.includes(aQuery);
+
+      return matchCat && matchQuery;
+    });
+  }, [activeCat, products, query]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
@@ -94,7 +93,17 @@ export default function SellerProductsScreen({ navigation }) {
         </View>
 
         <View style={styles.headerActions}>
-          <Pressable style={styles.iconBtn} hitSlop={10}>
+          <Pressable
+            style={styles.iconBtn}
+            hitSlop={10}
+            onPress={() => {
+              setSearchOpen((v) => {
+                const next = !v;
+                if (!next) setQuery(""); //si on ferme, on reset
+                return next;
+              });
+            }}
+          >
             <MaterialIcons
               name="search"
               size={22}
@@ -110,6 +119,36 @@ export default function SellerProductsScreen({ navigation }) {
           </Pressable>
         </View>
       </View>
+      {searchOpen && (
+        <View style={styles.searchWrap}>
+          <View style={styles.searchBox}>
+            <MaterialIcons
+              name="search"
+              size={18}
+              color="#6b7280"
+            ></MaterialIcons>
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Rechercher un produit..."
+              placeholderTextColor="#9ca3af"
+              style={styles.searchInput}
+              returnKeyType="search"
+              autoFocus
+              onSubmitEditing={() => Keyboard.dismiss()}
+            ></TextInput>
+            {!!query && (
+              <Pressable onPress={() => setQuery("")} hitSlop={10}>
+                <MaterialIcons
+                  name="close"
+                  size={18}
+                  color="#6b7280"
+                ></MaterialIcons>
+              </Pressable>
+            )}
+          </View>
+        </View>
+      )}
 
       {/* Categories */}
       <View style={styles.catRow}>
@@ -148,10 +187,10 @@ export default function SellerProductsScreen({ navigation }) {
         <Text style={styles.listKicker}>
           Inventaire actuel ({filtered.length})
         </Text>
-        {loading ? (
+        {!loading && filtered.length === 0 ? (
           <View style={styles.loadingRow}>
-            <ActivityIndicator size="small"></ActivityIndicator>
-            <Text style={styles.loadingText}>Chargement des produits...</Text>
+            {/* <ActivityIndicator size="small"></ActivityIndicator> */}
+            <Text style={styles.loadingText}>Aucun produit trouvé</Text>
           </View>
         ) : (
           <FlatList
@@ -173,7 +212,14 @@ export default function SellerProductsScreen({ navigation }) {
                   <View style={{ flex: 1 }}>
                     <View style={styles.productTitleRow}>
                       <Text style={styles.productName}>{item.name}</Text>
-                      <Pressable hitSlop={10}>
+                      <Pressable
+                        hitSlop={10}
+                        onPress={() =>
+                          navigation.navigate("SellerEditProduct", {
+                            product: item,
+                          })
+                        }
+                      >
                         <MaterialIcons
                           name="edit-note"
                           size={22}
@@ -386,16 +432,25 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: COLORS.muted,
   },
-  fab: {
-    position: "absolute",
-    right: 16,
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    backgroundColor: COLORS.primary,
-    alignItems: "center",
-    justifyContent: "center",
+  searchWrap: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  searchBox: {
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "white",
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.06)",
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "800",
+    color: COLORS.text,
   },
 });

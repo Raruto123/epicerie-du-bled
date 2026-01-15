@@ -5,11 +5,11 @@ export async function ensureLocationPermission() {
   const current = await Location.getForegroundPermissionsAsync();
   if (current.status === "granted") return true;
 
-  const asked = await Location.requestBackgroundPermissionsAsync();
+  const asked = await Location.requestForegroundPermissionsAsync();
   if (asked.status === "granted") return true;
 
   Alert.alert(
-    "Location refusée",
+    "Localisation refusée",
     "Autorisez la localisation pour utiliser la position actuelle. Vous pouvez toujours choisir manuellement sur la carte.",
     [
       { text: "OK", style: "cancel" },

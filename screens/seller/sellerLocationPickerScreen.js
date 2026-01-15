@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import {
   clampLatLng,
   ensureLocationPermission,
@@ -28,7 +34,7 @@ export default function SellerLocationPickerScreen({ navigation, route }) {
     () => ({
       ...marker,
       latitudeDelta: 0.02,
-      longitude: 0.02,
+      longitudeDelta: 0.02,
     }),
     [marker]
   );
@@ -112,19 +118,37 @@ export default function SellerLocationPickerScreen({ navigation, route }) {
   };
 
   const confirm = () => {
-    navigation.navigate({
-      name: "SellerBoard",
-      params: {
-        pickedLocation: {
-          latitude: marker.latitude,
-          longitude: marker.longitude,
-          accuracy: accuracy ?? null,
-          timestamp: Date.now(),
+    const pickedLocation = {
+      latitude: marker.latitude,
+      longitude: marker.longitude,
+      accuracy: accuracy ?? null,
+      timestamp: Date.now(),
+    };
+    navigation.navigate(
+      "SellerBoard",
+      {
+        screen: "SellerTabs",
+        params: {
+          screen: "APERÇU",
+          params: { pickedLocation },
         },
+        merge : true
       },
-      merge: true,
-    });
-    navigation.goBack();
+    );
+    // navigation.navigate({
+    //   name: "SellerBoard",
+    //   screen: "SellerTabs",
+    //   params: {
+    //     screen: "APERÇU",
+    //     pickedLocation: {
+    //       latitude: marker.latitude,
+    //       longitude: marker.longitude,
+    //       accuracy: accuracy ?? null,
+    //       timestamp: Date.now(),
+    //     },
+    //   },
+    //   merge: true,
+    // });
   };
   return (
     <SafeAreaView style={styles.safe} edges={["right", "left", "top"]}>
@@ -142,37 +166,55 @@ export default function SellerLocationPickerScreen({ navigation, route }) {
         </Pressable>
 
         <Text style={styles.title}>Position de l'épicerie</Text>
-        
+
         <Pressable onPress={confirm} style={styles.validateBtn}>
-            <Text style={styles.validateText}>Valider</Text>
+          <Text style={styles.validateText}>Valider</Text>
         </Pressable>
       </View>
       {/* Map */}
       <View style={styles.mapWrap}>
-        <MapView ref={mapRef} style={styles.map} initialRegion={region} onPress={onPickOnMap}>
-            <Marker coordinate={marker} draggable onDragEnd={(e) => {
-                const {latitude, longitude} = e.nativeEvent.coordinate;
-                setMarker(clampLatLng({latitude, longitude}));
-                setAccuracy(null)
-            }}></Marker>
+        <MapView
+          ref={mapRef}
+          style={styles.map}
+          initialRegion={region}
+          onPress={onPickOnMap}
+          provider="google"
+        >
+          <Marker
+            coordinate={marker}
+            draggable
+            onDragEnd={(e) => {
+              const { latitude, longitude } = e.nativeEvent.coordinate;
+              setMarker(clampLatLng({ latitude, longitude }));
+              setAccuracy(null);
+            }}
+          ></Marker>
         </MapView>
 
         {/* Floating button */}
         <View style={styles.floating}>
-            <Pressable onPress={useMyPosition} disabled={busy} style={[styles.gpsBtn, busy && {opacity : 0.7}]}>
-                {busy ? (
-                    <ActivityIndicator color="white"></ActivityIndicator>
-                ) : (
-                    <>
-                    <MaterialIcons name="my-location" size={18} color="white"></MaterialIcons>
-                    <Text style={styles.gpsBtnText}>Utiliser ma position</Text>
-                    </>
-                )}
-            </Pressable>
+          <Pressable
+            onPress={useMyPosition}
+            disabled={busy}
+            style={[styles.gpsBtn, busy && { opacity: 0.7 }]}
+          >
+            {busy ? (
+              <ActivityIndicator color="white"></ActivityIndicator>
+            ) : (
+              <>
+                <MaterialIcons
+                  name="my-location"
+                  size={18}
+                  color="white"
+                ></MaterialIcons>
+                <Text style={styles.gpsBtnText}>Utiliser ma position</Text>
+              </>
+            )}
+          </Pressable>
 
-            <Text style={styles.hint}>
-                Touchez la carte pour placer le marqueur, ou déplacez-le
-            </Text>
+          <Text style={styles.hint}>
+            Touchez la carte pour placer le marqueur, ou déplacez-le
+          </Text>
         </View>
       </View>
     </SafeAreaView>
@@ -191,7 +233,13 @@ const styles = StyleSheet.create({
   topBtn: { width: 90, height: 40, justifyContent: "center" },
   topBtnRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   topBtnText: { fontSize: 15, fontWeight: "800", color: COLORS.text },
-  title: { flex: 1, textAlign: "center", fontSize: 16, fontWeight: "900", color: COLORS.text },
+  title: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "900",
+    color: COLORS.text,
+  },
   validateBtn: {
     height: 40,
     paddingHorizontal: 14,

@@ -55,7 +55,7 @@ export async function pickProfilePicture() {
     if (!res.granted) {
       // 3) Refusé → proposer d’ouvrir les réglages
       Alert.alert(
-        "Accès aux photos",
+        "Accès aux photos refusé",
         "Pour ajouter une photo de profil, autorise l'accès à ta galerie dans les réglages.",
         [
           { text: "Annuler", style: "cancel" },

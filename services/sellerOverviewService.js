@@ -74,7 +74,7 @@ export async function pickSellerLogo() {
     const res = await ImagePicker.requestCameraPermissionsAsync();
     if (!res.granted) {
       Alert.alert(
-        "Accès aux photos",
+        "Accès aux photos refusé",
         "Pour ajouter un logo, autorise l'accès à ta galerie dans les réglages.",
         [
           { text: "Annuler", style: "cancel" },

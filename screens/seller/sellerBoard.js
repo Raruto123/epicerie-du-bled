@@ -7,6 +7,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import SellerOverviewScreen from "./sellerOverviewScreen";
 import SellerProductsScreen from "./sellerProductsScreen";
 import SellerAddProductScreen from "./sellerAddProductScreen";
+import SellerEditProductScreen from "./sellerEditProductScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -43,7 +44,7 @@ function SellerTabs() {
   );
 }
 
-export default function SellerBoard({ }) {
+export default function SellerBoard() {
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -51,6 +52,10 @@ export default function SellerBoard({ }) {
         <Stack.Screen
           name="SellerAddProduct"
           component={SellerAddProductScreen}
+        ></Stack.Screen>
+        <Stack.Screen
+          name="SellerEditProduct"
+          component={SellerEditProductScreen}
         ></Stack.Screen>
       </Stack.Navigator>
     </SafeAreaView>
@@ -74,8 +79,8 @@ const styles = StyleSheet.create({
     // borderTopColor: "rgba(0,0,0,0.06)",
     // backgroundColor: "white",
   },
-  tabLabel :{
-    fontSize:11,
-    fontWeight:"800"
-  }
+  tabLabel: {
+    fontSize: 11,
+    fontWeight: "800",
+  },
 });

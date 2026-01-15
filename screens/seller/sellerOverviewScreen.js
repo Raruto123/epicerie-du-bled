@@ -28,6 +28,7 @@ import {
 import { getUserProfile } from "../../services/profileService";
 import { formatDateFr } from "../../utils/dateFormat";
 import { useRoute } from "@react-navigation/native";
+import MapView, { Marker } from "react-native-maps";
 
 export default function SellerOverviewScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -44,6 +45,7 @@ export default function SellerOverviewScreen({ navigation }) {
 
   const lastUpdated = profile?.seller?.updatedAt ?? null;
   const route = useRoute();
+  const gps = profile?.seller?.gps ?? null;
 
   useEffect(() => {
     let alive = true;
@@ -90,6 +92,7 @@ export default function SellerOverviewScreen({ navigation }) {
     };
   }, []);
 
+  //pour la localisation
   useEffect(() => {
     const picked = route.params?.pickedLocation;
     if (!picked || !uid) return;
@@ -108,7 +111,40 @@ export default function SellerOverviewScreen({ navigation }) {
     })();
   }, [route.params?.pickedLocation]);
 
-  const goBack = () => navigation.goBack?.();
+  const mapCoord = useMemo(() => {
+    if (!gps?.latitude || !gps?.longitude) return null;
+    return {
+      latitude: Number(gps.latitude),
+      longitude: Number(gps.longitude),
+    };
+  }, [gps?.latitude, gps?.longitude]);
+
+  const mapRegion = useMemo(() => {
+    if (!mapCoord) {
+      //fallback Montréal
+      return {
+        latitude: 45.5017,
+        longitude: -73.5673,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02,
+      };
+    }
+    return {
+      ...mapCoord,
+      latitudeDelta: 0.02,
+      longitudeDelta: 0.02,
+    };
+  }, [mapCoord]);
+
+  const goBack = () => {
+    // SellerOverviewScreen -> Tab (SellerTabs) -> Stack (SellerBoard) -> Root Stack
+    const rootNav =
+      navigation.getParent()?.getParent()?.getParent?.() ??
+      navigation.getParent()?.getParent?.();
+
+    // Selon les versions, parfois 2 ou 3 parents, donc fallback:
+    (rootNav?.navigate ?? navigation.navigate)("App", { screen: "PROFIL" });
+  };
 
   const saveField = async (field) => {
     Keyboard.dismiss();
@@ -209,7 +245,7 @@ export default function SellerOverviewScreen({ navigation }) {
 
   const updateGps = () => {
     navigation.navigate("SellerLocationPicker", {
-      initialLocation : profile?.seller?.gps ?? null
+      initialLocation: profile?.seller?.gps ?? null,
     });
   };
 
@@ -404,8 +440,29 @@ export default function SellerOverviewScreen({ navigation }) {
             </Pressable>
           </View>
 
-          {/* Map preview placeholder */}
-          <View style={styles.mapPreview}></View>
+          {/* Map preview */}
+          <View style={styles.mapPreview}>
+            <MapView
+              style={StyleSheet.absoluteFill}
+              pointerEvents="none"
+              region={mapRegion}
+              provider="google"
+            >
+              {!!mapCoord && <Marker coordinate={mapCoord}></Marker>}
+            </MapView>
+            {!mapCoord && (
+              <View style={styles.mapEmptyOverlay}>
+                <MaterialIcons
+                  name="location-off"
+                  size={22}
+                  color={COLORS.text}
+                ></MaterialIcons>
+                <Text style={styles.mapEmptyText}>
+                  Aucune position GPS enregistrée
+                </Text>
+              </View>
+            )}
+          </View>
 
           {/* Info */}
           <View style={styles.infoBox}>
@@ -603,7 +660,20 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0,0,0,0.06)",
     marginTop: 4,
   },
-
+  mapEmptyOverlay: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    backgroundColor: "rgba(255,255,255,0.55)",
+  },
+  mapEmptyText: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: COLORS.text,
+    textAlign: "center",
+  },
   infoBox: {
     marginTop: 14,
     borderRadius: 14,
