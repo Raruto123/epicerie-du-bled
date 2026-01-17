@@ -6,6 +6,7 @@ import {
   Platform,
   Pressable,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -242,22 +243,19 @@ export default function SellerEditProductScreen({ navigation, route }) {
 
               <View style={{ flex: 1 }}>
                 <Text style={styles.label}>État du stock</Text>
-                <Pressable
-                  onPress={() => setInStock((v) => !v)}
-                  style={styles.stockBox}
-                >
+                <View style={styles.stockBox}>
                   <Text style={styles.stockLabel}>
                     {inStock ? "En stock" : "Rupture"}
                   </Text>
-                  <View style={[styles.switch, inStock && styles.switchOn]}>
-                    <View
-                      style={[
-                        styles.switchKnob,
-                        inStock && styles.switchKnobOn,
-                      ]}
-                    ></View>
-                  </View>
-                </Pressable>
+                  <Switch
+                    style={{ alignSelf: "center" }}
+                    value={inStock}
+                    onValueChange={setInStock}
+                    trackColor={{ false: "#e5e7eb", true: COLORS.primary }}
+                    thumbColor="#ffffff"
+                    ios_backgroundColor="#e5e7eb"
+                  ></Switch>
+                </View>
               </View>
             </View>
 
@@ -433,22 +431,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   stockLabel: { fontSize: 13, fontWeight: "800", color: COLORS.text },
-  switch: {
-    width: 44,
-    height: 26,
-    borderRadius: 999,
-    backgroundColor: "#e5e7eb",
-    padding: 3,
-    justifyContent: "center",
-  },
-  switchOn: { backgroundColor: COLORS.primary },
-  switchKnob: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "white",
-  },
-  switchKnobOn: { alignSelf: "flex-end" },
   footer: {
     position: "absolute",
     left: 0,
@@ -460,14 +442,14 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "rgba(0,0,0,0.06)",
   },
-  publishBtn:{
-    height:56,
-    borderRadius:14,
-    backgroundColor:COLORS.primary,
-    alignItems:"center",
-    flexDirection:"row",
-    justifyContent:"center",
-    gap:10
+  publishBtn: {
+    height: 56,
+    borderRadius: 14,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 10,
   },
-  publishText:{color:"white", fontSize:15, fontWeight:"900"}
+  publishText: { color: "white", fontSize: 15, fontWeight: "900" },
 });

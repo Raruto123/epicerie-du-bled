@@ -17,6 +17,7 @@ import { useEffect, useMemo, useState } from "react";
 import * as Location from "expo-location";
 import { MaterialIcons } from "@expo/vector-icons";
 import ProfileScreen from "./profileScreen";
+import HomeScreen from "./homeScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -30,9 +31,9 @@ function CenterScreen({ title }) {
   );
 }
 
-function HomeScreen() {
-  return <CenterScreen title="ACCUEIL"></CenterScreen>;
-}
+// function HomeScreen() {
+//   return <CenterScreen title="ACCUEIL"></CenterScreen>;
+// }
 function SearchScreen() {
   return <CenterScreen title="RECHERCHE"></CenterScreen>;
 }

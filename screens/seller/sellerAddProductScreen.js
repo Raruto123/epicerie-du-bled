@@ -8,6 +8,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -80,7 +81,7 @@ export default function SellerAddProductScreen({ navigation }) {
         price: productPrice,
         inStock,
         desc: productDesc,
-        photoURL
+        photoURL,
       });
 
       //reset form
@@ -146,7 +147,7 @@ export default function SellerAddProductScreen({ navigation }) {
             <Pressable style={styles.photoBox} onPress={pickPhoto}>
               {pictureUri ? (
                 <Image
-                resizeMode="cover"
+                  resizeMode="cover"
                   source={{ uri: pictureUri }}
                   style={styles.photoPreview}
                 ></Image>
@@ -233,22 +234,20 @@ export default function SellerAddProductScreen({ navigation }) {
 
               <View style={{ flex: 1 }}>
                 <Text style={styles.label}>État du stock</Text>
-                <Pressable
-                  onPress={() => setInStock((v) => !v)}
-                  style={styles.stockBox}
-                >
+
+                <View style={styles.stockBox}>
                   <Text style={styles.stockLabel}>
                     {inStock ? "En stock" : "Rupture"}
                   </Text>
-                  <View style={[styles.switch, inStock && styles.switchOn]}>
-                    <View
-                      style={[
-                        styles.switchKnob,
-                        inStock && styles.switchKnobOn,
-                      ]}
-                    ></View>
-                  </View>
-                </Pressable>
+                  <Switch
+                    style={{ alignSelf : "center"}}
+                    value={inStock}
+                    onValueChange={setInStock}
+                    trackColor={{ false: "#e5e7eb", true: COLORS.primary }}
+                    thumbColor="#ffffff"
+                    ios_backgroundColor="#e5e7eb"
+                  ></Switch>
+                </View>
               </View>
             </View>
 
@@ -410,35 +409,6 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: COLORS.text,
   },
-  switch: {
-    width: 44,
-    height: 26,
-    borderRadius: 999,
-    backgroundColor: "#e5e7eb",
-    padding: 3,
-    justifyContent: "center",
-  },
-  switchOn: {
-    backgroundColor: COLORS.primary,
-  },
-  switchKnob: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "white",
-  },
-  switchKnobOn: { alignSelf: "flex-end" },
-  footer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    backgroundColor: "rgba(255,255,255, 0.92)",
-    borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.06)",
-  },
   publishBtn: {
     height: 56,
     borderRadius: 14,
@@ -449,5 +419,5 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   publishText: { color: "white", fontSize: 15, fontWeight: "900" },
-  photoPreview:{width:"100%", height:"100%", borderRadius:14}
+  photoPreview: { width: "100%", height: "100%", borderRadius: 14 },
 });

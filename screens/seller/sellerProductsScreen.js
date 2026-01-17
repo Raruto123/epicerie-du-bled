@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   Keyboard,
@@ -24,7 +25,10 @@ import { COLORS } from "../../constants/colors";
 import { MaterialIcons } from "@expo/vector-icons";
 import { auth } from "../../lib/firebase";
 import { listenSellerProducts } from "../../services/sellerAddProductService";
-import { updateProductStock } from "../../services/sellerProductsService";
+import {
+  deleteProductWithImage,
+  updateProductStock,
+} from "../../services/sellerProductsService";
 
 export default function SellerProductsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -51,6 +55,8 @@ export default function SellerProductsScreen({ navigation }) {
   const [stockMode, setStockMode] = useState("all"); //"all" |"in"|"out"
 
   const [updatingStock, setUpdatingStock] = useState({}); //{[productId] : true}
+
+  const [deleting, setDeleting] = useState({}); // ✅ {[productId]: true}
 
   // ✅ mêmes catégories que ton écran d'ajout (tu peux en ajouter d'autres)
   const categories = useMemo(
@@ -191,6 +197,43 @@ export default function SellerProductsScreen({ navigation }) {
         return copy;
       });
     }
+  };
+
+  const onDeleteProduct = (item) => {
+    const productId = item?.id;
+    if (!productId) return;
+
+    Alert.alert("Supprimer ce produit ?", "Cette action est définitive.", [
+      { text: "Annuler", style: "cancel" },
+      {
+        text: "Supprimer",
+        style: "destructive",
+        onPress: async () => {
+          //avoid double click
+          if (deleting[productId] || updatingStock[productId]) return;
+
+          const snapshot = [...products];
+          setProducts((prev) => prev.filter((p) => p.id !== productId));
+          setDeleting((m) => ({ ...m, [productId]: true }));
+
+          try {
+            await deleteProductWithImage({
+              productId: productId,
+              photoURL: item?.photoURL ?? null,
+            });
+          } catch (e) {
+            console.log("❌ delete product failed :", e);
+            setProducts(snapshot);
+          } finally {
+            setDeleting((m) => {
+              const copy = { ...m };
+              delete copy[productId];
+              return copy;
+            });
+          }
+        },
+      },
+    ]);
   };
 
   return (
@@ -382,15 +425,38 @@ export default function SellerProductsScreen({ navigation }) {
                       </Text>
                     </View>
 
-                    {/* SWITCH */}
-                    <Switch
-                      value={isInStock}
-                      onValueChange={(val) => onToggleStock(item, val)}
-                      disabled={isUpdating}
-                      trackColor={{ false: "#e5e7eb", true: COLORS.primary }}
-                      thumbColor={"#ffffff"}
-                      ios_backgroundColor="#e5e7eb"
-                    ></Switch>
+                    <View style={styles.actionsRight}>
+                      <Pressable
+                        onPress={() => onDeleteProduct(item)}
+                        hitSlop={10}
+                        disabled={isUpdating || !!deleting[item.id]}
+                        style={({ pressed }) => [
+                          styles.trashBtn,
+                          (isUpdating || !!deleting[item.id]) &&
+                            styles.trashBtnDisabled,
+                          pressed &&
+                            !(
+                              isUpdating ||
+                              (!!deleting[item.id] && { opacity: 0.7 })
+                            ),
+                        ]}
+                      >
+                        <MaterialIcons
+                          name="delete-outline"
+                          size={22}
+                          color="#ef4444"
+                        ></MaterialIcons>
+                      </Pressable>
+                      {/* SWITCH */}
+                      <Switch
+                        value={isInStock}
+                        onValueChange={(val) => onToggleStock(item, val)}
+                        disabled={isUpdating || deleting[item.id]}
+                        trackColor={{ false: "#e5e7eb", true: COLORS.primary }}
+                        thumbColor={"#ffffff"}
+                        ios_backgroundColor="#e5e7eb"
+                      ></Switch>
+                    </View>
                   </View>
                 </View>
               );
@@ -1110,4 +1176,16 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "white",
   },
+  actionsRight: { flexDirection: "row", alignItems: "center", gap: 10 },
+  trashBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.06)",
+  },
+  trashBtnDisabled: { opacity: 0.4 },
 });
