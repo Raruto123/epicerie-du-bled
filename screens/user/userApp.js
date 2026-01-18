@@ -18,31 +18,10 @@ import * as Location from "expo-location";
 import { MaterialIcons } from "@expo/vector-icons";
 import ProfileScreen from "./profileScreen";
 import HomeScreen from "./homeScreen";
+import FavoritesScreen from "./favoritesScreen";
+import GroceriesListScreen from "./groceriesListScreen";
 
 const Tab = createBottomTabNavigator();
-
-function CenterScreen({ title }) {
-  return (
-    <SafeAreaView style={styles.screenSafe} edges={["top", "left", "right"]}>
-      <View style={styles.center}>
-        <Text style={styles.screenTitle}>{title}</Text>
-      </View>
-    </SafeAreaView>
-  );
-}
-
-// function HomeScreen() {
-//   return <CenterScreen title="ACCUEIL"></CenterScreen>;
-// }
-function SearchScreen() {
-  return <CenterScreen title="RECHERCHE"></CenterScreen>;
-}
-function FavoritesScreen() {
-  return <CenterScreen title="FAVORIS"></CenterScreen>;
-}
-// function ProfileScreen() {
-//   return <CenterScreen title="PROFIL"></CenterScreen>;
-// }
 
 // Modal simple (MVP) :
 // - step "ask" : ton popup qui demande
@@ -276,7 +255,7 @@ export default function UserApp() {
           tabBarIcon: ({ color, size }) => {
             const name = (() => {
               if (route.name === "ACCUEIL") return "home";
-              if (route.name === "RECHERCHE") return "search";
+              if (route.name === "EPICERIES") return "local-grocery-store";
               if (route.name === "FAVORIS") return "favorite";
               return "person";
             })();
@@ -291,7 +270,7 @@ export default function UserApp() {
         })}
       >
         <Tab.Screen name="ACCUEIL" component={HomeScreen}></Tab.Screen>
-        <Tab.Screen name="RECHERCHE" component={SearchScreen}></Tab.Screen>
+        <Tab.Screen name="EPICERIES" component={GroceriesListScreen}></Tab.Screen>
         <Tab.Screen name="FAVORIS" component={FavoritesScreen}></Tab.Screen>
         <Tab.Screen name="PROFIL" component={ProfileScreen}></Tab.Screen>
       </Tab.Navigator>

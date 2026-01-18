@@ -34,6 +34,7 @@ function makeMockProducts(page = 0, size = 10) {
       price: 1.99,
       distanceKm: 1.2,
       inStock: true,
+      cat : "Poissons",
       photoURL:
         "https://images.unsplash.com/photo-1603048297172-c92544798d3a?auto=format&fit=crop&w=800&q=80",
     },
@@ -73,7 +74,7 @@ function makeMockProducts(page = 0, size = 10) {
     };
   });
 }
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [localtionLabel] = useState("Montréal, QC");
   const [query, setQuery] = useState("");
@@ -134,6 +135,20 @@ export default function HomeScreen() {
       return matchCat && matchQuery;
     });
   }, [items, activeCat, query]);
+
+  const onOpenProduct = useCallback(
+    (product) => {
+      navigation.navigate("ProductDetails", { product });
+    },
+    [navigation],
+  );
+
+  const onToggleFav = useCallback((productId) => {
+    // MVP local (plus tard Firestore)
+    setItems((prev) =>
+      prev.map((p) => (p.id === productId ? { ...p, isFav: !p.isFav } : p)),
+    );
+  }, []);
 
   const renderHeader = () => {
     return (
@@ -233,9 +248,12 @@ export default function HomeScreen() {
   const renderItem = ({ item }) => {
     const inStock = !!item.inStock;
     return (
-      <Pressable style={styles.card} onPress={() => {}}>
-        {/* Favorite button (UI only pour l'instant) */}
-        <Pressable style={styles.favBtn} onPress={() => {}} hitSlop={10}>
+      <Pressable style={styles.card} onPress={() => onOpenProduct(item)}>
+      {/* ✅ Favorite button : bloque le clic carte */}        
+        <Pressable style={styles.favBtn} onPress={(e) => {
+          e?.stopPropagation?.();
+          onToggleFav(item.id)
+        }} hitSlop={10}>
           <MaterialIcons
             name={item.isFav ? "favorite" : "favorite-border"}
             size={18}
@@ -441,12 +459,12 @@ const styles = StyleSheet.create({
   metaText: { fontSize: 10, fontWeight: "800", color: "#71717a" },
   priceRow: { marginTop: 2 },
   price: { fontSize: 16, fontWeight: "900", color: COLORS.primary },
-  center:{flex:1, alignItems:"center", justifyContent:"center"},
-  footerLoading:{paddingVertical:16, alignItems:"center"},
-  footerEnd:{paddingVertical:16, alignItems:"center"},
-  footerEndText:{
-    fontSize:12,
-    fontWeight:"800",
-    color:"#9ca3af"
-  }
+  center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  footerLoading: { paddingVertical: 16, alignItems: "center" },
+  footerEnd: { paddingVertical: 16, alignItems: "center" },
+  footerEndText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#9ca3af",
+  },
 });
