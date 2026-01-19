@@ -20,231 +20,122 @@ import ProfileScreen from "./profileScreen";
 import HomeScreen from "./homeScreen";
 import FavoritesScreen from "./favoritesScreen";
 import GroceriesListScreen from "./groceriesListScreen";
+import LocationGateModal from "../../components/locationGateModal";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { LOCATION_GATE_KEY } from "../../constants/locationGateKeys";
+import { auth } from "../../lib/firebase";
+import {
+  getUserLastLocation,
+  saveUserLocation,
+} from "../../services/userLocationService";
 
 const Tab = createBottomTabNavigator();
+export default function UserApp() {
+  const [showLocationGate, setShowLocationGate] = useState(false);
+  const [ready, setReady] = useState(false);
 
-// Modal simple (MVP) :
-// - step "ask" : ton popup qui demande
-// - step "granted" : ton popup qui valide
-// - step "denied" : ton popup qui refuse
-
-// IMPORTANT : même si "denied" on permet de continuer vers ACCUEIL
-
-function LocationGateModal({ visible, onDone, onLocation }) {
-  const insets = useSafeAreaInsets();
-  const [step, setStep] = useState("ask");
-  const [busy, setBusy] = useState(false);
+  const [location, setLocation] = useState(null);
+  const [locationStatus, setLocationStatus] = useState("unknown"); //unknown|granted|denied
+  const [locationLabel, setLocationLabel] = useState("Chargement...");
 
   useEffect(() => {
-    if (visible) {
-      setStep("ask");
-      setBusy(false);
-    }
-  }, [visible]);
+    (async () => {
+      const done = await AsyncStorage.getItem(LOCATION_GATE_KEY.HAS_SEEN_GATE);
+      // default UI pendant chargement
+      setLocationStatus("unknown");
+      setLocationLabel("Chargement...");
 
-  const close = () => onDone?.();
+      const uid = auth.currentUser?.uid;
+      // ✅ si déjà vu, on essaie de récupérer la dernière adresse enregistrée
+      if (done && uid) {
+        try {
+          const last = await getUserLastLocation({ uid });
 
-  const request = async () => {
-    setBusy(true);
-    try {
-      const perm = await Location.requestForegroundPermissionsAsync();
-      if (perm.status !== "granted") {
-        setStep("denied");
-        setBusy(false);
+          const formatted = last?.lastAddress.formatted;
+          if (formatted) {
+            setLocationStatus("granted");
+            setLocationLabel(formatted);
+          } else {
+            // pas d'adresse enregistrée => on ne sait pas
+            setLocationStatus("denied");
+            setLocationLabel("Aucune localisation");
+          }
+        } catch (e) {
+          console.log("⚠️ getUserLastLocation failed:", e?.message ?? e);
+          setLocationStatus("denied");
+          setLocationLabel("Aucune localisation");
+        }
+        setShowLocationGate(false);
+        setReady(true);
         return;
       }
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
+      // ✅ si pas encore vu => on affiche le modal
+      if (!done) {
+        setShowLocationGate(true);
+        setLocationStatus("unknown");
+        setLocationLabel("Localisation...");
+        setReady(true);
+        return;
+      }
+      // ✅ déjà vu MAIS pas de uid (pas connecté)
+      setLocationStatus("denied");
+      setLocationLabel("Aucune localisation");
+      setShowLocationGate(false);
+      setReady(true);
+    })();
+  }, []);
 
-      onLocation?.({
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-        accuracy: position.coords.accuracy ?? null,
-        timestamp: position.timestamp ?? Date.now(),
-      });
-
-      console.log(
-        `voici la position de l'utilisateur = ${position.coords.accuracy}`
-      );
-
-      setStep("granted");
-      setBusy(false);
-    } catch (e) {
-      setStep("denied");
-      setBusy(false);
-    }
+  const markGateDone = async () => {
+    await AsyncStorage.setItem(LOCATION_GATE_KEY.HAS_SEEN_GATE, "true");
   };
-
-  const title = useMemo(() => {
-    if (step === "granted") return "C'est tout bon !";
-    if (step === "denied") return "Localisation nécessaire";
-    return "Découvrez les épiceries à proximité";
-  }, [step]);
-
-  const body = useMemo(() => {
-    if (step === "granted")
-      return "Localisation obtenue. Nous trouvons les meilleures épiceries africaines autour de vous.";
-    if (step === "denied")
-      return "Vous avez refusé la localisation. L'app marchera quand même, mais les distances et la proximité seront moins précises";
-    return "Pour afficher les en stock et calculer les distances vers les meilleures épiceries africaines, nous avons besoin de votre position.";
-  }, [step]);
-
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      statusBarTranslucent
-    >
-      <View style={styles.modalOverlay}>
-        <StatusBar barStyle="light-content"></StatusBar>
-        <View
-          style={[
-            styles.modalCard,
-            { marginBottom: Math.max(16, insets.bottom) },
-          ]}
-        >
-          <View style={styles.modalHeader}>
-            <View style={styles.headerBlobRight}></View>
-            <View style={styles.headerBlobLeft}></View>
-
-            <View style={styles.headerIconWrap}>
-              {step === "granted" ? (
-                <View style={styles.headerCheck}>
-                  <MaterialIcons
-                    name="check"
-                    size={22}
-                    color="#16a34a"
-                  ></MaterialIcons>
-                </View>
-              ) : step === "denied" ? (
-                <MaterialIcons
-                  name="location-disabled"
-                  size={42}
-                  color={COLORS.primary}
-                ></MaterialIcons>
-              ) : (
-                <MaterialIcons
-                  name="location-on"
-                  size={42}
-                  color={COLORS.primary}
-                ></MaterialIcons>
-              )}
-
-              {step === "ask" && (
-                <View style={styles.headerBadge}>
-                  <MaterialIcons
-                    name="storefront"
-                    size={16}
-                    color="white"
-                  ></MaterialIcons>
-                </View>
-              )}
-            </View>
-          </View>
-
-          <View style={styles.modalBody}>
-            <Text style={styles.modalTitle}>{title}</Text>
-            <Text style={styles.modalText}>{body}</Text>
-
-            {step === "ask" && (
-              <View style={styles.modalActions}>
-                <Pressable
-                  onPress={request}
-                  disabled={busy}
-                  style={[styles.primaryBtn, busy && styles.primaryBtnDisabled]}
-                >
-                  {busy ? (
-                    <ActivityIndicator color="white"></ActivityIndicator>
-                  ) : (
-                    <View style={styles.primaryBtn}>
-                      <MaterialIcons
-                        name="near-me"
-                        size={20}
-                        color="white"
-                      ></MaterialIcons>
-                      <Text style={styles.primaryBtnText}>
-                        Autoriser la localisation
-                      </Text>
-                    </View>
-                  )}
-                </Pressable>
-
-                <Pressable onPress={close} style={styles.secondaryBtn}>
-                  <Text style={styles.secondaryBtnText}>
-                    Continuer sans localisation
-                  </Text>
-                </Pressable>
-
-                <Text style={styles.reassure}>
-                  Vous pourrez modifier ce choix dans les réglages.
-                </Text>
-              </View>
-            )}
-
-            {step === "granted" && (
-              <View style={styles.modalActions}>
-                <Pressable onPress={close} style={styles.primaryBtn}>
-                  <View style={styles.primaryBtnRow}>
-                    <Text style={styles.primaryBtnText}>Voir les produits</Text>
-                    <MaterialIcons
-                      name="arrow-forward"
-                      size={20}
-                      color="white"
-                    ></MaterialIcons>
-                  </View>
-                </Pressable>
-
-                <Pressable onPress={close} style={styles.secondaryBtn}>
-                  <Text style={styles.secondaryBtnText}>
-                    Modifier ma position manuellement
-                  </Text>
-                </Pressable>
-              </View>
-            )}
-
-            {step === "denied" && (
-              <View style={styles.modalActions}>
-                <Pressable onPress={close} style={styles.primaryBtn}>
-                  <View style={styles.primaryBtnRow}>
-                    <Text style={styles.primaryBtnText}>
-                      Continuer sans localisation
-                    </Text>
-                    <MaterialIcons
-                      name="arrow-forward"
-                      size={20}
-                      color="white"
-                    ></MaterialIcons>
-                  </View>
-                </Pressable>
-
-                <Pressable onPress={close} style={styles.secondaryBtn}>
-                  <Text style={styles.secondaryBtnText}>
-                    Ouvrir les réglages
-                  </Text>
-                </Pressable>
-              </View>
-            )}
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
-export default function UserApp() {
-  const [showLocationGate, setShowLocationGate] = useState(true);
-  const [location, setLocation] = useState(null);
 
   return (
     <View style={styles.appWrap}>
       <StatusBar barStyle="dark-content"></StatusBar>
-      <LocationGateModal
-        visible={showLocationGate}
-        onDone={() => setShowLocationGate(false)}
-        onLocation={(loc) => setLocation(loc)}
-      ></LocationGateModal>
+      {ready && (
+        <LocationGateModal
+          visible={showLocationGate}
+          currentLabel={locationLabel}
+          currentStatus={locationStatus}
+          onDone={async () => {
+            setShowLocationGate(false);
+            await AsyncStorage.setItem(LOCATION_GATE_KEY.HAS_SEEN_GATE, "1");
+            // si aucune location n'a été récupérée => on considère "refus / pas dispo"
+            if (!location) {
+              setLocationStatus("denied");
+              setLocationLabel("Aucune localisation");
+            }
+          }}
+          onLocation={async (loc) => {
+            setLocation(loc);
+            setShowLocationGate(false); // ✅ ferme direct
+            await AsyncStorage.setItem(LOCATION_GATE_KEY.HAS_SEEN_GATE, "1");
+            //save in Firestore
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+              console.log("⚠️ No auth user, location not saved to Firestore.");
+              // mais on peut quand même afficher localement :
+              setLocationStatus("granted");
+              setLocationLabel("Position détectée");
+              return;
+            }
+            try {
+              const result = await saveUserLocation({ uid, location: loc });
+              const formatted =
+                result?.address?.formatted || "Localisation enregistrée";
+
+              setLocationStatus("granted");
+              setLocationLabel(formatted);
+              console.log("✅Location saved to Firestore");
+            } catch (e) {
+              console.log("❌saveUserLocation failed :", e.message ?? e);
+              //fallback
+              setLocationStatus("denied");
+              setLocationLabel("Aucune localisation");
+            }
+          }}
+        ></LocationGateModal>
+      )}
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerShown: false,
@@ -269,11 +160,24 @@ export default function UserApp() {
           },
         })}
       >
-        <Tab.Screen name="ACCUEIL" component={HomeScreen}></Tab.Screen>
-        <Tab.Screen name="EPICERIES" component={GroceriesListScreen}></Tab.Screen>
+        <Tab.Screen name="ACCUEIL">
+          {(props) => (
+            <HomeScreen
+              {...props}
+              locationStatus={locationStatus}
+              locationLabel={locationLabel}
+              onPressLocation={() => setShowLocationGate(true)} //pour relancer manuellement le modal
+            ></HomeScreen>
+          )}
+        </Tab.Screen>
+        <Tab.Screen
+          name="EPICERIES"
+          component={GroceriesListScreen}
+        ></Tab.Screen>
         <Tab.Screen name="FAVORIS" component={FavoritesScreen}></Tab.Screen>
         <Tab.Screen name="PROFIL" component={ProfileScreen}></Tab.Screen>
       </Tab.Navigator>
+      {/* Pour relancer manuellement plus tard: setShowLocationGate(true) */}
       {console.log(location)}
     </View>
   );

@@ -3,6 +3,7 @@ import {
   FlatList,
   Image,
   Keyboard,
+  Modal,
   Platform,
   Pressable,
   StyleSheet,
@@ -72,12 +73,171 @@ function makeMockGroceries() {
     },
   ];
 }
+function FiltersModal({
+  visible,
+  onClose,
+  nearBy,
+  setNearBy,
+  onApply,
+  hasActiveFilters,
+  onReset,
+}) {
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
+      {/* Overlay */}
+      <Pressable style={styles.modalOverlay} onPress={onClose}>
+        {/* Bottom sheet */}
+        <Pressable style={styles.sheet} onPress={(e) => e?.stopPropagation?.()}>
+          {/* Handle */}
+          <View style={styles.sheetHandle}></View>
+
+          {/* Header */}
+          <View style={styles.sheetHeader}>
+            <View style={{ flex: 1 }}>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+              >
+                <Text style={styles.sheetTitle}>Trier par</Text>
+
+                {hasActiveFilters && (
+                  <View style={styles.activeBadge}>
+                    <Text style={styles.activeBadgeText}>Filtres actifs</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+            >
+              <Pressable
+                onPress={onReset}
+                disabled={!hasActiveFilters}
+                style={[
+                  styles.resetBtn,
+                  !hasActiveFilters && styles.resetBtnDisabled,
+                ]}
+                hitSlop={10}
+              >
+                <MaterialIcons
+                  name="restart-alt"
+                  size={20}
+                  color={!hasActiveFilters ? "#9ca3af" : COLORS.primary}
+                />
+              </Pressable>
+
+              <Pressable
+                onPress={onClose}
+                style={styles.sheetCloseBtn}
+                hitSlop={10}
+              >
+                <MaterialIcons name="close" size={22} color="#71717a" />
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Proximity only */}
+          <Text style={[styles.sheetSectionKicker, { marginTop: 6 }]}>
+            Distance
+          </Text>
+
+          <View style={styles.nearGrid}>
+            <Pressable
+              onPress={() => setNearBy("near")}
+              style={[
+                styles.nearCard,
+                nearBy === "near" ? styles.nearCardActive : styles.nearCardIdle,
+              ]}
+            >
+              <MaterialIcons
+                name="near-me"
+                size={20}
+                color={nearBy === "near" ? COLORS.primary : "#71717a"}
+              />
+              <Text
+                style={[
+                  styles.nearText,
+                  nearBy === "near"
+                    ? styles.nearTextActive
+                    : styles.nearTextIdle,
+                ]}
+              >
+                Plus proche
+              </Text>
+              {nearBy === "near" && (
+                <MaterialIcons
+                  name="check-circle"
+                  size={18}
+                  color={COLORS.primary}
+                />
+              )}
+            </Pressable>
+
+            <Pressable
+              onPress={() => setNearBy("far")}
+              style={[
+                styles.nearCard,
+                nearBy === "far" ? styles.nearCardActive : styles.nearCardIdle,
+              ]}
+            >
+              <MaterialIcons
+                name="social-distance"
+                size={20}
+                color={nearBy === "far" ? COLORS.primary : "#71717a"}
+              />
+              <Text
+                style={[
+                  styles.nearText,
+                  nearBy === "far"
+                    ? styles.nearTextActive
+                    : styles.nearTextIdle,
+                ]}
+              >
+                Plus loin
+              </Text>
+              {nearBy === "far" && (
+                <MaterialIcons
+                  name="check-circle"
+                  size={18}
+                  color={COLORS.primary}
+                />
+              )}
+            </Pressable>
+          </View>
+
+          {/* Apply */}
+          <Pressable
+            style={styles.applyBtn}
+            onPress={() => {
+              onApply?.();
+              onClose?.();
+            }}
+          >
+            <Text style={styles.applyBtnText}>Appliquer les filtres</Text>
+          </Pressable>
+
+          <View style={{ height: Platform.OS === "ios" ? 6 : 0 }} />
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
 export default function GroceriesListScreen({ navigation }) {
   const insets = useSafeAreaInsets();
 
   const [loading, setLoading] = useState(true);
   const [groceries, setGroceries] = useState([]);
   const [query, setQuery] = useState("");
+
+  const [showFilters, setShowFilters] = useState(false);
+  const [nearBy, setNearBy] = useState(null);
+  const DEFAULT_NEAR = null;
 
   // ✅ plus tard: vraie location + ville dynamique
   const cityLabel = "Montréal, QC";
@@ -91,15 +251,24 @@ export default function GroceriesListScreen({ navigation }) {
     })();
   }, []);
 
-  const filtered = useMemo(() => {
+  const hasActiveFilters = useMemo(() => nearBy !== DEFAULT_NEAR, [nearBy]);
+
+ const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return groceries;
-    return groceries.filter((g) => {
+
+    const base = groceries.filter((g) => {
+      if (!q) return true;
       const name = (g?.name ?? "").toLowerCase();
       const address = (g?.address ?? "").toLowerCase();
       return name.includes(q) || address.includes(q);
     });
-  }, [groceries, query]);
+
+    const sorted = [...base];
+    if (nearBy === "near") sorted.sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
+    if (nearBy === "far") sorted.sort((a, b) => (b.distanceKm ?? 0) - (a.distanceKm ?? 0));
+
+    return sorted;
+  }, [groceries, query, nearBy]);
 
   const onOpenGrocery = useCallback(
     (g) => {
@@ -154,9 +323,10 @@ export default function GroceriesListScreen({ navigation }) {
           )}
           {/* tune icon */}
           <Pressable
-            style={styles.tuneBtn}
+            style={[styles.tuneBtn, hasActiveFilters && styles.filterBtnActive]}
             onPress={() => {
               Keyboard.dismiss();
+              setShowFilters(true);
               // ✅ plus tard: ouvrir modal filtres
             }}
             hitSlop={10}
@@ -164,8 +334,9 @@ export default function GroceriesListScreen({ navigation }) {
             <MaterialIcons
               name="tune"
               size={18}
-              color={COLORS.primary}
+              color={hasActiveFilters ? "white" : COLORS.primary}
             ></MaterialIcons>
+            {hasActiveFilters && <View style={styles.filterDot}></View>}
           </Pressable>
         </View>
       </View>
@@ -249,6 +420,17 @@ export default function GroceriesListScreen({ navigation }) {
             ItemSeparatorComponent={() => <View style={{ height: 12 }}></View>}
           ></FlatList>
         )}
+        <FiltersModal
+          visible={showFilters}
+          onClose={() => setShowFilters(false)}
+          nearBy={nearBy}
+          setNearBy={setNearBy}
+          hasActiveFilters={hasActiveFilters}
+          onReset={() => setNearBy(DEFAULT_NEAR)}
+          onApply={() => {
+            console.log("apply filters:", { nearBy });
+          }}
+        ></FiltersModal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -367,5 +549,133 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#9ca3af",
     textAlign: "center",
+  },
+  // ✅ Modal (copié de HomeScreen)
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.40)",
+    justifyContent: "flex-end",
+  },
+  sheet: {
+    backgroundColor: "white",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingBottom: 22,
+    paddingTop: 10,
+    paddingHorizontal: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: -8 },
+    elevation: 18,
+  },
+  sheetHandle: {
+    width: 52,
+    height: 6,
+    borderRadius: 99,
+    backgroundColor: "#d1d5db",
+    alignSelf: "center",
+    marginTop: 6,
+    marginBottom: 14,
+  },
+  sheetHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  sheetTitle: { fontSize: 20, fontWeight: "900", color: COLORS.text },
+  sheetCloseBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f3f4f6",
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.06)",
+  },
+  sheetSectionKicker: {
+    marginTop: 6,
+    marginBottom: 10,
+    fontSize: 12,
+    fontWeight: "900",
+    color: "#71717a",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+  },
+
+  nearGrid: { flexDirection: "row", gap: 12 },
+  nearCard: {
+    flex: 1,
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  nearCardActive: {
+    backgroundColor: "rgba(249,115,22,0.10)",
+    borderColor: "rgba(249,115,22,0.22)",
+  },
+  nearCardIdle: { backgroundColor: "#f9fafb", borderColor: "transparent" },
+  nearText: { fontSize: 13 },
+  nearTextActive: { fontWeight: "900", color: COLORS.text },
+  nearTextIdle: { fontWeight: "800", color: COLORS.text },
+
+  applyBtn: {
+    marginTop: 18,
+    height: 54,
+    borderRadius: 18,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: COLORS.primary,
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 10,
+  },
+  applyBtnText: { color: "white", fontSize: 15, fontWeight: "900" },
+
+  // ✅ indicateur filtre actif sur le bouton tune
+  filterBtnActive: { backgroundColor: COLORS.primary },
+  filterDot: {
+    position: "absolute",
+    top: 7,
+    right: 7,
+    width: 8,
+    height: 8,
+    borderRadius: 99,
+    backgroundColor: "#22c55e",
+    borderWidth: 2,
+    borderColor: "white",
+  },
+
+  // ✅ badge + reset
+  activeBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(34,197,94,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(34,197,94,0.22)",
+  },
+  activeBadgeText: { fontSize: 11, fontWeight: "900", color: "#16a34a" },
+  resetBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(249,115,22,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(249,115,22,0.18)",
+  },
+  resetBtnDisabled: {
+    backgroundColor: "#f3f4f6",
+    borderColor: "rgba(0,0,0,0.06)",
   },
 });

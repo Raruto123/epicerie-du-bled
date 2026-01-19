@@ -138,13 +138,7 @@ export default function SellerOverviewScreen({ navigation }) {
 
   const goBack = () => {
     // SellerOverviewScreen -> Tab (SellerTabs) -> Stack (SellerBoard) -> Root Stack
-    const rootNav =
-      navigation.getParent()?.getParent()?.getParent?.() ??
-      navigation.getParent()?.getParent?.();
-
-    // Selon les versions, parfois 2 ou 3 parents, donc fallback:
-    (rootNav?.navigate ?? navigation.navigate)("App", { screen: "PROFIL" });
-  };
+ navigation.goBack();  };
 
   const saveField = async (field) => {
     Keyboard.dismiss();
