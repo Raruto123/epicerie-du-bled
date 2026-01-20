@@ -69,8 +69,9 @@ export default function ProductDetailsScreen({ navigation, route }) {
         product?.desc ??
         "Nos gombos sont sélectionnés à la main pour garantir leur fraîcheur et leur texture croquante. Idéal pour la préparation de sauces onctueuses ou fritures traditionnelles.",
       seller: {
+        id:product?.sellerId ?? null,
         name: product?.sellerName ?? "Épicerie Mapouka",
-        distanceKm: product?.sellerDistanceKm ?? 1.2,
+        distanceKm: product?.distanceKm ?? 1.2,
         address:
           product?.sellerAddress ??
           "1234 Rue Saint-Hubert, Montréal, QC H2L 3Y7, Canada",
@@ -178,9 +179,24 @@ export default function ProductDetailsScreen({ navigation, route }) {
                 )}
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.sellerName} numberOfLines={1}>
-                  {data.seller.name}
-                </Text>
+                <Pressable
+                  onPress={() =>
+                    navigation.navigate("GroceryStore", {
+                      grocery: {
+                        id: data.seller.id ?? `g-${data.id}`,
+                        name: data.seller.name,
+                        address: data.seller.address,
+                        distanceKm: data.seller.distanceKm,
+                        photoURL: data.seller.logoURL,
+                      },
+                    })
+                  }
+                  hitSlop={10}
+                >
+                  <Text style={styles.sellerName} numberOfLines={1}>
+                    {data.seller.name}
+                  </Text>
+                </Pressable>
                 <View style={styles.sellerDistRow}>
                   <MaterialIcons
                     name="near-me"
@@ -256,8 +272,11 @@ export default function ProductDetailsScreen({ navigation, route }) {
               >
                 <View style={styles.simImgWrap}>
                   {!!p.photoURL ? (
-                    <Image source={{uri:p.photoURL}} style={styles.simImg}></Image>
-                  ):(
+                    <Image
+                      source={{ uri: p.photoURL }}
+                      style={styles.simImg}
+                    ></Image>
+                  ) : (
                     <View style={styles.simImg}></View>
                   )}
                 </View>
@@ -266,10 +285,14 @@ export default function ProductDetailsScreen({ navigation, route }) {
                     {p.name}
                   </Text>
                   <Text style={styles.simPrice}>
-                    {p.price.toFixed(2).replace(".",",")} $
+                    {p.price.toFixed(2).replace(".", ",")} $
                   </Text>
                   <View style={styles.simMeta}>
-                    <MaterialIcons name="near-me" size={12} color="#9ca3af"></MaterialIcons>
+                    <MaterialIcons
+                      name="near-me"
+                      size={12}
+                      color="#9ca3af"
+                    ></MaterialIcons>
                     <Text style={styles.simMetaText}>
                       {Number(p.distanceKm ?? 0).toFixed(1)} km
                     </Text>

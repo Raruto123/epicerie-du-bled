@@ -1,4 +1,4 @@
-import { act, useCallback, useEffect, useMemo, useState } from "react";
+import { act, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -17,6 +17,9 @@ import { COLORS } from "../../constants/colors";
 import { Pressable, View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Modal } from "react-native";
+import { fetchProductsPage } from "../../services/sellerProductsService";
+import { auth } from "../../lib/firebase";
+import { toggleFavoriteProduct } from "../../services/userService";
 
 //mock categories
 const cats = [
@@ -77,7 +80,15 @@ function makeMockProducts(page = 0, size = 10) {
     };
   });
 }
-export default function HomeScreen({ navigation, locationStatus, locationLabel, onPressLocation }) {
+export default function HomeScreen({
+  navigation,
+  locationStatus,
+  locationLabel,
+  onPressLocation,
+  userLocation,
+  favIds,
+  refreshKey,
+}) {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
   const [activeCat, setActiveCat] = useState("Tout");
@@ -85,7 +96,7 @@ export default function HomeScreen({ navigation, locationStatus, locationLabel, 
   const [items, setItems] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [page, setPage] = useState(0);
+  const [cursor, setCursor] = useState(null);
   const [hasMore, setHasMore] = useState(true);
 
   const [showFilters, setShowFilters] = useState(false);
@@ -94,40 +105,77 @@ export default function HomeScreen({ navigation, locationStatus, locationLabel, 
   const DEFAULT_SORT = "price_low";
   const DEFAULT_NEAR = null;
 
+  const [refreshing, setRefreshing] = useState(false);
+  const didLoadOnceRef = useRef(false);
+  const blockEndReachedRef = useRef(true)
+
   //Simulation now but Later with Firestore
   const fetchNextPage = useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
+
     try {
-      //simulate network
-      await new Promise((r) => setTimeout(r, 450));
-      const next = makeMockProducts(page, 10);
+      const res = await fetchProductsPage({
+        pageSize: 10,
+        cursor,
+        cat: activeCat,
+        userLocation: locationStatus === "granted" ? userLocation : null,
+      });
 
-      //example : stop after 8 pages
-      const nextPage = page + 1;
-      if (nextPage >= 8) setHasMore(false);
-
-      setItems((prev) => [...prev, ...next]);
-      setPage(nextPage);
+      const mapped = res.items.map((p) => ({ ...p, isFav: favIds?.has(p.id) }));
+      setItems((prev) => {
+        const map = new Map(prev.map((p) => [p.id, p]));
+        for (const p of mapped) map.set(p.id, p);
+        return Array.from(map.values())
+      });
+      setCursor(res.cursor);
+      setHasMore(res.hasMore);
+    } catch (e) {
+      console.log("❌ fetchNextPage failed :", e?.message ?? e);
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMore, page]);
+  }, [
+    loadingMore,
+    hasMore,
+    cursor,
+    activeCat,
+    userLocation,
+    locationStatus,
+    favIds,
+  ]);
 
-  useEffect(() => {
-    //first load
-    (async () => {
-      setInitialLoading(true);
-      setItems([]);
-      setPage(0);
-      setHasMore(true);
+  // useEffect(() => {
+  //   //first load
+  //   (async () => {
+  //     setInitialLoading(true);
+  //     setItems([]);
+  //     setCursor(null);
+  //     setHasMore(true);
 
-      await new Promise((r) => setTimeout(r, 400));
-      setItems(makeMockProducts(0, 10));
-      setPage(1);
-      setInitialLoading(false);
-    })();
-  }, []);
+  //     try {
+  //       const res = await fetchProductsPage({
+  //         pageSize: 10,
+  //         cursor: null,
+  //         cat: activeCat,
+  //         userLocation: locationStatus === "granted" ? userLocation : null,
+  //       });
+  //       const mapped = res.items.map((p) => ({
+  //         ...p,
+  //         isFav: favIds?.has(p.id),
+  //       }));
+  //       setItems(mapped);
+  //       setCursor(res.cursor);
+  //       setHasMore(res.hasMore);
+  //     } catch (e) {
+  //       console.log("❌ fetchProductsPage failed :", e?.message ?? e);
+  //       setItems([]);
+  //       setHasMore(false);
+  //     } finally {
+  //       setInitialLoading(false);
+  //     }
+  //   })();
+  // }, [activeCat, userLocation, locationStatus, favIds]);
 
   //filter locally with cat + search+ filters
   const filtered = useMemo(() => {
@@ -163,37 +211,139 @@ export default function HomeScreen({ navigation, locationStatus, locationLabel, 
     [navigation],
   );
 
-  const onToggleFav = useCallback((productId) => {
-    // MVP local (plus tard Firestore)
+  const onToggleFav = useCallback(async (product) => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) {
+      console.log("⚠️ user not logged in");
+      return;
+    }
+
+    const productId = product.id;
+
+    //optimistic UI
     setItems((prev) =>
       prev.map((p) => (p.id === productId ? { ...p, isFav: !p.isFav } : p)),
     );
+
+    try {
+      const res = await toggleFavoriteProduct({ uid, product });
+      //sync favIds
+      // setFavIds((prevSet) => {
+      //   const next = new Set(prevSet);
+      //   if (res.isFav) next.add(productId);
+      //   else next.delete(productId);
+      //   return next;
+      // });
+    } catch (e) {
+      console.log("❌ toggleFavorite failed :", e?.message ?? e);
+      //rollback
+      setItems((prev) =>
+        prev.map((p) => (p.id === productId ? { ...p, isFav: !p.isFav } : p)),
+      );
+    }
   }, []);
 
   const hasActiveFilters = useMemo(() => {
     return sortBy !== DEFAULT_SORT || nearBy !== DEFAULT_NEAR;
   }, [sortBy, nearBy]);
 
+  useEffect(() => {
+    if (!favIds) return;
+    setItems((prev) => prev.map((p) => ({ ...p, isFav: favIds.has(p.id) })));
+  }, [favIds]);
+
+  const refreshProducts = useCallback(
+    async ({ soft = false } = {}) => {
+      const first = !didLoadOnceRef.current;
+      blockEndReachedRef.current = true;
+      if (first) {
+        setInitialLoading(true);
+        setItems([]);
+      } else {
+        if (!soft) setRefreshing(true);
+      }
+
+      setCursor(null);
+      setHasMore(true);
+
+      try {
+        const res = await fetchProductsPage({
+          pageSize: 10,
+          cursor: null,
+          cat: activeCat,
+          userLocation: locationStatus === "granted" ? userLocation : null,
+        });
+
+        const mapped = res.items.map((p) => ({
+          ...p,
+          isFav: false,
+        }));
+        setItems(mapped);
+        setCursor(res.cursor);
+        setHasMore(res.hasMore);
+
+        didLoadOnceRef.current = true;
+      } catch (e) {
+        console.log("❌ refreshProducts failed :", e?.message ?? e);
+        if (first) {
+          setItems([]);
+          setHasMore(false);
+        }
+      } finally {
+        setInitialLoading(false);
+        setRefreshing(false);
+        setTimeout(() => {
+          blockEndReachedRef.current = false
+        }, 0)
+      }
+    },
+    [activeCat, locationStatus, userLocation],
+  );
+
+  useEffect(() => {
+    refreshProducts({soft : true});
+  }, [activeCat, locationStatus, userLocation, refreshKey, refreshProducts]);
+
+  const onPullRefresh = useCallback(() => {
+    refreshProducts();
+  }, [refreshProducts])
+
   const renderHeader = () => {
     return (
       <View>
         {/* Top Header */}
         <View style={[styles.header, { paddingTop: 10 }]}>
-          <Pressable style={styles.locationPill} onPress={onPressLocation} hitSlop={10}>
+          <Pressable
+            style={styles.locationPill}
+            onPress={onPressLocation}
+            hitSlop={10}
+          >
             <MaterialIcons
-              name={locationStatus ==="granted" ? "location-on" : 'location-disabled'}
+              name={
+                locationStatus === "granted"
+                  ? "location-on"
+                  : "location-disabled"
+              }
               size={18}
-              color={locationStatus ==="granted" ? COLORS.primary : "#9ca3af"}
+              color={locationStatus === "granted" ? COLORS.primary : "#9ca3af"}
             ></MaterialIcons>
-            <Text style={[styles.locationText, locationStatus !== "granted" && {color : "#9ca3af"}]} numberOfLines={1}>
-              {locationStatus ==="granted" ? locationLabel : "Aucune localisation"}
+            <Text
+              style={[
+                styles.locationText,
+                locationStatus !== "granted" && { color: "#9ca3af" },
+              ]}
+              numberOfLines={1}
+            >
+              {locationStatus === "granted"
+                ? locationLabel
+                : "Aucune localisation"}
             </Text>
           </Pressable>
-            <MaterialIcons
-              name="keyboard-arrow-down"
-              size={20}
-              color={COLORS.text}
-            ></MaterialIcons>
+          <MaterialIcons
+            name="keyboard-arrow-down"
+            size={20}
+            color={COLORS.text}
+          ></MaterialIcons>
         </View>
 
         {/* Search */}
@@ -294,7 +444,7 @@ export default function HomeScreen({ navigation, locationStatus, locationLabel, 
           style={styles.favBtn}
           onPress={(e) => {
             e?.stopPropagation?.();
-            onToggleFav(item.id);
+            onToggleFav(item);
           }}
           hitSlop={10}
         >
@@ -339,7 +489,9 @@ export default function HomeScreen({ navigation, locationStatus, locationLabel, 
               color="#71717a"
             ></MaterialIcons>
             <Text style={styles.metaText}>
-              {Number(item.distanceKm ?? 0).toFixed(1)} km
+              {item.distanceKm == null
+                ? "-"
+                : `${Number(item.distanceKm).toFixed(1)} km`}
             </Text>
           </View>
           <View style={styles.priceRow}>
@@ -608,8 +760,9 @@ export default function HomeScreen({ navigation, locationStatus, locationLabel, 
           showsVerticalScrollIndicator={false}
           onEndReachedThreshold={0.5}
           onEndReached={() => {
-            // IMPORTANT: en prod, on déclenche sur la liste "items" (pas filtered)
-            // Ici on garde simple.
+              console.log("onEndReached", { initialLoading, refreshing, block: blockEndReachedRef.current });
+            if (initialLoading || refreshing) return;
+            if (blockEndReachedRef.current) return;
             fetchNextPage();
           }}
           ListFooterComponent={
@@ -640,6 +793,7 @@ export default function HomeScreen({ navigation, locationStatus, locationLabel, 
           setNearBy(DEFAULT_NEAR);
         }}
         onApply={() => {
+          refreshProducts();
           // MVP: on ne fait que log, mais tu peux déclencher un tri réel ici
           console.log("apply filters:", { sortBy, nearBy });
         }}
@@ -653,7 +807,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg,
   },
-  header: { paddingHorizontal: 16, paddingBottom: 8, flexDirection:"row", alignItems:"center"},
+  header: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+  },
   locationPill: {
     flexDirection: "row",
     alignItems: "center",

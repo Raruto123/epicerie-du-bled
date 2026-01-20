@@ -239,8 +239,6 @@ export default function GroceriesListScreen({ navigation }) {
   const [nearBy, setNearBy] = useState(null);
   const DEFAULT_NEAR = null;
 
-  // ✅ plus tard: vraie location + ville dynamique
-  const cityLabel = "Montréal, QC";
 
   useEffect(() => {
     (async () => {
@@ -286,14 +284,6 @@ export default function GroceriesListScreen({ navigation }) {
       {/* Title row */}
       <View style={styles.headerTop}>
         <Text style={styles.headerTitle}>Liste des épiceries</Text>
-        <View style={styles.locWrap}>
-          <MaterialIcons
-            name="location-on"
-            size={16}
-            color={COLORS.primary}
-          ></MaterialIcons>
-          <Text style={styles.locText}>{cityLabel}</Text>
-        </View>
       </View>
       {/* Search */}
       <View style={styles.searchWrap}>

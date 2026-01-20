@@ -28,6 +28,7 @@ import {
   getUserLastLocation,
   saveUserLocation,
 } from "../../services/userLocationService";
+import { subscribeUserFavorites } from "../../services/userService";
 
 const Tab = createBottomTabNavigator();
 export default function UserApp() {
@@ -37,6 +38,11 @@ export default function UserApp() {
   const [location, setLocation] = useState(null);
   const [locationStatus, setLocationStatus] = useState("unknown"); //unknown|granted|denied
   const [locationLabel, setLocationLabel] = useState("Chargement...");
+
+  const [favorites, setFavorites] = useState([]);
+  const [favIds, setFavIds] = useState(new Set());
+
+  const [homeRefreshKey, setHomeRefreshKey] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -50,6 +56,15 @@ export default function UserApp() {
       if (done && uid) {
         try {
           const last = await getUserLastLocation({ uid });
+          const lastLoc = last?.lastLocation;
+          if (lastLoc?.latitude !== null && lastLoc?.longitude !== null) {
+            setLocation({
+              latitude: Number(lastLoc.latitude),
+              longitude: Number(lastLoc.longitude),
+              accuracy: lastLoc.accuracy ?? null,
+              timestamp: lastLoc.timestamp ?? Date.now(),
+            });
+          }
 
           const formatted = last?.lastAddress.formatted;
           if (formatted) {
@@ -83,6 +98,25 @@ export default function UserApp() {
       setShowLocationGate(false);
       setReady(true);
     })();
+  }, []);
+
+  useEffect(() => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) {
+      setFavorites([]);
+      setFavIds(new Set());
+      return;
+    }
+
+    const unsub = subscribeUserFavorites({
+      uid,
+      cb: ({ favoritesArray, favIdsSet }) => {
+        setFavorites(favoritesArray);
+        setFavIds(favIdsSet);
+      },
+    });
+
+    return () => unsub?.();
   }, []);
 
   const markGateDone = async () => {
@@ -160,13 +194,23 @@ export default function UserApp() {
           },
         })}
       >
-        <Tab.Screen name="ACCUEIL">
+        <Tab.Screen
+          name="ACCUEIL"
+          listeners={{
+            tabPress: (e) => {
+              setHomeRefreshKey((x) => x + 1);
+            },
+          }}
+        >
           {(props) => (
             <HomeScreen
               {...props}
               locationStatus={locationStatus}
               locationLabel={locationLabel}
               onPressLocation={() => setShowLocationGate(true)} //pour relancer manuellement le modal
+              userLocation={location}
+              favIds={favIds}
+              refreshKey={homeRefreshKey}
             ></HomeScreen>
           )}
         </Tab.Screen>
@@ -174,7 +218,11 @@ export default function UserApp() {
           name="EPICERIES"
           component={GroceriesListScreen}
         ></Tab.Screen>
-        <Tab.Screen name="FAVORIS" component={FavoritesScreen}></Tab.Screen>
+        <Tab.Screen name="FAVORIS">
+          {(props) => (
+            <FavoritesScreen {...props} favorites={favorites}></FavoritesScreen>
+          )}
+        </Tab.Screen>
         <Tab.Screen name="PROFIL" component={ProfileScreen}></Tab.Screen>
       </Tab.Navigator>
       {/* Pour relancer manuellement plus tard: setShowLocationGate(true) */}

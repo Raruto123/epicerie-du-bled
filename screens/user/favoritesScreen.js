@@ -18,6 +18,11 @@ import { COLORS } from "../../constants/colors";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Keyboard } from "react-native";
 import { KeyboardAvoidingView } from "react-native";
+import { auth } from "../../lib/firebase";
+import {
+  getUserFavorites,
+  toggleFavoriteProduct,
+} from "../../services/userService";
 
 //Mock data à remplacer par Firestore plus tard
 function makeMockFavs() {
@@ -61,21 +66,27 @@ function makeMockFavs() {
   ];
 }
 
-export default function FavoritesScreen() {
+export default function FavoritesScreen({ navigation, favorites = [] }) {
   const insets = useSafeAreaInsets();
 
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // ✅ en vrai: tu vas écouter la collection favorites de l’utilisateur
-  const [favorites, setFavorites] = useState([]);
-
   useEffect(() => {
     (async () => {
       setLoading(true);
-      await new Promise((r) => setTimeout(r, 350));
-      setFavorites(makeMockFavs());
-      setLoading(false);
+      try {
+        const uid = auth.currentUser?.uid;
+        if (!uid) {
+          setLoading(false);
+          return;
+        }
+
+      } catch (e) {
+        console.log("❌ getUserFavorites failed:", e?.message ?? e);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
@@ -84,9 +95,16 @@ export default function FavoritesScreen() {
     if (!q) return favorites;
     return favorites.filter((p) => (p.name ?? "").toLowerCase().includes(q));
   }, [favorites, query]);
+
   // ✅ unfav (UI) — plus tard: Firestore
-  const onUnfavorite = useCallback((id) => {
-    setFavorites((prev) => prev.filter((x) => x.id !== id));
+  const onUnfavorite = useCallback(async (product) => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    try {
+      await toggleFavoriteProduct({ uid, product });
+    } catch (e) {
+      console.log("❌ unfavorite2 failed :", e?.message ?? e);
+    }
   }, []);
 
   const renderHeader = () => (
@@ -130,11 +148,17 @@ export default function FavoritesScreen() {
     const inStock = !!item.inStock;
 
     return (
-      <Pressable style={styles.card} onPress={() => {}}>
+      <Pressable
+        style={styles.card}
+        onPress={() => navigation.navigate("ProductDetails", { product: item })}
+      >
         {/* Favorite (filled) */}
         <Pressable
           style={styles.favBtn}
-          onPress={() => onUnfavorite(item.id)}
+          onPress={(e) => {
+            e?.stopPropagation?.();
+            onUnfavorite(item);
+          }}
           hitSlop={10}
         >
           <MaterialIcons

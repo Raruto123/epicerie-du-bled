@@ -1,4 +1,17 @@
-import { deleteDoc, doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  documentId,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  serverTimestamp,
+  startAfter,
+  updateDoc,
+  where,
+} from "firebase/firestore";
 import { db, storage } from "../lib/firebase";
 import { deleteObject, ref as storageRef } from "firebase/storage";
 
@@ -51,4 +64,143 @@ export async function deleteProductWithImage({ productId, photoURL }) {
   //2) Delete Firestore doc
   const productRef = doc(db, "products", productId);
   await deleteDoc(productRef);
+}
+
+function chunkArray(arr, size = 10) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+//Haversine distance in KM
+function distanceKmBetween(a, b) {
+  if (!a || !b) return null;
+  const lat1 = Number(a.latitude);
+  const lon1 = Number(a.longitude);
+  const lat2 = Number(b.latitude);
+  const lon2 = Number(b.longitude);
+  if (![lat1, lon1, lat2, lon2].every((x) => Number.isFinite(x))) return null;
+
+  const R = 6371; //km
+  const toRad = (x) => (x * Math.PI) / 180;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const s1 = Math.sin(dLat / 2);
+  const s2 = Math.sin(dLon / 2);
+
+  const aa = s1 * s1 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * s2 * s2;
+
+  const c = 2 * Math.atan2(Math.sqrt(aa), Math.sqrt(1 - aa));
+  return Number((R * c).toFixed(2));
+}
+
+/**
+ * Fetch seller user docs for a list of sellerIds
+ * Uses where(documentId(), "in", ids) with chunking (10 max per query)
+ */
+async function fetchSellersByIds(sellerIds = []) {
+  const ids = Array.from(new Set(sellerIds.filter(Boolean)));
+  if (!ids.length) return new Map();
+
+  const usersCol = collection(db, "users");
+  const chunks = chunkArray(ids, 10);
+
+  const results = new Map();
+  for (const group of chunks) {
+    const q = query(usersCol, where(documentId(), "in", group));
+    const snap = await getDocs(q);
+
+    snap.docs.forEach((d) => {
+      results.set(d.id, d.data() || {});
+    });
+  }
+
+  return results;
+}
+
+/**
+ * Fetch products for Home (public feed)
+ * - paginated with cursor
+ * - optional category filter (cat)
+ * - optional inStockOnly filter
+ *
+ * Returns:
+ *  { items: [], cursor: DocumentSnapshot|null, hasMore: boolean }
+ */
+export async function fetchProductsPage({
+  pageSize = 10,
+  cursor = null,
+  cat = "Tout",
+  inStockOnly = false,
+  userLocation = null,
+} = {}) {
+  try{
+const colRef = collection(db, "products");
+  const constraints = [];
+
+  // Optional filters
+  if (cat && cat !== "Tout") constraints.push(where("cat", "==", cat));
+  if (inStockOnly) constraints.push(where("inStock", "==", true));
+
+  constraints.push(orderBy("createdAt", "desc"));
+  constraints.push(limit(pageSize));
+
+  let q = query(colRef, ...constraints);
+  if (cursor) {
+    // When paginating, startAfter must come AFTER orderBy
+    q = query(colRef, ...constraints, startAfter(cursor));
+  }
+
+  const snap = await getDocs(q);
+  //1) base products
+  const baseProducts = snap.docs.map((d) => {
+    const data = d.data() || {};
+    return {
+      id: d.id,
+      name: data.name ?? "",
+      price: Number(data.price ?? 0),
+      inStock: !!data.inStock,
+      cat: data.cat ?? "Autres",
+      photoURL: data.photoURL ?? null,
+      desc: data.desc ?? null,
+      sellerId: data.sellerId ?? null,
+      createdAt: data.createdAt ?? null,
+    };
+  });
+  // 2) fetch sellers from users collection
+  const sellerIds = baseProducts.map((p) => p.sellerId).filter(Boolean);
+  const sellersMap = await fetchSellersByIds(sellerIds);
+  // 3) enrich products with seller info + distance
+  const items = baseProducts.map((p) => {
+    const u = sellersMap.get(p.sellerId) || null;
+    const seller = u?.seller || null;
+
+    const sellerName = seller?.storeName ?? null;
+    const sellerAddress = seller?.addressText ?? null;
+    const sellerLogoURL = seller?.logoURL ?? null;
+    const sellerGps = seller?.gps ?? null;
+
+    const distanceKm =
+      userLocation && sellerGps
+        ? distanceKmBetween(userLocation, sellerGps)
+        : null;
+
+    return {
+      ...p,
+      sellerName,
+      sellerAddress,
+      sellerLogoURL,
+      sellerGps,
+      distanceKm,
+    };
+  });
+
+  const nextCursor = snap.docs.length ? snap.docs[snap.docs.length - 1] : null;
+  const hasMore = snap.docs.length === pageSize;
+
+  return {items, cursor : nextCursor, hasMore};
+  }catch(e){
+    console.log("❌ fetchProductsPage failed :", e?.message ?? e);
+    throw e;
+  }
 }
