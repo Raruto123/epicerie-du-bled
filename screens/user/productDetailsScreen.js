@@ -1,4 +1,5 @@
 import {
+  ActivityIndicator,
   Image,
   Linking,
   Platform,
@@ -13,9 +14,13 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import {
+  fetchProductById,
+  fetchSimilarProducts,
+} from "../../services/sellerProductsService";
 // Petit helper (MVP) : ouvrir Google Maps / Apple Maps
 function openMapsWithAddress(address) {
   const q = encodeURIComponent(address ?? "");
@@ -25,66 +30,100 @@ function openMapsWithAddress(address) {
       : `https://www.google.com/maps/Search/?api=1&query=${q}`;
   Linking.openURL(url).catch(() => {});
 }
-// mock “produits similaires”
-function makeSimilarProducts(seed = "x") {
-  const imgs = [
-    "https://images.unsplash.com/photo-1603048297172-c92544798d3a?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1548946526-f69e2424cf45?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1604908176997-125b5bd7be3d?auto=format&fit=crop&w=800&q=80",
-  ];
-  return Array.from({ length: 6 }).map((_, i) => ({
-    id: `sim-${seed}-${i}`,
-    name:
-      i === 0
-        ? "Gombo Découpé"
-        : i === 1
-          ? "Gombo Rouge"
-          : i === 2
-            ? "Gombo Bio"
-            : i % 2 === 0
-              ? "Piment Oiseau"
-              : "Aubergine Africaine",
-    price: Number((4.9 + i * 0.5).toFixed(2)),
-    distanceKm: Number((0.8 + i * 0.6).toFixed(1)),
-    photoURL: imgs[i % imgs.length],
-  }));
-}
+
 export default function ProductDetailsScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   // ✅ on reçoit le produit depuis HomeScreen
-  const product = route?.params.product ?? null;
+  const productParam = route?.params.product ?? null;
+  const userLocation = route?.params.userLocation ?? null;
+
+  const productId = productParam.id ?? null;
+
+  const [product, setProduct] = useState(productParam);
+  const [loadingProduct, setLoadingProduct] = useState(!productParam);
+
+  const [similar, setSimilar] = useState([]);
+  const [loadingSimilar, setLoadingSimilar] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      if (!productId) return;
+      setLoadingProduct(true);
+      try {
+        const full = await fetchProductById({ productId, userLocation });
+        if (!alive) return;
+        if (full) setProduct(full);
+      } catch (e) {
+        console.log("❌ fetchProductById failed :", e?.messge);
+      } finally {
+        if (alive) setLoadingProduct(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [productId, userLocation]);
+
   // fallback si jamais on arrive sans rien
   const data = useMemo(() => {
-    const inStock = product?.inStock ?? true;
+    const p = product || {};
+    const inStock = p?.inStock ?? true;
     return {
-      id: product?.id ?? "p-0",
-      name: product?.name ?? "Gombo Frais",
-      cat: product?.cat ?? "Légumes",
-      price: Number(product?.price ?? 4.99),
+      id: p?.id ?? "p-0",
+      name: p?.name ?? "Produit",
+      cat: p?.cat ?? "Légumes",
+      price: Number(p?.price ?? 4.99),
       inStock: !!inStock,
       photoURL:
-        product?.photoURL ??
+        p?.photoURL ??
         "https://images.unsplash.com/photo-1604908176997-125b5bd7be3d?auto=format&fit=crop&w=1000&q=80",
-      desc:
-        product?.desc ??
-        "Nos gombos sont sélectionnés à la main pour garantir leur fraîcheur et leur texture croquante. Idéal pour la préparation de sauces onctueuses ou fritures traditionnelles.",
+      desc: p?.desc ?? "Aucune description bitch",
       seller: {
-        id:product?.sellerId ?? null,
-        name: product?.sellerName ?? "Épicerie Mapouka",
-        distanceKm: product?.distanceKm ?? 1.2,
+        id: p?.sellerId ?? null,
+        name: p?.sellerName ?? "Épicerie",
+        distanceKm: p?.distanceKm ?? 99.2,
         address:
-          product?.sellerAddress ??
+          p?.sellerAddress ??
           "1234 Rue Saint-Hubert, Montréal, QC H2L 3Y7, Canada",
         logoURL:
-          product?.sellerLogoURL ??
+          p?.sellerLogoURL ??
           "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80",
+        description: p?.sellerDescription ?? null,
+        gps: p?.sellerGps ?? null,
       },
-      isFav: !!product?.isFav,
+      isFav: !!p?.isFav,
     };
   }, [product]);
 
-  const [isFav, setIsFav] = useState(data.isFav);
-  const similar = useMemo(() => makeSimilarProducts(data.id), [data.id]);
+  const isFav = !!data.isFav;
+
+  //similar car
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      if (!data?.cat) return;
+      setLoadingSimilar(true);
+      try {
+        const list = await fetchSimilarProducts({
+          cat: data.cat,
+          excludeProductId: data.id,
+          pageSize: 6,
+          userLocation,
+        });
+        if (!alive) return;
+        setSimilar(list);
+      } catch (e) {
+        console.log("❌ fetchSimilarProducts failed:", e?.message ?? e);
+        if (alive) setSimilar([]);
+      } finally {
+        if (alive) setLoadingSimilar(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [data.cat, data.id, userLocation]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "right", "left"]}>
@@ -188,7 +227,10 @@ export default function ProductDetailsScreen({ navigation, route }) {
                         address: data.seller.address,
                         distanceKm: data.seller.distanceKm,
                         photoURL: data.seller.logoURL,
+                        description: data.seller.description,
+                        gps: data.seller.gps
                       },
+                      userLocation,
                     })
                   }
                   hitSlop={10}
@@ -257,50 +299,91 @@ export default function ProductDetailsScreen({ navigation, route }) {
             </Pressable>
           </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.simRow}
-          >
-            {similar.map((p) => (
-              <Pressable
-                key={p.id}
-                style={styles.simCard}
-                onPress={() =>
-                  navigation.push("ProductDetails", { product: p })
-                }
-              >
-                <View style={styles.simImgWrap}>
-                  {!!p.photoURL ? (
-                    <Image
-                      source={{ uri: p.photoURL }}
-                      style={styles.simImg}
-                    ></Image>
-                  ) : (
-                    <View style={styles.simImg}></View>
-                  )}
-                </View>
-                <View style={styles.simBody}>
-                  <Text style={styles.simTitle} numberOfLines={1}>
-                    {p.name}
-                  </Text>
-                  <Text style={styles.simPrice}>
-                    {p.price.toFixed(2).replace(".", ",")} $
-                  </Text>
-                  <View style={styles.simMeta}>
-                    <MaterialIcons
-                      name="near-me"
-                      size={12}
-                      color="#9ca3af"
-                    ></MaterialIcons>
-                    <Text style={styles.simMetaText}>
-                      {Number(p.distanceKm ?? 0).toFixed(1)} km
-                    </Text>
-                  </View>
-                </View>
-              </Pressable>
-            ))}
-          </ScrollView>
+          {loadingSimilar ? (
+            <View style={{ paddingHorizontal: 16, paddingVertical: 10 }}>
+              <ActivityIndicator size="small"></ActivityIndicator>
+            </View>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.simRow}
+            >
+              {similar.map((p) => {
+                const inStock = !!p.inStock;
+                return (
+                  <Pressable
+                    key={p.id}
+                    style={styles.simCard}
+                    onPress={() =>
+                      navigation.push("ProductDetails", {
+                        product: p,
+                        userLocation,
+                      })
+                    }
+                  >
+                    <View style={styles.simImgWrap}>
+                      {!!p.photoURL ? (
+                        <Image
+                          source={{ uri: p.photoURL }}
+                          style={[styles.simImg, !inStock && { opacity: 0.8 }]}
+                        ></Image>
+                      ) : (
+                        <View style={styles.simImg}></View>
+                      )}
+                      {/* Badge stock */}
+                      <View
+                        style={{ position: "absolute", left: 10, bottom: 10 }}
+                      >
+                        <View
+                          style={{
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            borderRadius: 8,
+                            backgroundColor: inStock ? "#22c55e" : "#ef4444",
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: "white",
+                              fontSize: 9,
+                              fontWeight: "900",
+                            }}
+                          >
+                            {inStock ? "En stock" : "Rupture"}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    <View style={styles.simBody}>
+                      <Text style={styles.simTitle} numberOfLines={1}>
+                        {p.name}
+                      </Text>
+                      <Text style={styles.simPrice}>
+                        {Number(p.price ?? 0)
+                          .toFixed(2)
+                          .replace(".", ",")}{" "}
+                        $
+                      </Text>
+                      <View style={styles.simMeta}>
+                        <MaterialIcons
+                          name="near-me"
+                          size={12}
+                          color="#9ca3af"
+                        ></MaterialIcons>
+                        <Text style={styles.simMetaText}>
+                          {p.distanceKm == null
+                            ? "-"
+                            : `${Number(p.distanceKm).toFixed(1)} km`}
+                        </Text>
+                      </View>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

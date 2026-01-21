@@ -3,6 +3,7 @@ import {
   deleteDoc,
   doc,
   documentId,
+  getDoc,
   getDocs,
   limit,
   orderBy,
@@ -134,26 +135,153 @@ export async function fetchProductsPage({
   inStockOnly = false,
   userLocation = null,
 } = {}) {
-  try{
-const colRef = collection(db, "products");
-  const constraints = [];
+  try {
+    const colRef = collection(db, "products");
+    const constraints = [];
 
-  // Optional filters
-  if (cat && cat !== "Tout") constraints.push(where("cat", "==", cat));
-  if (inStockOnly) constraints.push(where("inStock", "==", true));
+    // Optional filters
+    if (cat && cat !== "Tout") constraints.push(where("cat", "==", cat));
+    if (inStockOnly) constraints.push(where("inStock", "==", true));
 
-  constraints.push(orderBy("createdAt", "desc"));
-  constraints.push(limit(pageSize));
+    constraints.push(orderBy("createdAt", "desc"));
+    constraints.push(limit(pageSize));
 
-  let q = query(colRef, ...constraints);
-  if (cursor) {
-    // When paginating, startAfter must come AFTER orderBy
-    q = query(colRef, ...constraints, startAfter(cursor));
+    let q = query(colRef, ...constraints);
+    if (cursor) {
+      // When paginating, startAfter must come AFTER orderBy
+      q = query(colRef, ...constraints, startAfter(cursor));
+    }
+
+    const snap = await getDocs(q);
+    //1) base products
+    const baseProducts = snap.docs.map((d) => {
+      const data = d.data() || {};
+      return {
+        id: d.id,
+        name: data.name ?? "",
+        price: Number(data.price ?? 0),
+        inStock: !!data.inStock,
+        cat: data.cat ?? "Autres",
+        photoURL: data.photoURL ?? null,
+        desc: data.desc ?? null,
+        sellerId: data.sellerId ?? null,
+        createdAt: data.createdAt ?? null,
+      };
+    });
+    // 2) fetch sellers from users collection
+    const sellerIds = baseProducts.map((p) => p.sellerId).filter(Boolean);
+    const sellersMap = await fetchSellersByIds(sellerIds);
+    // 3) enrich products with seller info + distance
+    const items = baseProducts.map((p) => {
+      const u = sellersMap.get(p.sellerId) || null;
+      const seller = u?.seller || null;
+
+      const sellerName = seller?.storeName ?? null;
+      const sellerAddress =
+        seller?.addressText ?? u?.lastAddress?.formatted ?? null;
+      const sellerLogoURL = seller?.logoURL ?? null;
+      const sellerGps = seller?.gps ?? null;
+      const sellerDescription = seller?.description ?? null;
+
+      const distanceKm =
+        userLocation && sellerGps
+          ? distanceKmBetween(userLocation, sellerGps)
+          : null;
+
+      return {
+        ...p,
+        sellerName,
+        sellerAddress,
+        sellerLogoURL,
+        sellerGps,
+        distanceKm,
+        sellerDescription,
+      };
+    });
+
+    const nextCursor = snap.docs.length
+      ? snap.docs[snap.docs.length - 1]
+      : null;
+    const hasMore = snap.docs.length === pageSize;
+
+    return { items, cursor: nextCursor, hasMore };
+  } catch (e) {
+    console.log("❌ fetchProductsPage failed :", e?.message ?? e);
+    throw e;
   }
+}
+
+//1) fetch product by id (for productDetailsScreen)
+export async function fetchProductById({ productId, userLocation = null }) {
+  if (!productId) throw new Error("Missing productId");
+  const ref = doc(db, "products", productId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return null;
+
+  const d = snap.data() || {};
+  const base = {
+    id: snap.id,
+    name: d.name ?? "",
+    price: Number(d.price ?? 0),
+    inStock: !!d.inStock,
+    cat: d.cat ?? "Autres",
+    photoURL: d.photoURL ?? null,
+    desc: d.desc ?? null,
+    sellerId: d.sellerId ?? null,
+    createdAt: d.createdAt ?? null,
+  };
+
+  const sellersMap = await fetchSellersByIds([base.sellerId].filter(Boolean));
+  const u = sellersMap.get(base.sellerId) || null;
+//   console.log("SELLER RAW USER DOC", base.sellerId, u);
+// console.log("SELLER DISTANCEKM", u?.seller?.description);
+  const seller = u?.seller || null;
+
+  const sellerName = seller?.storeName ?? null;
+  const sellerAddress =
+    seller?.addressText ?? u?.lastAddress?.formatted ?? null;
+  const sellerLogoURL = seller?.logoURL ?? null;
+  const sellerGps = seller?.gps ?? null;
+  const sellerDescription = seller?.description ?? null;
+
+  const distanceKm =
+    userLocation && sellerGps
+      ? distanceKmBetween(userLocation, sellerGps)
+      : null;
+
+  return {
+    ...base,
+    sellerName,
+    sellerAddress,
+    sellerLogoURL,
+    sellerGps,
+    distanceKm,
+    sellerDescription,
+  };
+}
+
+//2) similar products by cat
+export async function fetchSimilarProducts({
+  cat,
+  excludeProductId = null,
+  pageSize = 6,
+  userLocation = null,
+} = {}) {
+  if (!cat) return [];
+
+  const colRef = collection(db, "products");
+
+  // ⚠️ Firestore: where(cat==) + orderBy(createdAt) => index
+  const q = query(
+    colRef,
+    where("cat", "==", cat),
+    orderBy("createdAt", "desc"),
+    limit(pageSize + 3),
+  );
 
   const snap = await getDocs(q);
-  //1) base products
-  const baseProducts = snap.docs.map((d) => {
+
+  const base = snap.docs.map((d) => {
     const data = d.data() || {};
     return {
       id: d.id,
@@ -167,18 +295,24 @@ const colRef = collection(db, "products");
       createdAt: data.createdAt ?? null,
     };
   });
-  // 2) fetch sellers from users collection
-  const sellerIds = baseProducts.map((p) => p.sellerId).filter(Boolean);
+
+  const filtered = excludeProductId
+    ? base.filter((p) => p.id !== excludeProductId)
+    : base;
+
+  const sellerIds = filtered.map((p) => p.sellerId).filter(Boolean);
   const sellersMap = await fetchSellersByIds(sellerIds);
-  // 3) enrich products with seller info + distance
-  const items = baseProducts.map((p) => {
+
+  const enriched = filtered.map((p) => {
     const u = sellersMap.get(p.sellerId) || null;
     const seller = u?.seller || null;
 
     const sellerName = seller?.storeName ?? null;
-    const sellerAddress = seller?.addressText ?? null;
+    const sellerAddress =
+      seller?.addressText ?? u?.lastAddress?.formatted ?? null;
     const sellerLogoURL = seller?.logoURL ?? null;
     const sellerGps = seller?.gps ?? null;
+    const sellerDescription = seller?.description ?? null;
 
     const distanceKm =
       userLocation && sellerGps
@@ -192,15 +326,73 @@ const colRef = collection(db, "products");
       sellerLogoURL,
       sellerGps,
       distanceKm,
+      sellerDescription,
     };
   });
 
-  const nextCursor = snap.docs.length ? snap.docs[snap.docs.length - 1] : null;
-  const hasMore = snap.docs.length === pageSize;
+  return enriched.slice(0, pageSize);
+}
 
-  return {items, cursor : nextCursor, hasMore};
-  }catch(e){
-    console.log("❌ fetchProductsPage failed :", e?.message ?? e);
-    throw e;
-  }
+//3)product by the same grocery store
+export async function fetchProductsBySellerId({
+  sellerId,
+  pageSize = 200,
+  userLocation = null,
+} = {}) {
+  if (!sellerId) return [];
+
+  const colRef = collection(db, "products");
+
+  const q = query(
+    colRef,
+    where("sellerId", "==", sellerId),
+    orderBy("createdAt", "desc"),
+    limit(pageSize),
+  );
+
+  console.log("🔎 products query sellerId=", sellerId);
+
+  const snap = await getDocs(q);
+
+  const base = snap.docs.map((d) => {
+    const data = d.data() || {};
+    return {
+      id: d.id,
+      name: data.name ?? "",
+      price: Number(data.price ?? 0),
+      inStock: !!data.inStock,
+      cat: data.cat ?? "Autres",
+      photoURL: data.photoURL ?? null,
+      desc: data.desc ?? null,
+      sellerId: data.sellerId ?? null,
+      createdAt: data.createdAt ?? null,
+    };
+  });
+
+  //seller info + distance (same logic)
+  const sellersMap = await fetchSellersByIds([sellerId]);
+  const u = sellersMap.get(sellerId) || null;
+  const seller = u?.seller || null;
+
+  const sellerName = seller?.storeName ?? null;
+  const sellerAddress =
+    seller?.addressText ?? u?.lastAddress?.formatted ?? null;
+  const sellerLogoURL = seller?.logoURL ?? null;
+  const sellerGps = seller?.gps ?? null;
+  const sellerDescription = seller?.description ?? null;
+
+  const distanceKm =
+    userLocation && sellerGps
+      ? distanceKmBetween(userLocation, sellerGps)
+      : null;
+
+  return base.map((p) => ({
+    ...p,
+    sellerName,
+    sellerAddress,
+    sellerLogoURL,
+    sellerGps,
+    distanceKm,
+    sellerDescription,
+  }));
 }

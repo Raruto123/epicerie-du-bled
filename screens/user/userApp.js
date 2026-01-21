@@ -214,13 +214,23 @@ export default function UserApp() {
             ></HomeScreen>
           )}
         </Tab.Screen>
-        <Tab.Screen
-          name="EPICERIES"
-          component={GroceriesListScreen}
-        ></Tab.Screen>
+        <Tab.Screen name="EPICERIES">
+          {(props) => (
+            <GroceriesListScreen
+              {...props}
+              userLocation={location}
+              locationStatus={locationStatus}
+            ></GroceriesListScreen>
+          )}
+        </Tab.Screen>
         <Tab.Screen name="FAVORIS">
           {(props) => (
-            <FavoritesScreen {...props} favorites={favorites}></FavoritesScreen>
+            <FavoritesScreen
+              {...props}
+              favorites={favorites}
+              userLocation={location}
+              locationStatus={locationStatus}
+            ></FavoritesScreen>
           )}
         </Tab.Screen>
         <Tab.Screen name="PROFIL" component={ProfileScreen}></Tab.Screen>

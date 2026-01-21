@@ -19,60 +19,8 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { KeyboardAvoidingView } from "react-native";
+import { fetchGroceriesList } from "../../services/userService";
 
-// ✅ Mock groceries (à remplacer par Firestore + geo plus tard)
-function makeMockGroceries() {
-  return [
-    {
-      id: "g-1",
-      name: "Saveurs de Dakar",
-      address: "1234 Rue Ontario Est, Montréal",
-      distanceKm: 1.2,
-      photoURL:
-        "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80",
-    },
-    {
-      id: "g-2",
-      name: "Marché Tropical",
-      address: "456 Avenue Papineau, Montréal",
-      distanceKm: 2.8,
-      photoURL:
-        "https://images.unsplash.com/photo-1604719312566-8912e9227c6a?auto=format&fit=crop&w=900&q=80",
-    },
-    {
-      id: "g-3",
-      name: "Maman Afrique",
-      address: "789 Boul. St-Laurent, Montréal",
-      distanceKm: 0.5,
-      photoURL:
-        "https://images.unsplash.com/photo-1580915411954-282cb1b0d780?auto=format&fit=crop&w=900&q=80",
-    },
-    {
-      id: "g-4",
-      name: "Soleil d'Afrique",
-      address: "2021 Rue Sherbrooke, Montréal",
-      distanceKm: 3.4,
-      photoURL:
-        "https://images.unsplash.com/photo-1580913428735-bd3c269d6a82?auto=format&fit=crop&w=900&q=80",
-    },
-    {
-      id: "g-5",
-      name: "Afro Market Plus",
-      address: "55 Rue Jean-Talon Ouest, Montréal",
-      distanceKm: 4.1,
-      photoURL:
-        "https://images.unsplash.com/photo-1580915411954-282cb1b0d780?auto=format&fit=crop&w=900&q=80",
-    },
-    {
-      id: "g-6",
-      name: "Teranga Épices",
-      address: "980 Rue Bélanger, Montréal",
-      distanceKm: 1.9,
-      photoURL:
-        "https://images.unsplash.com/photo-1604719312566-8912e9227c6a?auto=format&fit=crop&w=900&q=80",
-    },
-  ];
-}
 function FiltersModal({
   visible,
   onClose,
@@ -228,7 +176,7 @@ function FiltersModal({
     </Modal>
   );
 }
-export default function GroceriesListScreen({ navigation }) {
+export default function GroceriesListScreen({ navigation, userLocation, locationStatus }) {
   const insets = useSafeAreaInsets();
 
   const [loading, setLoading] = useState(true);
@@ -239,19 +187,32 @@ export default function GroceriesListScreen({ navigation }) {
   const [nearBy, setNearBy] = useState(null);
   const DEFAULT_NEAR = null;
 
-
   useEffect(() => {
+    let alive = true;
     (async () => {
       setLoading(true);
-      await new Promise((r) => setTimeout(r, 350));
-      setGroceries(makeMockGroceries());
-      setLoading(false);
+      try {
+        const list = await fetchGroceriesList({
+          pageSize: 50,
+          userLocation
+        });
+        if (!alive) return;
+        setGroceries(list);
+      } catch (e) {
+        console.log("❌ fetchGroceriesList failed:", e?.message ?? e);
+        if (alive) setGroceries([]);
+      } finally {
+        if (alive) setLoading(false);
+      }
     })();
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const hasActiveFilters = useMemo(() => nearBy !== DEFAULT_NEAR, [nearBy]);
 
- const filtered = useMemo(() => {
+  const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
 
     const base = groceries.filter((g) => {
@@ -262,21 +223,21 @@ export default function GroceriesListScreen({ navigation }) {
     });
 
     const sorted = [...base];
-    if (nearBy === "near") sorted.sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
-    if (nearBy === "far") sorted.sort((a, b) => (b.distanceKm ?? 0) - (a.distanceKm ?? 0));
+    if (nearBy === "near")
+      sorted.sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
+    if (nearBy === "far")
+      sorted.sort((a, b) => (b.distanceKm ?? 0) - (a.distanceKm ?? 0));
 
     return sorted;
   }, [groceries, query, nearBy]);
 
   const onOpenGrocery = useCallback(
     (g) => {
-      navigation.navigate("GroceryStore", { grocery: g });
-      // ✅ plus tard: navigate("GroceryDetails", { groceryId: g.id })
-      // Pour l’instant tu peux juste log
-      // navigation.navigate("GroceryStoreScreen", { grocery: g });
+      navigation.navigate("GroceryStore", { grocery: g, userLocation });
       console.log("open grocery:", g?.id);
+      console.log('voici g =', g)
     },
-    [navigation],
+    [navigation, userLocation],
   );
 
   const renderHeader = () => (

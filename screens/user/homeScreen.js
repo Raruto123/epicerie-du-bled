@@ -206,9 +206,10 @@ export default function HomeScreen({
 
   const onOpenProduct = useCallback(
     (product) => {
-      navigation.navigate("ProductDetails", { product });
+      navigation.navigate("ProductDetails", { product, userLocation : locationStatus === "granted" ? userLocation : null });
+      console.log("voici product =", product)
     },
-    [navigation],
+    [navigation, userLocation, locationStatus],
   );
 
   const onToggleFav = useCallback(async (product) => {

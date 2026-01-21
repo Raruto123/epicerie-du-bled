@@ -24,49 +24,7 @@ import {
   toggleFavoriteProduct,
 } from "../../services/userService";
 
-//Mock data à remplacer par Firestore plus tard
-function makeMockFavs() {
-  return [
-    {
-      id: "fav-1",
-      name: "Plantain Mûr",
-      price: 1.99,
-      distanceKm: 1.2,
-      inStock: true,
-      photoURL:
-        "https://images.unsplash.com/photo-1603048297172-c92544798d3a?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      id: "fav-2",
-      name: "Huile de Palme",
-      price: 8.99,
-      distanceKm: 3.1,
-      inStock: true,
-      photoURL:
-        "https://images.unsplash.com/photo-1604908176997-125b5bd7be3d?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      id: "fav-3",
-      name: "Poisson Fumé",
-      price: 12.0,
-      distanceKm: 0.8,
-      inStock: false,
-      photoURL:
-        "https://images.unsplash.com/photo-1548946526-f69e2424cf45?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      id: "fav-4",
-      name: "Attiéké Premium",
-      price: 5.5,
-      distanceKm: 2.5,
-      inStock: true,
-      photoURL:
-        "https://images.unsplash.com/photo-1604909053196-6f1e8b9e3c7f?auto=format&fit=crop&w=800&q=80",
-    },
-  ];
-}
-
-export default function FavoritesScreen({ navigation, favorites = [] }) {
+export default function FavoritesScreen({ navigation, favorites = [], userLocation, locationStatus }) {
   const insets = useSafeAreaInsets();
 
   const [query, setQuery] = useState("");
@@ -150,7 +108,7 @@ export default function FavoritesScreen({ navigation, favorites = [] }) {
     return (
       <Pressable
         style={styles.card}
-        onPress={() => navigation.navigate("ProductDetails", { product: item })}
+        onPress={() => navigation.navigate("ProductDetails", { product: item, userLocation })}
       >
         {/* Favorite (filled) */}
         <Pressable

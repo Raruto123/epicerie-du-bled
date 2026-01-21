@@ -1,10 +1,22 @@
-import { FlatList, Image, Pressable, StyleSheet, View, Keyboard, TextInput } from "react-native";
+import {
+  FlatList,
+  Image,
+  Pressable,
+  StyleSheet,
+  View,
+  Keyboard,
+  TextInput,
+} from "react-native";
 import { COLORS } from "../../constants/colors";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Text } from "react-native";
 import { ActivityIndicator } from "react-native";
+import { fetchProductsBySellerId } from "../../services/sellerProductsService";
 
 // ✅ Catégories style "sections"
 const SECTION_ORDER = [
@@ -14,103 +26,45 @@ const SECTION_ORDER = [
   "Poissons",
 ];
 
-// ✅ Mock products grouped by category
-function makeMockProductsForGrocery(groceryId) {
-  const imgA =
-    "https://images.unsplash.com/photo-1603048297172-c92544798d3a?auto=format&fit=crop&w=900&q=80";
-  const imgB =
-    "https://images.unsplash.com/photo-1604908176997-125b5bd7be3d?auto=format&fit=crop&w=900&q=80";
-  const imgC =
-    "https://images.unsplash.com/photo-1548946526-f69e2424cf45?auto=format&fit=crop&w=900&q=80";
-
-  return [
-    {
-      id: `${groceryId}-p1`,
-      name: "Igname Puna Premium",
-      cat: "Tubercules",
-      price: 5.99,
-      distanceKm: 1.2,
-      inStock: true,
-      photoURL: imgC,
-      isFav: false,
-    },
-    {
-      id: `${groceryId}-p2`,
-      name: "Manioc Frais",
-      cat: "Tubercules",
-      price: 3.45,
-      distanceKm: 1.2,
-      inStock: false,
-      photoURL: imgA,
-      isFav: true,
-    },
-    {
-      id: `${groceryId}-p3`,
-      name: "Piment Oiseau",
-      cat: "Épices & Condiments",
-      price: 2.99,
-      distanceKm: 1.2,
-      inStock: true,
-      photoURL: imgB,
-      isFav: false,
-    },
-    {
-      id: `${groceryId}-p4`,
-      name: "Mélange Yassa",
-      cat: "Épices & Condiments",
-      price: 4.5,
-      distanceKm: 1.2,
-      inStock: true,
-      photoURL: imgC,
-      isFav: false,
-    },
-    {
-      id: `${groceryId}-p5`,
-      name: "Gombo Frais",
-      cat: "Légumes",
-      price: 4.99,
-      distanceKm: 1.2,
-      inStock: true,
-      photoURL: imgA,
-      isFav: false,
-    },
-    {
-      id: `${groceryId}-p6`,
-      name: "Poisson Fumé",
-      cat: "Poissons",
-      price: 12.0,
-      distanceKm: 1.2,
-      inStock: false,
-      photoURL: imgB,
-      isFav: true,
-    },
-  ];
-}
-
 function formatPrice(x) {
   const n = Number(x ?? 0);
   return n.toFixed(2).replace(".00", ".00");
 }
 
 export default function GroceryStoreScreen({ navigation, route }) {
+  console.log(route.params)
   const insets = useSafeAreaInsets();
   const grocery = route?.params?.grocery ?? null;
+  const userLocation = route?.params?.userLocation ?? null;
 
   const groceryId = grocery?.id ?? "g-0";
   const groceryName = grocery?.name ?? "Épicerie";
   const groceryAddress = grocery?.address ?? "Adresse inconnue";
-  const groceryDistance = Number(grocery?.distanceKm ?? 0).toFixed(1);
+  const groceryDistance =
+    grocery?.distanceKm == null ? null : Number(grocery.distanceKm);
+  const groceryDesc = grocery?.description ?? "Aucune description kgjgjg";
 
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [items, setItems] = useState([]);
 
   useEffect(() => {
+    let alive = true;
     (async () => {
       setLoading(true);
-      await new Promise((r) => setTimeout(r, 250));
-      setItems(makeMockProductsForGrocery(groceryId));
-      setLoading(false);
+      try {
+        const list = await fetchProductsBySellerId({
+          sellerId: groceryId,
+          userLocation,
+        });
+        if (!alive) return;
+        setItems(list.map((p) => ({ ...p })));
+      } catch (e) {
+        console.log("❌ fetchProductsBySellerId failed:", e?.message ?? e);
+        if (alive) setItems([]);
+      } finally {
+        if (alive) setLoading(false);
+      }
     })();
   }, [groceryId]);
 
@@ -123,16 +77,11 @@ export default function GroceryStoreScreen({ navigation, route }) {
   const openProduct = useCallback(
     (p) => {
       navigation.navigate("ProductDetails", {
-        product: {
-          ...p,
-          sellerName: groceryName,
-          sellerAddress: groceryAddress,
-          sellerDistanceKm: Number(grocery?.distanceKm ?? p.distanceKm ?? 0),
-          sellerLogoURL: grocery?.photoURL ?? null,
-        },
+        product: p,
+        userLocation,
       });
     },
-    [navigation, groceryName, groceryAddress, grocery],
+    [navigation, userLocation],
   );
 
   const filtered = useMemo(() => {
@@ -201,10 +150,7 @@ export default function GroceryStoreScreen({ navigation, route }) {
           </View>
         </View>
 
-        <Text style={styles.storeDesc}>
-          Retrouvez tous les produits authentiques du Sénégal et de l'Afrique de
-          l'Ouest. Importations directes et produits frais hebdomadaires.
-        </Text>
+        <Text style={styles.storeDesc}>{groceryDesc}</Text>
       </View>
 
       {/* Main content spacing */}
@@ -225,7 +171,9 @@ export default function GroceryStoreScreen({ navigation, route }) {
               {groceryAddress}
             </Text>
             <Text style={styles.locationSub}>
-              À {groceryDistance} km de votre position
+              {groceryDistance == null
+                ? "Distance inconnue"
+                : `À ${groceryDistance.toFixed(1)} km de votre position`}{" "}
             </Text>
           </View>
 
@@ -343,7 +291,9 @@ export default function GroceryStoreScreen({ navigation, route }) {
                       <Text style={styles.pUnit}>{item.unit || ""}</Text>
                     </Text>
                     <Text style={styles.pDist}>
-                      {Number(item.distanceKm ?? 0).toFixed(1)} km
+                      {item.distanceKm == null
+                        ? "-"
+                        : `${Number(item.distanceKm).toFixed(1)} km`}
                     </Text>
                   </View>
                 </View>
