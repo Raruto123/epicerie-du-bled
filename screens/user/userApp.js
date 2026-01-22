@@ -29,6 +29,7 @@ import {
   saveUserLocation,
 } from "../../services/userLocationService";
 import { subscribeUserFavorites } from "../../services/userService";
+import { onAuthStateChanged } from "firebase/auth";
 
 const Tab = createBottomTabNavigator();
 export default function UserApp() {
@@ -41,6 +42,8 @@ export default function UserApp() {
 
   const [favorites, setFavorites] = useState([]);
   const [favIds, setFavIds] = useState(new Set());
+
+  const [uid, setUid] = useState(null)
 
   const [homeRefreshKey, setHomeRefreshKey] = useState(0);
 
@@ -100,24 +103,31 @@ export default function UserApp() {
     })();
   }, []);
 
-  useEffect(() => {
-    const uid = auth.currentUser?.uid;
-    if (!uid) {
-      setFavorites([]);
-      setFavIds(new Set());
-      return;
-    }
 
-    const unsub = subscribeUserFavorites({
-      uid,
-      cb: ({ favoritesArray, favIdsSet }) => {
-        setFavorites(favoritesArray);
-        setFavIds(favIdsSet);
-      },
-    });
+useEffect(() => {
+  const unsub = onAuthStateChanged(auth, (user) => {
+    setUid(user?.uid ?? null);
+  });
+  return unsub;
+}, []);
 
-    return () => unsub?.();
-  }, []);
+useEffect(() => {
+  if (!uid) {
+    setFavorites([]);
+    setFavIds(new Set());
+    return;
+  }
+
+  const unsub = subscribeUserFavorites({
+    uid,
+    cb: ({ favoritesArray, favIdsSet }) => {
+      setFavorites(favoritesArray);
+      setFavIds(favIdsSet);
+    },
+  });
+
+  return () => unsub?.();
+}, [uid]);
 
   const markGateDone = async () => {
     await AsyncStorage.setItem(LOCATION_GATE_KEY.HAS_SEEN_GATE, "true");

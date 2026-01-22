@@ -21,6 +21,17 @@ import {
   fetchProductById,
   fetchSimilarProducts,
 } from "../../services/sellerProductsService";
+import { auth, db } from "../../lib/firebase";
+import { toggleFavoriteProduct } from "../../services/userService";
+import { doc, getDoc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
+import {
+  clearCompareProduct,
+  getCompareProduct,
+  setCompareProduct,
+  subscribeCompareProduct,
+} from "../../services/userCompareService";
+import CompareBubble from "../../components/compareBubble";
 // Petit helper (MVP) : ouvrir Google Maps / Apple Maps
 function openMapsWithAddress(address) {
   const q = encodeURIComponent(address ?? "");
@@ -36,6 +47,7 @@ export default function ProductDetailsScreen({ navigation, route }) {
   // ✅ on reçoit le produit depuis HomeScreen
   const productParam = route?.params.product ?? null;
   const userLocation = route?.params.userLocation ?? null;
+  // console.log("product de productDetailsScreen :", productParam);
 
   const productId = productParam.id ?? null;
 
@@ -45,25 +57,64 @@ export default function ProductDetailsScreen({ navigation, route }) {
   const [similar, setSimilar] = useState([]);
   const [loadingSimilar, setLoadingSimilar] = useState(true);
 
+  const [authReady, setAuthReady] = useState(false);
+  const [uid, setUid] = useState(null);
+
+  const [compareProduct, setCompareProductState] = useState(null);
+  useEffect(() => {
+    const unsub = subscribeCompareProduct((p) => setCompareProductState(p));
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setUid(user?.uid ?? null);
+      setAuthReady(true);
+    });
+    return unsub;
+  }, []);
+
   useEffect(() => {
     let alive = true;
     (async () => {
       if (!productId) return;
+      if (!authReady) return;
+
+      // ✅ si tu veux que le coeur reste correct, n'écrase pas isFav tant que uid inconnu
+      if (!uid) return;
+
       setLoadingProduct(true);
       try {
-        const full = await fetchProductById({ productId, userLocation });
+        const full = await fetchProductById({ productId, userLocation, uid });
         if (!alive) return;
-        if (full) setProduct(full);
+
+        if (full) {
+          setProduct((prev) => {
+            const prevFav = prev?.isFav;
+            const nextFav =
+              full?.isFav === undefined || full?.isFav === null
+                ? prevFav
+                : full.isFav;
+
+            return {
+              ...(prev ?? {}),
+              ...full,
+              isFav: nextFav, // ✅ protège le coeur
+            };
+          });
+        }
+        console.log("full.isFav =", full?.isFav);
       } catch (e) {
-        console.log("❌ fetchProductById failed :", e?.messge);
+        console.log("❌ fetchProductById failed :", e?.message ?? e);
       } finally {
         if (alive) setLoadingProduct(false);
       }
     })();
+
     return () => {
       alive = false;
     };
-  }, [productId, userLocation]);
+  }, [productId, userLocation, authReady, uid]);
 
   // fallback si jamais on arrive sans rien
   const data = useMemo(() => {
@@ -125,6 +176,102 @@ export default function ProductDetailsScreen({ navigation, route }) {
     };
   }, [data.cat, data.id, userLocation]);
 
+  const onToggleFav = async () => {
+    const uidNow = uid;
+    if (!uidNow) {
+      console.log("⚠️ user not logged in");
+      return;
+    }
+
+    const productSnapshot = {
+      id: data.id,
+      name: data.name,
+      price: data.price,
+      inStock: data.inStock,
+      cat: data.cat,
+      photoURL: data.photoURL,
+      desc: data.desc,
+      distanceKm: data.seller.distanceKm ?? null,
+
+      sellerId: data?.seller.id ?? null,
+      sellerName: data?.seller?.name ?? null,
+      sellerAddress: data?.seller?.address ?? null,
+      sellerLogoURL: data?.seller?.logoURL ?? null,
+      sellerGps: data?.seller?.gps ?? null,
+
+      createdAt: product?.createdAt ?? null,
+    };
+    const prev = !!data.isFav;
+
+    setProduct((p) => (p ? { ...p, isFav: !prev } : p));
+
+    try {
+      const res = await toggleFavoriteProduct({
+        uid: uidNow,
+        product: productSnapshot,
+      });
+      setProduct((p) => (p ? { ...p, isFav: !!res.isFav } : p));
+    } catch (e) {
+      console.log(
+        "❌ toggleFavorite from ProductDetails failed:",
+        e?.message ?? e,
+      );
+      setProduct((p) => (p ? { ...p, isFav: prev } : p));
+    }
+  };
+  useEffect(() => {
+    if (productParam?.isFav == null) return;
+    setProduct((prev) => ({ ...(prev ?? {}), isFav: productParam.isFav }));
+  }, [productParam?.id, productParam?.isFav]);
+  useEffect(() => {
+    console.log("ProductDetails params isFav =", route?.params?.product?.isFav);
+  }, [route?.params?.product?.id]);
+
+  const buildCompareSnapshot = () => ({
+    id: data.id,
+    name: data.name,
+    price: data.price,
+    inStock: data.inStock,
+    cat: data.cat,
+    photoURL: data.photoURL,
+    desc: data.desc,
+    distanceKm: data.seller?.distanceKm ?? null,
+
+    sellerId: data?.seller?.id ?? null,
+    sellerName: data?.seller?.name ?? null,
+    sellerAddress: data?.seller?.address ?? null,
+    sellerLogoURL: data?.seller?.logoURL ?? null,
+    sellerGps: data?.seller?.gps ?? null,
+
+    createdAt: product?.createdAt ?? null,
+  });
+
+  const onPressCompare = async () => {
+    const snapshot = buildCompareSnapshot();
+    const first = await getCompareProduct();
+    // 1) pas de bulle -> on la crée
+    if (!first) {
+      await setCompareProduct(snapshot);
+      return;
+    }
+
+    //  si même produit, on ignore
+    if (first?.id === snapshot.id) {
+      console.log("⚠️ ce produit est déjà sélectionné pour comparaison");
+      return;
+    }
+
+    // 2) bulle déjà active -> on va vers écran comparaison (à faire après)
+    // ⚠️ remplace "CompareScreen" par ton vrai nom de route quand tu le crées
+    navigation.navigate("CompareScreen", {
+      first,
+      second: snapshot,
+      userLocation,
+    });
+  };
+
+  const compareActive = !!compareProduct;
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "right", "left"]}>
       {/* <StatusBar */}
@@ -181,6 +328,18 @@ export default function ProductDetailsScreen({ navigation, route }) {
                 </Text>
               </View>
             </View>
+            {/* Fav button (top-right) */}
+            <Pressable
+              style={styles.heroFavBtn}
+              onPress={onToggleFav}
+              hitSlop={10}
+            >
+              <MaterialIcons
+                name={isFav ? "favorite" : "favorite-border"}
+                size={22}
+                color={isFav ? COLORS.primary : "#71717a"}
+              />
+            </Pressable>
           </View>
         </View>
         {/* Title+CaT+price */}
@@ -228,7 +387,7 @@ export default function ProductDetailsScreen({ navigation, route }) {
                         distanceKm: data.seller.distanceKm,
                         photoURL: data.seller.logoURL,
                         description: data.seller.description,
-                        gps: data.seller.gps
+                        gps: data.seller.gps,
                       },
                       userLocation,
                     })
@@ -274,13 +433,27 @@ export default function ProductDetailsScreen({ navigation, route }) {
                 ></MaterialIcons>
                 <Text style={styles.primaryBtnText}>Itinéraire</Text>
               </Pressable>
-              <Pressable style={styles.secondaryBtn} onPress={() => {}}>
+              <Pressable
+                style={[
+                  styles.secondaryBtn,
+                  compareActive && styles.secondaryBtnActive,
+                ]}
+                onPress={onPressCompare}
+              >
                 <MaterialIcons
                   name="compare-arrows"
                   size={20}
-                  color={COLORS.primary}
+                  color={compareActive ? "white" : COLORS.primary}
                 ></MaterialIcons>
-                <Text style={styles.secondaryBtnText}>Comparer</Text>
+                <Text
+                  style={[
+                    styles.secondaryBtnText,
+                    compareActive && styles.secondaryBtnTextActive,
+                  ]}
+                >
+                  Comparer
+                </Text>
+                {compareActive && <View style={styles.compareDot}></View>}
               </Pressable>
             </View>
           </View>
@@ -386,6 +559,17 @@ export default function ProductDetailsScreen({ navigation, route }) {
           )}
         </View>
       </ScrollView>
+      <CompareBubble
+        product={compareProduct}
+        topSafe={insets.top}
+        tabBarHeight={80}
+        onDropToTrash={async () => {
+          await clearCompareProduct();
+        }}
+        onPress={() => {
+          console.log("Bubble pressed");
+        }}
+      ></CompareBubble>
     </SafeAreaView>
   );
 }
@@ -600,4 +784,35 @@ const styles = StyleSheet.create({
   simPrice: { fontSize: 16, fontWeight: "900", color: COLORS.primary },
   simMeta: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
   simMetaText: { fontSize: 11, fontWeight: "800", color: "#9ca3af" },
+  heroFavBtn: {
+    position: "absolute",
+    top: 14,
+    right: 14,
+    width: 42,
+    height: 42,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.92)",
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.08)",
+  },
+  secondaryBtnActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  secondaryBtnTextActive: {
+    color: "white",
+  },
+  compareDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 99,
+    backgroundColor: "#22c55e",
+    position: "absolute",
+    top: 10,
+    right: 10,
+    borderWidth: 2,
+    borderColor: "white",
+  },
 });

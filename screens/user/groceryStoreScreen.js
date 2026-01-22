@@ -12,11 +12,23 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Text } from "react-native";
 import { ActivityIndicator } from "react-native";
 import { fetchProductsBySellerId } from "../../services/sellerProductsService";
+import { auth } from "../../lib/firebase";
+import {
+  subscribeUserFavorites,
+  toggleFavoriteProduct,
+} from "../../services/userService";
+import { onAuthStateChanged } from "firebase/auth";
 
 // ✅ Catégories style "sections"
 const SECTION_ORDER = [
@@ -32,7 +44,7 @@ function formatPrice(x) {
 }
 
 export default function GroceryStoreScreen({ navigation, route }) {
-  console.log(route.params)
+  console.log(route.params);
   const insets = useSafeAreaInsets();
   const grocery = route?.params?.grocery ?? null;
   const userLocation = route?.params?.userLocation ?? null;
@@ -44,12 +56,56 @@ export default function GroceryStoreScreen({ navigation, route }) {
     grocery?.distanceKm == null ? null : Number(grocery.distanceKm);
   const groceryDesc = grocery?.description ?? "Aucune description kgjgjg";
 
+  const logoSource = useMemo(() => {
+    return grocery?.photoURL ? { uri: grocery.photoURL } : null;
+  }, [grocery?.photoURL]);
+
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [items, setItems] = useState([]);
 
+  const [uid, setUid] = useState(null);
+
+  const [favIdsSet, setFavIdsSet] = useState(new Set());
+
+  const favIdsRef = useRef(new Set());
+
+  useEffect(() => {
+    const unsubAuth = onAuthStateChanged(auth, (user) => {
+      setUid(user?.uid ?? null);
+    });
+    return unsubAuth;
+  }, []);
+
+  useEffect(() => {
+    if (!uid) return;
+
+    const unsubFav = subscribeUserFavorites({
+      uid,
+      cb: ({ favIdsSet }) => {
+        const nextSet =
+          favIdsSet instanceof Set ? favIdsSet : new Set(favIdsSet || []);
+        // ✅ IMPORTANT: clone pour éviter Set muté / référence identique
+        favIdsRef.current = new Set(nextSet);
+
+        console.log(
+          "fav ids sample:",
+          Array.from(favIdsRef.current).slice(0, 5),
+        );
+
+        // ✅ patch direct sur items -> pas de loading, pas de refetch
+        setItems((prev) =>
+          prev.map((p) => ({ ...p, isFav: favIdsRef.current.has(p.id) })),
+        );
+      },
+    });
+
+    return unsubFav;
+  }, [uid]);
+
   useEffect(() => {
     let alive = true;
+
     (async () => {
       setLoading(true);
       try {
@@ -58,7 +114,15 @@ export default function GroceryStoreScreen({ navigation, route }) {
           userLocation,
         });
         if (!alive) return;
-        setItems(list.map((p) => ({ ...p })));
+
+        console.log(
+          "first items ids:",
+          list.slice(0, 5).map((x) => x.id),
+        );
+
+        setItems(
+          list.map((p) => ({ ...p, isFav: favIdsRef.current.has(p.id) })),
+        );
       } catch (e) {
         console.log("❌ fetchProductsBySellerId failed:", e?.message ?? e);
         if (alive) setItems([]);
@@ -66,13 +130,66 @@ export default function GroceryStoreScreen({ navigation, route }) {
         if (alive) setLoading(false);
       }
     })();
-  }, [groceryId]);
 
-  const toggleFav = useCallback((id) => {
-    setItems((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, isFav: !p.isFav } : p)),
-    );
-  }, []);
+    return () => {
+      alive = false;
+    };
+  }, [groceryId, userLocation]); // ✅ pas de favIdsSet
+
+  const onToggleFav = useCallback(
+    async (item) => {
+      const uid = auth.currentUser?.uid;
+      if (!uid) {
+        console.log("⚠️ user not logged in");
+        return;
+      }
+
+      const prev = !!item.isFav;
+      setItems((prevItems) =>
+        prevItems.map((p) => (p.id === item.id ? { ...p, isFav: !prev } : p)),
+      );
+
+      const productSnapshot = {
+        id: item.id,
+        name: item.name ?? null,
+        price: item.price ?? null,
+        inStock: !!item.inStock,
+        cat: item.cat ?? null,
+        photoURL: item.photoURL ?? null,
+        desc: item.desc ?? null,
+        distanceKm: item.distanceKm ?? null,
+
+        sellerId: groceryId,
+        sellerName: groceryName,
+        sellerAddress: groceryAddress,
+        sellerLogoURL: grocery?.photoURL ?? null,
+        sellerGps: grocery?.gps ?? null,
+
+        createdAt: item.createdAt ?? null,
+      };
+
+      try {
+        const res = await toggleFavoriteProduct({
+          uid,
+          product: productSnapshot,
+        });
+        setItems((prevItems) =>
+          prevItems.map((p) =>
+            p.id === item.id ? { ...p, isFav: !!res.isFav } : p,
+          ),
+        );
+      } catch (e) {
+        console.log(
+          "❌ toggleFavorite from GroceryStore failed:",
+          e?.message ?? e,
+        );
+        setItems((prevItems) =>
+          prevItems.map((p) => (p.id === item.id ? { ...p, isFav: prev } : p)),
+        );
+      }
+    },
+    [groceryId, groceryName, groceryAddress, grocery, setItems],
+  );
 
   const openProduct = useCallback(
     (p) => {
@@ -113,103 +230,111 @@ export default function GroceryStoreScreen({ navigation, route }) {
     return orderedKeys.map((k) => ({ key: k, items: map.get(k) || [] }));
   }, [filtered]);
 
-  const ListHeader = () => (
-    <View>
-      {/* Header top white */}
-      <View style={styles.headerShell}>
-        <View style={styles.headerRow}>
-          <Pressable
-            onPress={() => navigation.goBack()}
-            style={styles.backBtn}
-            hitSlop={10}
-          >
-            <MaterialIcons
-              name="arrow-back-ios-new"
-              size={18}
-              color={COLORS.text}
-            ></MaterialIcons>
-          </Pressable>
-        </View>
-        {/* Store identity */}
-        <View style={styles.identityWrap}>
-          <View style={styles.logoOuter}>
-            {!!grocery?.photoURL ? (
-              <Image
-                source={{ uri: grocery.photoURL }}
-                style={styles.logoImg}
-              ></Image>
-            ) : (
-              <View style={styles.logoImg}></View>
-            )}
-          </View>
-
-          <View style={{ flex: 1 }}>
-            <Text style={styles.storeName} numberOfLines={2}>
-              {groceryName}
-            </Text>
-          </View>
-        </View>
-
-        <Text style={styles.storeDesc}>{groceryDesc}</Text>
-      </View>
-
-      {/* Main content spacing */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 16, gap: 14 }}>
-        {/* Location card */}
-        <View style={styles.locationCard}>
-          <View style={styles.locationIcon}>
-            <MaterialIcons
-              name="location-on"
-              size={26}
-              color={COLORS.primary}
-            />
-          </View>
-
-          <View style={{ flex: 1 }}>
-            <Text style={styles.locationKicker}>Localisation</Text>
-            <Text style={styles.locationAddr} numberOfLines={2}>
-              {groceryAddress}
-            </Text>
-            <Text style={styles.locationSub}>
-              {groceryDistance == null
-                ? "Distance inconnue"
-                : `À ${groceryDistance.toFixed(1)} km de votre position`}{" "}
-            </Text>
-          </View>
-
-          <Pressable
-            style={styles.mapBtn}
-            onPress={() => {
-              // ✅ plus tard: ouvrir maps
-              console.log("open map for grocery:", groceryId);
-            }}
-            hitSlop={10}
-          >
-            <MaterialIcons name="map" size={18} color="#71717a" />
-          </Pressable>
-        </View>
-
-        {/* Search */}
-        <View style={styles.searchBox}>
-          <MaterialIcons name="search" size={18} color="#71717a" />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Rechercher un produit dans cette boutique..."
-            placeholderTextColor="#9ca3af"
-            style={styles.searchInput}
-            returnKeyType="search"
-            onSubmitEditing={() => Keyboard.dismiss()}
-          />
-          {!!query && (
-            <Pressable onPress={() => setQuery("")} hitSlop={10}>
-              <MaterialIcons name="close" size={18} color="#71717a" />
+  const GroceryHeader = React.memo(function GroceryHeader({
+    navigation,
+    groceryId,
+    groceryName,
+    groceryDesc,
+    groceryAddress,
+    groceryDistance,
+    logoSource,
+  }) {
+    return (
+      <View>
+        <View style={styles.headerShell}>
+          <View style={styles.headerRow}>
+            <Pressable
+              onPress={() => navigation.goBack()}
+              style={styles.backBtn}
+              hitSlop={10}
+            >
+              <MaterialIcons
+                name="arrow-back-ios-new"
+                size={18}
+                color={COLORS.text}
+              />
             </Pressable>
-          )}
+          </View>
+
+          <View style={styles.identityWrap}>
+            <View style={styles.logoOuter}>
+              {logoSource ? (
+                <Image
+                  source={logoSource}
+                  style={styles.logoImg}
+                  fadeDuration={0}
+                />
+              ) : (
+                <View style={styles.logoImg} />
+              )}
+            </View>
+
+            <View style={{ flex: 1 }}>
+              <Text style={styles.storeName} numberOfLines={2}>
+                {groceryName}
+              </Text>
+            </View>
+          </View>
+
+          <Text style={styles.storeDesc}>{groceryDesc}</Text>
+        </View>
+
+        <View style={{ paddingHorizontal: 16, paddingTop: 16, gap: 14 }}>
+          <View style={styles.locationCard}>
+            <View style={styles.locationIcon}>
+              <MaterialIcons
+                name="location-on"
+                size={26}
+                color={COLORS.primary}
+              />
+            </View>
+
+            <View style={{ flex: 1 }}>
+              <Text style={styles.locationKicker}>Localisation</Text>
+              <Text style={styles.locationAddr} numberOfLines={2}>
+                {groceryAddress}
+              </Text>
+              <Text style={styles.locationSub}>
+                {groceryDistance == null
+                  ? "Distance inconnue"
+                  : `À ${groceryDistance.toFixed(1)} km de votre position`}
+              </Text>
+            </View>
+
+            <Pressable
+              style={styles.mapBtn}
+              onPress={() => console.log("open map for grocery:", groceryId)}
+              hitSlop={10}
+            >
+              <MaterialIcons name="map" size={18} color="#71717a" />
+            </Pressable>
+          </View>
         </View>
       </View>
-    </View>
+    );
+  });
+
+  const headerNode = useMemo(() => {
+  return (
+    <GroceryHeader
+      navigation={navigation}
+      groceryId={groceryId}
+      groceryName={groceryName}
+      groceryDesc={groceryDesc}
+      groceryAddress={groceryAddress}
+      groceryDistance={groceryDistance}
+      logoSource={logoSource}
+    />
   );
+}, [
+  navigation,
+  groceryId,
+  groceryName,
+  groceryDesc,
+  groceryAddress,
+  groceryDistance,
+  logoSource,
+]);
 
   const renderSection = ({ item: section }) => {
     const data = section.items || [];
@@ -229,17 +354,18 @@ export default function GroceryStoreScreen({ navigation, route }) {
         <FlatList
           data={data}
           keyExtractor={(x) => x.id}
-          numColumns={2}
-          scrollEnabled={false} // important: c'est la liste parent qui scroll
-          columnWrapperStyle={styles.gridRow}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.hRow}
+          ItemSeparatorComponent={() => <View style={{width:12}}></View>}
           renderItem={({ item }) => {
             const inStock = !!item.inStock;
             return (
               <Pressable
-                style={[styles.pCard, !inStock && { opacity: 0.8 }]}
+                style={[styles.hCard, !inStock && { opacity: 0.8 }]}
                 onPress={() => openProduct(item)}
               >
-                <View style={[styles.pImgWrap, !inStock && styles.pImgWrapOut]}>
+                <View style={[styles.hImgWrap, !inStock && styles.pImgWrapOut]}>
                   {!!item.photoURL ? (
                     <Image
                       source={{ uri: item.photoURL }}
@@ -268,7 +394,7 @@ export default function GroceryStoreScreen({ navigation, route }) {
                     style={[styles.favBtn, item.isFav && styles.favBtnActive]}
                     onPress={(e) => {
                       e.stopPropagation?.();
-                      toggleFav(item.id);
+                      onToggleFav(item);
                     }}
                     hitSlop={10}
                   >
@@ -300,7 +426,6 @@ export default function GroceryStoreScreen({ navigation, route }) {
               </Pressable>
             );
           }}
-          ItemSeparatorComponent={() => <View style={{ height: 14 }} />}
         />
       </View>
     );
@@ -317,7 +442,7 @@ export default function GroceryStoreScreen({ navigation, route }) {
           data={sections}
           keyExtractor={(s) => s.key}
           renderItem={renderSection}
-          ListHeaderComponent={ListHeader}
+          ListHeaderComponent={headerNode}
           contentContainerStyle={{ paddingBottom: 110 + insets.bottom }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -549,4 +674,22 @@ const styles = StyleSheet.create({
     color: "#9ca3af",
     textAlign: "center",
   },
+hRow: {
+  paddingRight: 16, // pour que le dernier item respire
+},
+
+hCard: {
+  width: 170,              // ajuste selon ton design
+  backgroundColor: "white",
+  borderRadius: 18,
+  overflow: "hidden",
+  borderWidth: 1,
+  borderColor: "rgba(0,0,0,0.06)",
+},
+
+hImgWrap: {
+  width: "100%",
+  aspectRatio: 1,          // carré comme avant
+  backgroundColor: "#f3f4f6",
+},
 });

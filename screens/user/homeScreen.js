@@ -107,7 +107,7 @@ export default function HomeScreen({
 
   const [refreshing, setRefreshing] = useState(false);
   const didLoadOnceRef = useRef(false);
-  const blockEndReachedRef = useRef(true)
+  const blockEndReachedRef = useRef(true);
 
   //Simulation now but Later with Firestore
   const fetchNextPage = useCallback(async () => {
@@ -122,11 +122,14 @@ export default function HomeScreen({
         userLocation: locationStatus === "granted" ? userLocation : null,
       });
 
-      const mapped = res.items.map((p) => ({ ...p, isFav: favIds?.has(p.id) }));
+      const mapped = res.items.map((p) => ({
+        ...p,
+        isFav: favIds ? favIds?.has(p.id) : false,
+      }));
       setItems((prev) => {
         const map = new Map(prev.map((p) => [p.id, p]));
         for (const p of mapped) map.set(p.id, p);
-        return Array.from(map.values())
+        return Array.from(map.values());
       });
       setCursor(res.cursor);
       setHasMore(res.hasMore);
@@ -144,38 +147,6 @@ export default function HomeScreen({
     locationStatus,
     favIds,
   ]);
-
-  // useEffect(() => {
-  //   //first load
-  //   (async () => {
-  //     setInitialLoading(true);
-  //     setItems([]);
-  //     setCursor(null);
-  //     setHasMore(true);
-
-  //     try {
-  //       const res = await fetchProductsPage({
-  //         pageSize: 10,
-  //         cursor: null,
-  //         cat: activeCat,
-  //         userLocation: locationStatus === "granted" ? userLocation : null,
-  //       });
-  //       const mapped = res.items.map((p) => ({
-  //         ...p,
-  //         isFav: favIds?.has(p.id),
-  //       }));
-  //       setItems(mapped);
-  //       setCursor(res.cursor);
-  //       setHasMore(res.hasMore);
-  //     } catch (e) {
-  //       console.log("❌ fetchProductsPage failed :", e?.message ?? e);
-  //       setItems([]);
-  //       setHasMore(false);
-  //     } finally {
-  //       setInitialLoading(false);
-  //     }
-  //   })();
-  // }, [activeCat, userLocation, locationStatus, favIds]);
 
   //filter locally with cat + search+ filters
   const filtered = useMemo(() => {
@@ -206,10 +177,14 @@ export default function HomeScreen({
 
   const onOpenProduct = useCallback(
     (product) => {
-      navigation.navigate("ProductDetails", { product, userLocation : locationStatus === "granted" ? userLocation : null });
-      console.log("voici product =", product)
+      navigation.push("ProductDetails", {
+        product,
+        userLocation: locationStatus === "granted" ? userLocation : null,
+        favIdsArray: Array.from(favIds ?? []),
+      });
+      // console.log("voici product =", product);
     },
-    [navigation, userLocation, locationStatus],
+    [navigation, userLocation, locationStatus, favIds],
   );
 
   const onToggleFav = useCallback(async (product) => {
@@ -277,7 +252,7 @@ export default function HomeScreen({
 
         const mapped = res.items.map((p) => ({
           ...p,
-          isFav: false,
+          isFav: favIds ? favIds.has(p.id) : false,
         }));
         setItems(mapped);
         setCursor(res.cursor);
@@ -294,20 +269,20 @@ export default function HomeScreen({
         setInitialLoading(false);
         setRefreshing(false);
         setTimeout(() => {
-          blockEndReachedRef.current = false
-        }, 0)
+          blockEndReachedRef.current = false;
+        }, 0);
       }
     },
-    [activeCat, locationStatus, userLocation],
+    [activeCat, locationStatus, userLocation, favIds],
   );
 
   useEffect(() => {
-    refreshProducts({soft : true});
+    refreshProducts({ soft: true });
   }, [activeCat, locationStatus, userLocation, refreshKey, refreshProducts]);
 
   const onPullRefresh = useCallback(() => {
     refreshProducts();
-  }, [refreshProducts])
+  }, [refreshProducts]);
 
   const renderHeader = () => {
     return (
@@ -761,7 +736,11 @@ export default function HomeScreen({
           showsVerticalScrollIndicator={false}
           onEndReachedThreshold={0.5}
           onEndReached={() => {
-              console.log("onEndReached", { initialLoading, refreshing, block: blockEndReachedRef.current });
+            console.log("onEndReached", {
+              initialLoading,
+              refreshing,
+              block: blockEndReachedRef.current,
+            });
             if (initialLoading || refreshing) return;
             if (blockEndReachedRef.current) return;
             fetchNextPage();

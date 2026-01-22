@@ -212,7 +212,11 @@ export async function fetchProductsPage({
 }
 
 //1) fetch product by id (for productDetailsScreen)
-export async function fetchProductById({ productId, userLocation = null }) {
+export async function fetchProductById({
+  productId,
+  userLocation = null,
+  uid = null,
+}) {
   if (!productId) throw new Error("Missing productId");
   const ref = doc(db, "products", productId);
   const snap = await getDoc(ref);
@@ -231,10 +235,13 @@ export async function fetchProductById({ productId, userLocation = null }) {
     createdAt: d.createdAt ?? null,
   };
 
-  const sellersMap = await fetchSellersByIds([base.sellerId].filter(Boolean));
-  const u = sellersMap.get(base.sellerId) || null;
-//   console.log("SELLER RAW USER DOC", base.sellerId, u);
-// console.log("SELLER DISTANCEKM", u?.seller?.description);
+let u = null;
+if (base.sellerId) {
+  const sellerSnap = await getDoc(doc(db, "users", base.sellerId));
+  if (sellerSnap.exists()) u = sellerSnap.data();
+}
+  //   console.log("SELLER RAW USER DOC", base.sellerId, u);
+  // console.log("SELLER DISTANCEKM", u?.seller?.description);
   const seller = u?.seller || null;
 
   const sellerName = seller?.storeName ?? null;
@@ -249,6 +256,13 @@ export async function fetchProductById({ productId, userLocation = null }) {
       ? distanceKmBetween(userLocation, sellerGps)
       : null;
 
+let isFav = false;
+if (uid) {
+  const userSnap = await getDoc(doc(db, "users", uid));
+  const u = userSnap.exists() ? userSnap.data() : null;
+  isFav = !!u?.favorites?.[productId];
+}
+
   return {
     ...base,
     sellerName,
@@ -257,6 +271,7 @@ export async function fetchProductById({ productId, userLocation = null }) {
     sellerGps,
     distanceKm,
     sellerDescription,
+    isFav,
   };
 }
 
