@@ -6,6 +6,7 @@ import SellerBoard from "../screens/seller/sellerBoard";
 import SellerLocationPickerScreen from "../screens/seller/sellerLocationPickerScreen";
 import ProductDetailsScreen from "../screens/user/productDetailsScreen";
 import GroceryStoreScreen from "../screens/user/groceryStoreScreen";
+import CompareScreen from "../screens/user/compareScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -33,6 +34,10 @@ export default function RootNavigator({ initialRouteName }) {
       <Stack.Screen
         name="GroceryStore"
         component={GroceryStoreScreen}
+      ></Stack.Screen>
+      <Stack.Screen
+        name="CompareScreen"
+        component={CompareScreen}
       ></Stack.Screen>
     </Stack.Navigator>
   );
