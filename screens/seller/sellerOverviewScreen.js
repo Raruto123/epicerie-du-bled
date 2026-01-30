@@ -527,7 +527,7 @@ const styles = StyleSheet.create({
   logo: {
     width: 128,
     height: 128,
-    backgroundColor: "#d9d4d0",
+    backgroundColor: COLORS.bg,
     borderWidth: 4,
     borderColor: COLORS.bg,
     borderRadius: 999,
@@ -560,7 +560,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.55)",
   },
-  centerHeader: { alignItems: "center", marginTop: 8, marginTop: 16 },
+  centerHeader: { alignItems: "center", marginTop: 16 },
   storeTitle: {
     fontSize: 22,
     fontWeight: "900",
@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
     padding: 14,
     marginBottom: 12,
   },
@@ -592,7 +592,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
     overflow: "hidden",
     marginBottom: 12,
   },
@@ -607,7 +607,7 @@ const styles = StyleSheet.create({
     height: 48, //48
     borderRadius: 12,
     borderWidth: 1,
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderColor: COLORS.border,
     paddingHorizontal: 12,
     fontSize: 15,
@@ -629,8 +629,8 @@ const styles = StyleSheet.create({
   },
   gpsRow: {
     borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.06)",
-    backgroundColor: "rgba(214,86,31,0.06)",
+    borderTopColor: COLORS.border,
+    backgroundColor: "rgba(255,215,4,0.14)",
     paddingHorizontal: 14,
     paddingVertical: 14,
     flexDirection: "row",
@@ -649,10 +649,11 @@ const styles = StyleSheet.create({
   mapPreview: {
     height: 130,
     borderRadius: 14,
-    backgroundColor: "#e5dfdc",
+    backgroundColor: COLORS.bg,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor:COLORS.border,
     marginTop: 4,
+    overflow:"hidden"
   },
   mapEmptyOverlay: {
     flex: 1,
@@ -671,7 +672,9 @@ const styles = StyleSheet.create({
   infoBox: {
     marginTop: 14,
     borderRadius: 14,
-    backgroundColor: "#f4f1f0",
+    backgroundColor: COLORS.surface,
+    borderWidth:1,
+    borderColor:COLORS.primary,
     padding: 12,
     flexDirection: "row",
     gap: 10,

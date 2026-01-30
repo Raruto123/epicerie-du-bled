@@ -184,7 +184,7 @@ useEffect(() => {
         screenOptions={({ route }) => ({
           headerShown: false,
           tabBarActiveTintColor: COLORS.primary,
-          tabBarInactiveTintColor: "#6b7280",
+          tabBarInactiveTintColor: COLORS.muted,
           tabBarStyle: styles.tabBar,
           tabBarLabelStyle: styles.tabLabel,
           tabBarIcon: ({ color, size }) => {
@@ -276,8 +276,8 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     // paddingTop:8,
     borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.06)",
-    backgroundColor: "white",
+    borderTopColor: COLORS.border,
+    backgroundColor: COLORS.surface,
   },
   tabLabel: {
     fontSize: 11,
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
   },
   modalHeader: {
     height: 170,
-    backgroundColor: "rgba(214,86,31,0.08)",
+    backgroundColor: "rgba(6,105,3,0.07)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 999,
-    backgroundColor: "rgba(214, 86, 31, 0.10)",
+    backgroundColor: "rgba(255,215,4,0.18)",
   },
   headerBlobLeft: {
     position: "absolute",
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     width: 90,
     height: 90,
     borderRadius: 999,
-    backgroundColor: "rgba(84,180,145,0.16)",
+    backgroundColor: "rgba(6,105,3,0.10)",
   },
   headerIconWrap: {
     width: 86,
@@ -337,14 +337,14 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: "#54B491",
+    backgroundColor: COLORS.accent,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: "white",
+    borderColor: COLORS.surface,
   },
   headerCheck: {
-    backgroundColor: "rgba(22,163,74,0.12)",
+    backgroundColor: "rgba(6,105,3,0.12)",
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
   modalText: {
     fontSize: 14,
     lineHeight: 20,
-    color: "#6b7280",
+    color: COLORS.muted,
     textAlign: "center",
   },
   modalActions: {
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
   secondaryBtnText: {
     fontSize: 13,
     fontWeight: "800",
-    color: "#6b7280",
+    color: COLORS.muted,
   },
   reassure: {
     marginTop: 2,

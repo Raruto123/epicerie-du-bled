@@ -120,7 +120,7 @@ export default function AuthScreen({ navigation }) {
               </Pressable>
               <View style={styles.brand}>
                 <LogoMark></LogoMark>
-                <Text style={styles.brandText}>AfroMarket CA</Text>
+                {/* <Text style={styles.brandText}>MiFéré</Text> */}
               </View>
               <View style={styles.spacer}></View>
             </View>
@@ -174,6 +174,7 @@ export default function AuthScreen({ navigation }) {
                   <Text style={styles.label}>Nom</Text>
                   <TextInput
                     value={name}
+                    placeholderTextColor={COLORS.muted}
                     onChangeText={setName}
                     style={styles.input}
                     placeholder="Votre nom"
@@ -184,6 +185,7 @@ export default function AuthScreen({ navigation }) {
                 <Text style={styles.label}>Email</Text>
                 <TextInput
                   value={email}
+                  placeholderTextColor={COLORS.muted}
                   onChangeText={setEmail}
                   style={styles.input}
                   placeholder="exemple@email.com"
@@ -195,6 +197,7 @@ export default function AuthScreen({ navigation }) {
                 <View style={styles.passwordWrap}>
                   <TextInput
                     ref={passwordRef}
+                    placeholderTextColor={COLORS.muted}
                     style={[styles.input, { paddingRight: 44 }]}
                     value={password}
                     onChangeText={setPassword}
@@ -319,6 +322,8 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.7)",
+    borderWidth:1,
+    borderColor:COLORS.border,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -354,7 +359,9 @@ const styles = StyleSheet.create({
   segment: {
     height: 48,
     borderRadius: 14,
-    backgroundColor: "#e9e4e2",
+    backgroundColor: "#F1F5F1",
+    borderWidth:1,
+    borderColor:COLORS.border,
     padding: 4,
     flexDirection: "row",
     marginBottom: 20,
@@ -385,6 +392,8 @@ const styles = StyleSheet.create({
   label: {
     fontWeight: "700",
     marginBottom: 4,
+    color:COLORS.text,
+    opacity:0.8
   },
   input: {
     height: 48,
@@ -393,6 +402,8 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     paddingHorizontal: 14,
     backgroundColor: COLORS.surface,
+    color:COLORS.text,
+    fontWeight:"700"
   },
   passwordWrap: {
     position: "relative",
@@ -426,7 +437,7 @@ const styles = StyleSheet.create({
     color: COLORS.muted,
   },
   roleTextActive: {
-    color: COLORS.text,
+    color: COLORS.primary,
   },
   primaryBtn: {
     marginTop: 10,

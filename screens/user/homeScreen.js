@@ -361,7 +361,7 @@ export default function HomeScreen({
               <MaterialIcons
                 name="tune"
                 size={18}
-                color={hasActiveFilters ? "white" : COLORS.primary}
+                color={hasActiveFilters ? COLORS.surface : COLORS.primary}
               ></MaterialIcons>
               {hasActiveFilters && <View style={styles.filterDot}></View>}
             </Pressable>
@@ -629,7 +629,7 @@ export default function HomeScreen({
 
             {/* Proximity */}
             <Text style={[styles.sheetSectionKicker, { marginTop: 18 }]}>
-              Proximité
+              Distance
             </Text>
 
             <View style={styles.nearGrid}>
@@ -809,9 +809,9 @@ const styles = StyleSheet.create({
   searchBox: {
     height: 52,
     borderRadius: 18,
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
     paddingHorizontal: 12,
     flexDirection: "row",
     alignItems: "center",
@@ -829,7 +829,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(214,86,31,0.10)",
+    backgroundColor: "rgba(6,105,3,0.10)",
   },
   catsWrap: { paddingTop: 4, paddingBottom: 10 },
   catsContent: { paddingHorizontal: 16, gap: 10, paddingRight: 16 },
@@ -846,10 +846,10 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
-  catPillIdle: { backgroundColor: "white", borderColor: "rgba(0,0,0,0.06)" },
+  catPillIdle: { backgroundColor: COLORS.surface, borderColor: COLORS.border },
   catEmoji: { fontSize: 16 },
   catText: { fontSize: 13, fontWeight: "900" },
-  catTextActive: { color: "white" },
+  catTextActive: { color: COLORS.surface },
   catTextIdle: { color: COLORS.text },
   sectionRow: { paddingHorizontal: 16, paddingBottom: 10 },
   sectionKicker: {
@@ -862,10 +862,10 @@ const styles = StyleSheet.create({
   colWrap: { paddingHorizontal: 16, marginBottom: 12, gap: 12 },
   card: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
     overflow: "hidden",
   },
   favBtn: {
@@ -878,18 +878,18 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.85)",
+    backgroundColor: "rgba(255,255,255,0.92)",
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
   },
   imgWrap: { width: "100%", aspectRatio: 1, backgroundColor: "#f3f4f6" },
   img: { width: "100%", height: "100%" },
   imgOut: { opacity: 0.75 },
   stockBadgeWrap: { position: "absolute", left: 10, bottom: 10 },
   stockBadge: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
-  badgeGreen: { backgroundColor: "#22c55e" },
+  badgeGreen: { backgroundColor: COLORS.primary },
   badgeRed: { backgroundColor: "#ef4444" },
-  stockBadgeText: { color: "white", fontSize: 10, fontWeight: "900" },
+  stockBadgeText: { color: COLORS.surface, fontSize: 10, fontWeight: "900" },
   cardBody: { padding: 12, gap: 6 },
   cardTitle: { fontSize: 13, fontWeight: "900", color: COLORS.text },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 4 },
@@ -911,7 +911,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingBottom: 22,
@@ -950,9 +950,9 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#f3f4f6",
+    backgroundColor: COLORS.bg,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
   },
   sheetSectionKicker: {
     marginTop: 6,
@@ -974,8 +974,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   choiceRowActive: {
-    backgroundColor: "rgba(249,115,22,0.10)",
-    borderColor: "rgba(249,115,22,0.22)",
+    backgroundColor: "rgba(6,105,3,0.08)",
+    borderColor: "rgba(6,105,3,0.22)",
   },
   choiceRowIdle: {
     backgroundColor: "#f9fafb",
@@ -1005,8 +1005,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   nearCardActive: {
-    backgroundColor: "rgba(249,115,22,0.10)",
-    borderColor: "rgba(249,115,22,0.22)",
+    backgroundColor: "rgba(6,105,3,0.08)",
+    borderColor: "rgba(6,105,3,0.22)",
   },
   nearCardIdle: {
     backgroundColor: "#f9fafb",
@@ -1030,7 +1030,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   applyBtnText: {
-    color: "white",
+    color: COLORS.surface,
     fontSize: 15,
     fontWeight: "900",
   },
@@ -1047,20 +1047,20 @@ const styles = StyleSheet.create({
     borderRadius: 99,
     backgroundColor: "#22c55e", // vert comme "actif"
     borderWidth: 2,
-    borderColor: "white",
+    borderColor: COLORS.surface,
   },
   activeBadge: {
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: "rgba(34,197,94,0.12)",
+    backgroundColor: "rgba(255,215,4,0.18)",
     borderWidth: 1,
-    borderColor: "rgba(34,197,94,0.22)",
+    borderColor: "rgba(255,215,4,0.35)",
   },
   activeBadgeText: {
     fontSize: 11,
     fontWeight: "900",
-    color: "#16a34a",
+    color: COLORS.primary,
   },
   resetBtn: {
     width: 40,
@@ -1068,12 +1068,12 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(249,115,22,0.10)",
+    backgroundColor: "rgba(6,105,3,0.10)",
     borderWidth: 1,
-    borderColor: "rgba(249,115,22,0.18)",
+    borderColor: "rgba(6,105,3,0.18)",
   },
   resetBtnDisabled: {
     backgroundColor: "#f3f4f6",
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
   },
 });

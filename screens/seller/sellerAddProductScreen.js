@@ -36,7 +36,7 @@ export default function SellerAddProductScreen({ navigation }) {
       { key: "Épices", icon: "whatshot" },
       { key: "Légumes", icon: "eco" },
     ],
-    []
+    [],
   );
 
   const [name, setName] = useState("");
@@ -240,7 +240,7 @@ export default function SellerAddProductScreen({ navigation }) {
                     {inStock ? "En stock" : "Rupture"}
                   </Text>
                   <Switch
-                    style={{ alignSelf : "center"}}
+                    style={{ alignSelf: "center" }}
                     value={inStock}
                     onValueChange={setInStock}
                     trackColor={{ false: "#e5e7eb", true: COLORS.primary }}
@@ -311,9 +311,9 @@ const styles = StyleSheet.create({
     borderRadius: 99,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.75)",
+    backgroundColor: "rgba(255,255,255,0.85)",
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
+    borderColor: COLORS.border,
   },
   backBtnGhost: { width: 40, height: 40 },
   title: {
@@ -329,8 +329,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 2,
     borderStyle: "dashed",
-    borderColor: "rgba(0,0,0,0.18)",
-    backgroundColor: "white",
+    borderColor: "rgba(255,215,4,0.65)",
+    backgroundColor: COLORS.surface,
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
@@ -339,12 +339,12 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "rgba(214,86,31,0.10)",
+    backgroundColor: "rgba(255,215,4,0.20)",
     alignItems: "center",
     justifyContent: "center",
   },
   photoTitle: { fontSize: 16, fontWeight: "900", color: COLORS.text },
-  photoSub: { fontSize: 12, fontWeight: "700", color: "#6b7280" },
+  photoSub: { fontSize: 12, fontWeight: "700", color: COLORS.muted },
   h3: {
     marginTop: 16,
     marginBottom: 8,
@@ -353,13 +353,18 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   field: { marginTop: 10 },
-  label: { fontSize: 13, fontWeight: "800", color: "#6b7280", marginBottom: 8 },
+  label: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: COLORS.muted,
+    marginBottom: 8,
+  },
   input: {
     height: 54,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.08)",
-    backgroundColor: "white",
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
     paddingHorizontal: 14,
     fontSize: 15,
     fontWeight: "700",
@@ -378,12 +383,12 @@ const styles = StyleSheet.create({
   },
   catPillActive: {
     borderColor: COLORS.primary,
-    backgroundColor: "rgba(214,86,31,0.10)",
+    backgroundColor: "rgba(255,215,4,0.18)",
   },
-  catPillIdle: { borderColor: "rgba(0,0,0,0.08)", backgroundColor: "white" },
+  catPillIdle: { borderColor: COLORS.border, backgroundColor: COLORS.surface },
   catText: { fontSize: 13, fontWeight: "900" },
   catTextActive: { color: COLORS.primary },
-  catTextIdle: { color: "#6b7280" },
+  catTextIdle: { color: COLORS.muted },
   row2: { marginTop: 14, flexDirection: "row", gap: 12 },
   priceWrap: { position: "relative" },
   priceSuffix: {
@@ -397,8 +402,8 @@ const styles = StyleSheet.create({
     height: 54,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.08)",
-    backgroundColor: "white",
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
     paddingHorizontal: 14,
     flexDirection: "row",
     alignItems: "center",
@@ -420,4 +425,15 @@ const styles = StyleSheet.create({
   },
   publishText: { color: "white", fontSize: 15, fontWeight: "900" },
   photoPreview: { width: "100%", height: "100%", borderRadius: 14 },
+  footer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    backgroundColor: "rgba(255,255,255,0.96)",
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
 });

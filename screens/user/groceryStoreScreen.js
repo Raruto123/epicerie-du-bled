@@ -238,6 +238,8 @@ export default function GroceryStoreScreen({ navigation, route }) {
     groceryAddress,
     groceryDistance,
     logoSource,
+    query,
+    setQuery,
   }) {
     return (
       <View>
@@ -251,7 +253,7 @@ export default function GroceryStoreScreen({ navigation, route }) {
               <MaterialIcons
                 name="arrow-back-ios-new"
                 size={18}
-                color={COLORS.text}
+                color={COLORS.primary}
               />
             </Pressable>
           </View>
@@ -309,32 +311,62 @@ export default function GroceryStoreScreen({ navigation, route }) {
               <MaterialIcons name="map" size={18} color="#71717a" />
             </Pressable>
           </View>
+          <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+            <View style={styles.searchBox}>
+              <MaterialIcons
+                name="search"
+                size={18}
+                color={COLORS.muted}
+              ></MaterialIcons>
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder="Rechercher un produit..."
+                placeholderTextColor={COLORS.muted}
+                style={styles.searchInput}
+                returnKeyType="search"
+                onSubmitEditing={Keyboard.dismiss}
+              ></TextInput>
+              {!!query && (
+                <Pressable onPress={() => setQuery("")} hitSlop={10}>
+                  <MaterialIcons
+                    name="close"
+                    size={18}
+                    color={COLORS.muted}
+                  ></MaterialIcons>
+                </Pressable>
+              )}
+            </View>
+          </View>
         </View>
       </View>
     );
   });
 
   const headerNode = useMemo(() => {
-  return (
-    <GroceryHeader
-      navigation={navigation}
-      groceryId={groceryId}
-      groceryName={groceryName}
-      groceryDesc={groceryDesc}
-      groceryAddress={groceryAddress}
-      groceryDistance={groceryDistance}
-      logoSource={logoSource}
-    />
-  );
-}, [
-  navigation,
-  groceryId,
-  groceryName,
-  groceryDesc,
-  groceryAddress,
-  groceryDistance,
-  logoSource,
-]);
+    return (
+      <GroceryHeader
+        navigation={navigation}
+        groceryId={groceryId}
+        groceryName={groceryName}
+        groceryDesc={groceryDesc}
+        groceryAddress={groceryAddress}
+        groceryDistance={groceryDistance}
+        logoSource={logoSource}
+        query={query}
+        setQuery={setQuery}
+      />
+    );
+  }, [
+    navigation,
+    groceryId,
+    groceryName,
+    groceryDesc,
+    groceryAddress,
+    groceryDistance,
+    logoSource,
+    query,
+  ]);
 
   const renderSection = ({ item: section }) => {
     const data = section.items || [];
@@ -357,7 +389,7 @@ export default function GroceryStoreScreen({ navigation, route }) {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.hRow}
-          ItemSeparatorComponent={() => <View style={{width:12}}></View>}
+          ItemSeparatorComponent={() => <View style={{ width: 12 }}></View>}
           renderItem={({ item }) => {
             const inStock = !!item.inStock;
             return (
@@ -467,9 +499,9 @@ const styles = StyleSheet.create({
 
   // Header block
   headerShell: {
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.06)",
+    borderBottomColor: COLORS.border,
     paddingTop: 14,
     paddingBottom: 18,
     paddingHorizontal: 16,
@@ -479,11 +511,11 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 999,
-    backgroundColor: "#f9fafb",
+    backgroundColor: COLORS.bg,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.04)",
+    borderColor: COLORS.border,
   },
 
   identityWrap: { flexDirection: "row", alignItems: "center", gap: 12 },
@@ -491,10 +523,10 @@ const styles = StyleSheet.create({
     width: 84,
     height: 84,
     borderRadius: 18,
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     padding: 4,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
     overflow: "hidden",
   },
   logoImg: {
@@ -514,30 +546,30 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 13,
     lineHeight: 18,
-    color: "#71717a",
+    color: COLORS.muted,
     fontWeight: "700",
   },
 
   // Location card
   locationCard: {
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderRadius: 18,
     padding: 14,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
   },
   locationIcon: {
     width: 48,
     height: 48,
     borderRadius: 14,
-    backgroundColor: "rgba(214,86,31,0.10)",
+    backgroundColor: "rgba(255,215,4,0.22)",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(214,86,31,0.12)",
+    borderColor: "rgba(255,215,4,0.35)",
   },
   locationKicker: {
     fontSize: 10,
@@ -556,26 +588,26 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontSize: 11,
     fontWeight: "700",
-    color: "#71717a",
+    color: COLORS.muted,
   },
   mapBtn: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: "#f9fafb",
+    backgroundColor: COLORS.bg,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
+    borderColor: COLORS.border,
   },
 
   // Search
   searchBox: {
     height: 50,
     borderRadius: 18,
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
     paddingHorizontal: 12,
     flexDirection: "row",
     alignItems: "center",
@@ -595,9 +627,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: "rgba(214,86,31,0.10)",
+    backgroundColor: "rgba(255,215,4,0.18)",
     borderWidth: 1,
-    borderColor: "rgba(214,86,31,0.16)",
+    borderColor: "rgba(255,215,4,0.35)",
   },
   countPillText: { color: COLORS.primary, fontSize: 12, fontWeight: "900" },
 
@@ -618,7 +650,7 @@ const styles = StyleSheet.create({
 
   badgeWrap: { position: "absolute", left: 10, bottom: 10 },
   badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  badgeGreen: { backgroundColor: "#22c55e" },
+  badgeGreen: { backgroundColor: COLORS.primary },
   badgeRed: { backgroundColor: "#ef4444" },
   badgeText: {
     color: "white",
@@ -638,10 +670,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.85)",
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
   },
   favBtnActive: {
-    borderColor: "rgba(214,86,31,0.22)",
+    borderColor: "rgba(6,105,3,0.28)",
   },
 
   pBody: { padding: 12, gap: 6 },
@@ -674,22 +706,22 @@ const styles = StyleSheet.create({
     color: "#9ca3af",
     textAlign: "center",
   },
-hRow: {
-  paddingRight: 16, // pour que le dernier item respire
-},
+  hRow: {
+    paddingRight: 16, // pour que le dernier item respire
+  },
 
-hCard: {
-  width: 170,              // ajuste selon ton design
-  backgroundColor: "white",
-  borderRadius: 18,
-  overflow: "hidden",
-  borderWidth: 1,
-  borderColor: "rgba(0,0,0,0.06)",
-},
+  hCard: {
+    width: 170, // ajuste selon ton design
+    backgroundColor: COLORS.surface,
+    borderRadius: 18,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
 
-hImgWrap: {
-  width: "100%",
-  aspectRatio: 1,          // carré comme avant
-  backgroundColor: "#f3f4f6",
-},
+  hImgWrap: {
+    width: "100%",
+    aspectRatio: 1, // carré comme avant
+    backgroundColor: "#f3f4f6",
+  },
 });

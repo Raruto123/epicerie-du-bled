@@ -249,6 +249,7 @@ export default function ProfileScreen({ navigation }) {
                   placeholder="Votre nom"
                   returnKeyType="done"
                   onSubmitEditing={saveName}
+                  placeholderTextColor={COLORS.muted}
                 ></TextInput>
                 <MaterialIcons
                   name="edit"
@@ -330,7 +331,7 @@ export default function ProfileScreen({ navigation }) {
               <MaterialIcons
                 name="logout"
                 size={20}
-                color="#cf451a"
+                color={COLORS.primary}
               ></MaterialIcons>
               <Text style={styles.logoutText}>Se déconnecter</Text>
             </Pressable>
@@ -366,9 +367,9 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 999,
-    backgroundColor: "#e5dfdc",
+    backgroundColor: "#EEF2EE",
     borderWidth: 4,
-    borderColor: "white",
+    borderColor: COLORS.surface,
     overflow:"hidden",
   },
   avatarImg:{
@@ -386,7 +387,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: "white",
+    borderColor: COLORS.surface,
   },
   profileText: { marginTop: 12, alignItems: "center" },
   name: { fontSize: 22, fontWeight: "900", color: COLORS.text },
@@ -402,11 +403,11 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
     marginBottom: 18,
   },
   sellerCardLeft: { flex: 1, padding: 16 },
-  sellerCardRight: { width: 86, backgroundColor: "rgba(214,86,31,0.10)" },
+  sellerCardRight: { width: 86, backgroundColor: "rgba(255,215,4,0.18)" },
   sellerKickerRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   sellerKicker: {
     fontSize: 11,
@@ -452,7 +453,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 14,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
   },
   labelSmall: {
     fontSize: 11,
@@ -490,7 +491,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
   },
   rowItem: {
     padding: 14,
@@ -503,7 +504,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: "#f4f1f0",
+    backgroundColor: "rgba(6,105,3,0.08)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -519,7 +520,7 @@ const styles = StyleSheet.create({
 
   divider: {
     height: 1,
-    backgroundColor: "rgba(0,0,0,0.06)",
+    backgroundColor: COLORS.border,
   },
   footer: {
     paddingTop: 18,
@@ -528,18 +529,20 @@ const styles = StyleSheet.create({
   logoutBtn: {
     height: 54,
     borderRadius: 14,
-    backgroundColor: "#feece6",
+    backgroundColor: "#fFF4CC",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
+    borderWidth:1,
+    borderColor:"rgba(255,215,4,0.35)"
   },
-  logoutText: { fontWeight: "900", color: "#cf451a" },
+  logoutText: { fontWeight: "800", color: COLORS.text },
   version: {
     marginTop: 14,
     textAlign: "center",
     fontSize: 11,
-    color: "#ada29e",
+    color: "#9CA3AF",
     fontWeight: "700",
   },
   loadingRow: {

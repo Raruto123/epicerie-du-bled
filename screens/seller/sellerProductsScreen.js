@@ -264,7 +264,7 @@ export default function SellerProductsScreen({ navigation }) {
             <MaterialIcons
               name="search"
               size={22}
-              color={COLORS.text}
+              color={COLORS.muted}
             ></MaterialIcons>
           </Pressable>
           <Pressable
@@ -307,7 +307,7 @@ export default function SellerProductsScreen({ navigation }) {
                 <MaterialIcons
                   name="close"
                   size={18}
-                  color="#6b7280"
+                  color={COLORS.muted}
                 ></MaterialIcons>
               </Pressable>
             )}
@@ -839,9 +839,9 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.7)",
+    backgroundColor: "rgba(255,255,255,0.85)",
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
+    borderColor: COLORS.border,
   },
   catRow: {
     paddingHorizontal: 16,
@@ -860,7 +860,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
-  catPillIdle: { backgroundColor: "white", borderColor: "rgba(0,0,0,0.06)" },
+  catPillIdle: { backgroundColor: COLORS.surface, borderColor: COLORS.border},
   catText: { fontSize: 13, fontWeight: "900" },
   catTextActive: { color: "white" },
   catTextIdle: { color: COLORS.text },
@@ -868,17 +868,17 @@ const styles = StyleSheet.create({
   listKicker: {
     fontSize: 11,
     fontWeight: "900",
-    color: "#9ca3af",
+    color: COLORS.muted,
     letterSpacing: 1.2,
     textTransform: "uppercase",
     marginBottom: 12,
     paddingLeft: 2,
   },
   productCard: {
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
     padding: 14,
   },
   productTop: { flexDirection: "row", gap: 12 },
@@ -906,24 +906,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "rgba(255,215,4,0.18)",
+    borderWidth:1,
+    borderColor:"rgba(255,215,4,0.35)"
   },
-  tagText: { fontSize: 10, fontWeight: "900", color: "#6b7280" },
+  tagText: { fontSize: 10, fontWeight: "900", color: COLORS.primary },
   productBottom: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.06)",
+    borderTopColor: COLORS.border,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
   stockRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   dot: { width: 8, height: 8, borderRadius: 999 },
-  dotGreen: { backgroundColor: "#22c55e" },
+  dotGreen: { backgroundColor: COLORS.primary },
   dotGray: { backgroundColor: "#d1d5db" },
   stockText: { fontSize: 13, fontWeight: "800" },
-  stockTextGreen: { color: "#16a34a" },
+  stockTextGreen: { color: COLORS.primary },
   stockTextGray: { color: "#6b7280" },
 
   toggle: {
@@ -973,9 +975,9 @@ const styles = StyleSheet.create({
   searchBox: {
     height: 48,
     borderRadius: 14,
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
     paddingHorizontal: 12,
     flexDirection: "row",
     alignItems: "center",
@@ -1000,14 +1002,14 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 18,
     paddingBottom: 14,
     paddingTop: 8,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
   },
   sheetHandleRow: {
     alignItems: "center",
@@ -1017,7 +1019,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 5,
     borderRadius: 99,
-    backgroundColor: "#e5e7eb",
+    backgroundColor: COLORS.border,
   },
   sheetHeader: {
     flexDirection: "row",
@@ -1036,11 +1038,15 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#f3f4f6",
+    backgroundColor: COLORS.bg,
+    borderWidth:1,
+    borderColor:COLORS.border
   },
   tabsWrap: {
     flexDirection: "row",
-    backgroundColor: "#f3f4f6",
+    backgroundColor: COLORS.bg,
+    borderWidth:1,
+    borderColor:COLORS.border,
     borderRadius: 18,
     padding: 4,
     marginBottom: 16,
@@ -1052,22 +1058,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  tabBtn: {
-    flex: 1,
-    height: 42,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   tabBtnActive: {
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
   },
   tabBtnIdle: { backgroundColor: "transparent" },
   tabText: { fontSize: 13, fontWeight: "900" },
   tabTextActive: { color: COLORS.primary },
-  tabTextIdle: { color: "#6b7280" },
+  tabTextIdle: { color: COLORS.muted },
   sheetLabel: {
     fontSize: 11,
     fontWeight: "900",
@@ -1084,26 +1083,26 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     borderRadius: 14,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: COLORS.bg,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
   },
   segmentBtnOn: {
-    backgroundColor: "rgba(214,86,31,0.10)",
+    backgroundColor: "rgba(255,215,4,0.12)",
     borderColor: COLORS.primary,
   },
-  segmentText: { fontSize: 14, fontWeight: "900", color: "#6b7280" },
+  segmentText: { fontSize: 14, fontWeight: "900", color: COLORS.muted },
   segmentTextOn: { color: COLORS.primary },
   rangeRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  rangeDash: { width: 14, height: 2, backgroundColor: "#e5e7eb" },
+  rangeDash: { width: 14, height: 2, backgroundColor: COLORS.border },
   inputCard: {
     height: 52,
     borderRadius: 16,
-    backgroundColor: "#f9fafb",
+    backgroundColor: COLORS.bg,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
     paddingHorizontal: 14,
     justifyContent: "center",
   },
@@ -1111,16 +1110,16 @@ const styles = StyleSheet.create({
   stockOption: {
     padding: 14,
     borderRadius: 18,
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
   stockOptionActive: {
     borderColor: COLORS.primary,
-    backgroundColor: "rgba(214,86,31,0.06)",
+    backgroundColor: "rgba(255,215,4,0.12)",
   },
   stockLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
   stockText: { fontSize: 14, fontWeight: "900", color: COLORS.text },
@@ -1145,17 +1144,19 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.06)",
+    borderTopColor: COLORS.border,
   },
   resetBtn: {
     flex: 1,
     height: 54,
     borderRadius: 16,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: COLORS.bg,
+    borderWidth:1,
+    borderColor:COLORS.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  resetText: { fontSize: 14, fontWeight: "900", color: "#6b7280" },
+  resetText: { fontSize: 14, fontWeight: "900", color: COLORS.muted },
   applyBtn: {
     flex: 2,
     height: 54,
@@ -1183,9 +1184,9 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#fff",
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
   },
   trashBtnDisabled: { opacity: 0.4 },
 });

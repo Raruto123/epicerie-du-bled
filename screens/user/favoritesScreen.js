@@ -74,12 +74,12 @@ export default function FavoritesScreen({ navigation, favorites = [], userLocati
       {/* Search */}
       <View style={styles.searchWrap}>
         <View style={styles.searchBox}>
-          <MaterialIcons name="search" size={18} color="#7171a"></MaterialIcons>
+          <MaterialIcons name="search" size={18} color={COLORS.muted}></MaterialIcons>
           <TextInput
             value={query}
             onChangeText={setQuery}
             placeholder="Rechercher dans mes favoris..."
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={COLORS.muted}
             style={styles.searchInput}
             returnKeyType="search"
             onSubmitEditing={() => Keyboard.dismiss()}
@@ -89,7 +89,7 @@ export default function FavoritesScreen({ navigation, favorites = [], userLocati
               <MaterialIcons
                 name="close"
                 size={18}
-                color="#71717a"
+                color={COLORS.muted}
               ></MaterialIcons>
             </Pressable>
           )}
@@ -157,14 +157,14 @@ export default function FavoritesScreen({ navigation, favorites = [], userLocati
             <MaterialIcons
               name="location-on"
               size={12}
-              color="#71717a"
+              color={COLORS.muted}
             ></MaterialIcons>
             <Text style={styles.metaText}>
               {Number(item.distanceKm ?? 0).toFixed(1)} km
             </Text>
           </View>
           <View style={styles.priceRow}>
-            <Text style={[styles.price, !inStock && { color: "#71717a" }]}>
+            <Text style={[styles.price, !inStock && { color: COLORS.muted }]}>
               ${Number(item.price ?? 0).toFixed(2)}{" "}
             </Text>
           </View>
@@ -202,7 +202,7 @@ export default function FavoritesScreen({ navigation, favorites = [], userLocati
                 <MaterialIcons
                   name="favorite-border"
                   size={28}
-                  color="#9ca3af"
+                  color={COLORS.muted}
                 ></MaterialIcons>
                 <Text style={styles.emptyTitle}>Aucun favori</Text>
                 <Text style={styles.emptySub}>
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.06)",
+    borderBottomColor: COLORS.border,
     backgroundColor: COLORS.bg,
   },
   headerTitle: {
@@ -243,9 +243,9 @@ const styles = StyleSheet.create({
   searchBox: {
     height: 50,
     borderRadius: 18,
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
     paddingHorizontal: 12,
     flexDirection: "row",
     alignItems: "center",
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   sectionKicker: {
     fontSize: 11,
     fontWeight: "900",
-    color: "#9ca3af",
+    color: COLORS.muted,
     letterSpacing: 1.2,
     textTransform: "uppercase",
   },
@@ -278,10 +278,10 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
     overflow: "hidden",
   },
 
@@ -295,15 +295,15 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.85)",
+    backgroundColor: "rgba(255,255,255,0.92)",
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
   },
 
   imgWrap: {
     width: "100%",
     aspectRatio: 1,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: COLORS.bg,
   },
   img: { width: "100%", height: "100%" },
   imgOut: { opacity: 0.75 },
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 10,
   },
-  badgeGreen: { backgroundColor: "#22c55e" },
+  badgeGreen: { backgroundColor: COLORS.primary },
   badgeRed: { backgroundColor: "#ef4444" },
   stockBadgeText: {
     color: "white",
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
   metaText: {
     fontSize: 10,
     fontWeight: "800",
-    color: "#71717a",
+    color: COLORS.muted,
   },
   priceRow: { marginTop: 2 },
   price: {
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
   unit: {
     fontSize: 10,
     fontWeight: "700",
-    color: "#9ca3af",
+    color: COLORS.muted,
   },
 
   // states
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 12,
     fontWeight: "700",
-    color: "#9ca3af",
+    color: COLORS.muted,
     textAlign: "center",
   },
 });

@@ -85,7 +85,7 @@ function FiltersModal({
                 style={styles.sheetCloseBtn}
                 hitSlop={10}
               >
-                <MaterialIcons name="close" size={22} color="#71717a" />
+                <MaterialIcons name="close" size={22} color={COLORS.muted} />
               </Pressable>
             </View>
           </View>
@@ -106,7 +106,7 @@ function FiltersModal({
               <MaterialIcons
                 name="near-me"
                 size={20}
-                color={nearBy === "near" ? COLORS.primary : "#71717a"}
+                color={nearBy === "near" ? COLORS.primary : COLORS.muted}
               />
               <Text
                 style={[
@@ -137,7 +137,7 @@ function FiltersModal({
               <MaterialIcons
                 name="social-distance"
                 size={20}
-                color={nearBy === "far" ? COLORS.primary : "#71717a"}
+                color={nearBy === "far" ? COLORS.primary : COLORS.muted}
               />
               <Text
                 style={[
@@ -252,7 +252,7 @@ export default function GroceriesListScreen({ navigation, userLocation, location
           <MaterialIcons
             name="search"
             size={18}
-            color="#71717a"
+            color={COLORS.muted}
           ></MaterialIcons>
           <TextInput
             value={query}
@@ -268,7 +268,7 @@ export default function GroceriesListScreen({ navigation, userLocation, location
               <MaterialIcons
                 name="close"
                 size={18}
-                color="#71717a"
+                color={COLORS.muted}
               ></MaterialIcons>
             </Pressable>
           )}
@@ -308,7 +308,7 @@ export default function GroceriesListScreen({ navigation, userLocation, location
           {item.name}
         </Text>
         <View style={styles.addrRow}>
-          <MaterialIcons name="map" size={12} color="#71717a"></MaterialIcons>
+          <MaterialIcons name="map" size={12} color={COLORS.muted}></MaterialIcons>
           <Text style={styles.addrText} numberOfLines={2}>
             {item.address}
           </Text>
@@ -360,7 +360,7 @@ export default function GroceriesListScreen({ navigation, userLocation, location
                 <MaterialIcons
                   name="storefront"
                   size={28}
-                  color="#9ca3af"
+                  color={COLORS.muted}
                 ></MaterialIcons>
                 <Text style={styles.emptyTitle}>Aucune épicerie trouvée</Text>
                 <Text style={styles.emptySub}>
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.06)",
+    borderBottomColor: COLORS.border,
     backgroundColor: COLORS.bg,
   },
   headerTop: {
@@ -411,9 +411,9 @@ const styles = StyleSheet.create({
   searchBox: {
     height: 50,
     borderRadius: 18,
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
     paddingLeft: 12,
     paddingRight: 8,
     flexDirection: "row",
@@ -432,9 +432,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(214,86,31,0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(214,86,31,0.18)",
+    backgroundColor: "rgba(6,105,3,0.10)",
   },
 
   colWrap: {
@@ -445,16 +443,16 @@ const styles = StyleSheet.create({
 
   card: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
     overflow: "hidden",
   },
   cardImgWrap: {
     width: "100%",
     height: 112, // ~ h-28
-    backgroundColor: "#f3f4f6",
+    backgroundColor: COLORS.bg,
   },
   cardImg: { width: "100%", height: "100%" },
 
@@ -469,7 +467,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 10,
     fontWeight: "700",
-    color: "#71717a",
+    color: COLORS.muted,
     lineHeight: 14,
   },
   distRow: {
@@ -508,7 +506,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingBottom: 22,
@@ -524,7 +522,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 6,
     borderRadius: 99,
-    backgroundColor: "#d1d5db",
+    backgroundColor: COLORS.border,
     alignSelf: "center",
     marginTop: 6,
     marginBottom: 14,
@@ -542,16 +540,16 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#f3f4f6",
+    backgroundColor: COLORS.bg,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
   },
   sheetSectionKicker: {
     marginTop: 6,
     marginBottom: 10,
     fontSize: 12,
     fontWeight: "900",
-    color: "#71717a",
+    color: COLORS.muted,
     letterSpacing: 1.2,
     textTransform: "uppercase",
   },
@@ -568,10 +566,10 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   nearCardActive: {
-    backgroundColor: "rgba(249,115,22,0.10)",
-    borderColor: "rgba(249,115,22,0.22)",
+    backgroundColor: "rgba(6,105,3,0.08)",
+    borderColor: "rgba(6,105,3,0.22)",
   },
-  nearCardIdle: { backgroundColor: "#f9fafb", borderColor: "transparent" },
+  nearCardIdle: { backgroundColor: COLORS.bg, borderColor: "transparent" },
   nearText: { fontSize: 13 },
   nearTextActive: { fontWeight: "900", color: COLORS.text },
   nearTextIdle: { fontWeight: "800", color: COLORS.text },
@@ -610,23 +608,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: "rgba(34,197,94,0.12)",
+    backgroundColor: "rgba(255,215,4,0.18)",
     borderWidth: 1,
-    borderColor: "rgba(34,197,94,0.22)",
+    borderColor: "rgba(255,215,4,0.35)",
   },
-  activeBadgeText: { fontSize: 11, fontWeight: "900", color: "#16a34a" },
+  activeBadgeText: { fontSize: 11, fontWeight: "900", color: COLORS.primary},
   resetBtn: {
     width: 40,
     height: 40,
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(249,115,22,0.10)",
+    backgroundColor: "rgba(6,105,3,0.10)",
     borderWidth: 1,
-    borderColor: "rgba(249,115,22,0.18)",
+    borderColor: "rgba(6,105,3,0.18)",
   },
   resetBtnDisabled: {
     backgroundColor: "#f3f4f6",
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
   },
 });

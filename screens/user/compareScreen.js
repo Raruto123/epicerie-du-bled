@@ -77,7 +77,7 @@ function DistancePill({ km }) {
       <MaterialIcons
         name="location-on"
         size={16}
-        color="#9ca3af"
+        color={COLORS.muted}
       ></MaterialIcons>
       <Text style={styles.valueText}>{val} km</Text>
     </View>
@@ -225,7 +225,7 @@ export default function CompareScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#fdfdfc" },
+  safe: { flex: 1, backgroundColor: COLORS.bg },
 
   topBar: {
     position: "sticky",
@@ -235,9 +235,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingBottom: 10,
-    backgroundColor: "rgba(253,253,252,0.95)",
+    backgroundColor: "rgba(248,250,248,0.95)",
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.06)",
+    borderBottomColor: COLORS.border,
   },
   backBtn: {
     width: 40,
@@ -245,16 +245,16 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "white",
+    backgroundColor:COLORS.surface,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
   },
   topTitle: {
     flex: 1,
     textAlign: "center",
     fontSize: 16,
     fontWeight: "900",
-    color: "#181410",
+    color: COLORS.text,
   },
 
   imagesGrid: {
@@ -268,30 +268,30 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: 14,
     overflow: "hidden",
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
     shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 10 },
     elevation: 2,
   },
-  img: { width: "100%", height: "100%", backgroundColor: "#f3f4f6" },
+  img: { width: "100%", height: "100%", backgroundColor: COLORS.bg },
 
   sectionStrip: {
     marginTop: 14,
     paddingVertical: 10,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
-    backgroundColor: "rgba(0,0,0,0.02)",
+    borderColor: COLORS.border,
+    backgroundColor: "rgba(255,215,4,0.12)",
   },
   sectionStripTitle: {
     paddingHorizontal: 16,
     fontSize: 12,
     fontWeight: "900",
-    color: "#181410",
+    color: COLORS.text,
     letterSpacing: 1.6,
     textTransform: "uppercase",
   },
@@ -301,11 +301,11 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.06)",
+    borderBottomColor: COLORS.border,
     position: "relative",
     overflow:"visible"
   },
-  rowHighlight: { backgroundColor: "rgba(255,132,31,0.05)" },
+  rowHighlight: { backgroundColor: "rgba(255,215,4,0.12)" },
 
   rowLabelOverlay: {
     position: "absolute",
@@ -321,20 +321,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
-    backgroundColor: "#fdfdfc",
+    backgroundColor: COLORS.bg,
+    borderWidth:1,
+    borderColor:COLORS.border
   },
   rowLabel: {
     fontSize: 10,
     fontWeight: "900",
-    color: "#9ca3af",
+    color: COLORS.muted,
     letterSpacing: 1.2,
   },
   rowLabelPillHighlight: {
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: "rgba(255,132,31,0.20)",
+    borderColor: "rgba(255,215,4,0.55)",
   },
-  rowLabelHighlight: { color: COLORS.primary },
+  rowLabelHighlight: { color: COLORS.text },
 
   cellLeft: {
     flex: 1,
@@ -343,7 +345,7 @@ const styles = StyleSheet.create({
     paddingRight: 30,
     alignItems: "center",
     borderRightWidth: 1,
-    borderRightColor: "rgba(0,0,0,0.06)",
+    borderRightColor: COLORS.border,
   },
   cellRight: {
     flex: 1,
@@ -356,7 +358,7 @@ const styles = StyleSheet.create({
   valueText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#181410",
+    color: COLORS.text,
     textAlign: "center",
   },
 
@@ -366,23 +368,23 @@ const styles = StyleSheet.create({
     marginTop: 3,
     fontSize: 10,
     fontWeight: "700",
-    color: "#9ca3af",
+    color: COLORS.muted,
   },
 
   centerRow: { flexDirection: "row", alignItems: "center", gap: 6 },
 
   dot: { width: 8, height: 8, borderRadius: 99 },
-  dotGreen: { backgroundColor: "#22c55e" },
+  dotGreen: { backgroundColor: COLORS.primary },
   dotRed: { backgroundColor: "#ef4444" },
 
   stockText: { fontSize: 12, fontWeight: "900", textTransform: "uppercase" },
-  stockGreen: { color: "#16a34a" },
+  stockGreen: { color: COLORS.primary },
   stockRed: { color: "#ef4444" },
 
   sellerName: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#8d735e",
+    color: COLORS.text,
     textAlign: "center",
     maxWidth: 150,
   },
@@ -390,7 +392,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 10,
     fontWeight: "700",
-    color: "#9ca3af",
+    color: COLORS.muted,
     fontStyle: "italic",
     textAlign: "center",
     maxWidth: 150,
@@ -423,13 +425,13 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 48,
     borderRadius: 14,
-    backgroundColor: "rgba(255,132,31,0.10)",
+    backgroundColor: "rgba(255,215,4,0.18)",
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
     gap: 8,
     borderWidth: 1,
-    borderColor: "rgba(255,132,31,0.20)",
+    borderColor: "rgba(255,215,4,0.55)",
   },
   secondaryBtnText: { color: COLORS.primary, fontSize: 13, fontWeight: "900" },
 });

@@ -13,6 +13,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import { COLORS } from "../../constants/colors";
 
 const { width, height } = Dimensions.get("window");
 //Simple logo placeholder : later you can swap this View with your real logo <Image/>
@@ -26,12 +27,17 @@ export function LogoMark() {
         borderRadius: 17,
         borderWidth: 1,
         borderBottomWidth: 1,
-        backgroundColor: "none",
+        backgroundColor: "transparent",
+        borderColor: COLORS.border,
         alignItems: "center",
         justifyContent: "center",
       }}
     >
-      <Text style={{ color: "red", fontWeight: "800" }}>Future Logo</Text>
+      {/* <Text style={{ color: COLORS.primary, fontWeight: "900" }}>Future Logo</Text> */}
+      <Image
+        source={require("../../assets/logo.jpg")}
+        style={{ width: "100%", height: "100%", resizeMode: "contain" }}
+      ></Image>
     </View>
   );
 }
@@ -45,9 +51,9 @@ export default function OnboardingScreen({ navigation }) {
         text: "...sans faire 3 magasins, sans être sûr du stock, et sans comparer les prix.",
         image: require("../../assets/image1onboarding.png"),
         theme: {
-          bg: "#fbfaf9",
-          primary: "#d6561f",
-          darkText: "#2a2622",
+          bg: COLORS.bg,
+          primary: COLORS.primary,
+          darkText: COLORS.text,
         },
       },
       {
@@ -56,9 +62,9 @@ export default function OnboardingScreen({ navigation }) {
         text: "Découvre les épiceries africaines autour de toi, les produits disponibles, les prix et la distance.",
         image: require("../../assets/image2onboarding.png"),
         theme: {
-          bg: "#FBFAF9",
-          primary: "#13ec5b",
-          darkText: "#2B323D",
+          bg: COLORS.bg,
+          primary: COLORS.primary,
+          darkText: COLORS.text,
         },
       },
       {
@@ -67,13 +73,13 @@ export default function OnboardingScreen({ navigation }) {
         text: "Acheteurs : trouvez vos produits facilement.\nVendeurs : gagnez en visibilité et gérez vos produits.",
         image: require("../../assets/image3epicerie.png"),
         theme: {
-          bg: "#fafaf9",
-          primary: "#13ec5b",
-          darkText: "#161d18",
+          bg: COLORS.bg,
+          primary: COLORS.accent,
+          darkText: COLORS.text,
         },
       },
     ],
-    []
+    [],
   );
 
   const listRef = useRef(null);
@@ -155,7 +161,7 @@ export default function OnboardingScreen({ navigation }) {
                 right: 0,
                 bottom: 0,
                 top: item.id === "1" ? "85%" : "75%",
-                backgroundColor: "rgba(119, 17, 17, 0.18)",
+                backgroundColor: "rgba(0, 0, 0, 0.10)",
               }}
             ></View>
             {/* Slide 2 : floating mini badges + glass price card */}
@@ -180,7 +186,7 @@ export default function OnboardingScreen({ navigation }) {
                     transform: [{ rotate: "12deg" }],
                   }}
                 >
-                  <Text style={{ color: "#FFCB3D", fontWeight: "900" }}>
+                  <Text style={{ color: COLORS.accent, fontWeight: "900" }}>
                     🛒
                   </Text>
                 </View>
@@ -259,7 +265,7 @@ export default function OnboardingScreen({ navigation }) {
                       <View>
                         <Text
                           style={{
-                            color: "#6b7280",
+                            color: COLORS.muted,
                             fontWeight: "800",
                             fontSize: 12,
                           }}
@@ -268,7 +274,7 @@ export default function OnboardingScreen({ navigation }) {
                         </Text>
                         <Text
                           style={{
-                            color: "#111827",
+                            color: COLORS.text,
                             fontSize: 10,
                           }}
                         >
@@ -296,7 +302,7 @@ export default function OnboardingScreen({ navigation }) {
                       width: "100%",
                       height: 6,
                       borderRadius: 999,
-                      backgroundColor: "rgba(255,255,255,0.22",
+                      backgroundColor: "rgba(255,255,255,0.22)",
                       overflow: "hidden",
                     }}
                   >
@@ -353,7 +359,7 @@ export default function OnboardingScreen({ navigation }) {
                   <Text
                     style={{
                       fontSize: 11,
-                      color: "#6b7280",
+                      color: COLORS.muted,
                       fontWeight: "700",
                     }}
                   >
@@ -362,7 +368,7 @@ export default function OnboardingScreen({ navigation }) {
                   <Text
                     style={{
                       fontSize: 13,
-                      color: "#111827",
+                      color: COLORS.text,
                       fontWeight: "900",
                     }}
                   >
@@ -439,14 +445,17 @@ export default function OnboardingScreen({ navigation }) {
                 paddingHorizontal: 12,
                 paddingVertical: 8,
                 borderRadius: 999,
-                backgroundColor: "rgba(255,255,255,0.65",
+                backgroundColor: "rgba(255,255,255,0.75)",
+                borderWidth: 1,
+                borderColor: COLORS.border,
               }}
             >
               <Text
                 style={{
                   fontSize: 13,
                   fontWeight: "800",
-                  color: `${darkText}B3`,
+                  color: COLORS.text,
+                  opacity: 0.75,
                 }}
               >
                 Passer
@@ -518,7 +527,7 @@ export default function OnboardingScreen({ navigation }) {
                   width: active ? 32 : 10,
                   height: active ? 10 : 10,
                   borderRadius: 999,
-                  backgroundColor: active ? primary : "rgba(0,0,0,0.12)",
+                  backgroundColor: active ? primary : "rgba(31,41,51,0.12)",
                 }}
               ></View>
             );
@@ -531,9 +540,9 @@ export default function OnboardingScreen({ navigation }) {
           style={{
             height: 56,
             borderRadius: 16,
-            backgroundColor: primary,
+            backgroundColor: isLast ? COLORS.accent : COLORS.primary,
             justifyContent: "center",
-            shadowColor: primary,
+            shadowColor: isLast ? COLORS.accent : COLORS.primary,
             shadowOpacity: 0.25,
             shadowRadius: 18,
             shadowOffset: { width: 0, height: 10 },
@@ -544,7 +553,7 @@ export default function OnboardingScreen({ navigation }) {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Text
               style={{
-                color: isLast ? "black" : "white",
+                color: isLast ? COLORS.text : "white",
                 fontWeight: "900",
                 fontSize: 16,
               }}

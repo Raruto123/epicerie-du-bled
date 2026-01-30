@@ -321,7 +321,7 @@ export default function ProductDetailsScreen({ navigation, route }) {
                 <Text
                   style={[
                     styles.stockPillText,
-                    data.inStock ? { color: "#12b76a" } : { color: "#ef4444" },
+                    data.inStock ? { color: COLORS.primary} : { color: "#ef4444" },
                   ]}
                 >
                   {data.inStock ? "En stock" : "Rupture"}
@@ -416,7 +416,7 @@ export default function ProductDetailsScreen({ navigation, route }) {
               <MaterialIcons
                 name="location-on"
                 size={16}
-                color="#6b7280"
+                color={COLORS.muted}
               ></MaterialIcons>
               <Text style={styles.addrText}>{data.seller.address}</Text>
             </View>
@@ -513,7 +513,7 @@ export default function ProductDetailsScreen({ navigation, route }) {
                             paddingHorizontal: 8,
                             paddingVertical: 4,
                             borderRadius: 8,
-                            backgroundColor: inStock ? "#22c55e" : "#ef4444",
+                            backgroundColor: inStock ? COLORS.primary : "#ef4444",
                           }}
                         >
                           <Text
@@ -543,7 +543,7 @@ export default function ProductDetailsScreen({ navigation, route }) {
                         <MaterialIcons
                           name="near-me"
                           size={12}
-                          color="#9ca3af"
+                          color={COLORS.muted}
                         ></MaterialIcons>
                         <Text style={styles.simMetaText}>
                           {p.distanceKm == null
@@ -586,9 +586,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingBottom: 10,
-    backgroundColor: "rgba(248,247,246,0.90)",
+    backgroundColor: "rgba(248,250,248,0.92)",
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.06)",
+    borderBottomColor: COLORS.border,
   },
   navBtn: {
     width: 40,
@@ -596,11 +596,10 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
   },
-  navTitle: { fontSize: 14, fontWeight: "900", color: COLORS.text },
 
   heroWrap: { paddingHorizontal: 16, marginTop: 10 },
   heroCard: {
@@ -608,9 +607,9 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: 14,
     overflow: "hidden",
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 18,
@@ -630,11 +629,13 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.92)",
     borderWidth: 1,
   },
-  stockPillGreen: { borderColor: "rgba(18,183,106,0.25)" },
+  stockPillGreen: { borderColor: "rgba(6,105,3,0.25)" },
   stockPillRed: { borderColor: "rgba(239,68,68,0.25)" },
+
   dot: { width: 8, height: 8, borderRadius: 4 },
-  dotGreen: { backgroundColor: "#12b76a" },
+  dotGreen: { backgroundColor: COLORS.primary },
   dotRed: { backgroundColor: "#ef4444" },
+
   stockPillText: { fontSize: 11, fontWeight: "900", letterSpacing: 1.1 },
 
   titleSection: {
@@ -650,14 +651,15 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     lineHeight: 34,
   },
+
   catRow: { flexDirection: "row", marginTop: 10 },
   catPill: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
-    backgroundColor: "rgba(214,86,31,0.10)",
+    backgroundColor: "rgba(255,215,4,0.18)",
     borderWidth: 1,
-    borderColor: "rgba(214,86,31,0.16)",
+    borderColor: "rgba(255,215,4,0.35)",
   },
   catPillText: { fontSize: 12, fontWeight: "900", color: COLORS.primary },
 
@@ -666,7 +668,7 @@ const styles = StyleSheet.create({
 
   divider: {
     height: 1,
-    backgroundColor: "rgba(0,0,0,0.08)",
+    backgroundColor: COLORS.border,
     marginHorizontal: 16,
     marginTop: 18,
   },
@@ -675,29 +677,34 @@ const styles = StyleSheet.create({
   sectionKicker: {
     fontSize: 12,
     fontWeight: "900",
-    color: "#9ca3af",
+    color: COLORS.muted,
     letterSpacing: 1.6,
     textTransform: "uppercase",
     marginBottom: 10,
   },
 
   sellerCard: {
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderRadius: 14,
     padding: 14,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
   },
   sellerTop: { flexDirection: "row", gap: 12, alignItems: "center" },
+
   sellerLogo: {
     width: 56,
     height: 56,
     borderRadius: 12,
     overflow: "hidden",
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "#EEF2EE",
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   sellerLogoImg: { width: "100%", height: "100%" },
+
   sellerName: { fontSize: 16, fontWeight: "900", color: COLORS.text },
+
   sellerDistRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -721,11 +728,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     lineHeight: 18,
-    color: "#6b7280",
+    color: COLORS.muted,
     fontWeight: "700",
   },
 
   sellerBtns: { flexDirection: "row", gap: 10, marginTop: 14 },
+
   primaryBtn: {
     flex: 1,
     height: 52,
@@ -737,6 +745,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   primaryBtnText: { color: "white", fontWeight: "900", fontSize: 14 },
+
   secondaryBtn: {
     flex: 1,
     height: 52,
@@ -751,7 +760,7 @@ const styles = StyleSheet.create({
   },
   secondaryBtnText: { color: COLORS.primary, fontWeight: "900", fontSize: 14 },
 
-  desc: { color: "#374151", fontSize: 14, lineHeight: 21, fontWeight: "600" },
+  desc: { color: COLORS.text, fontSize: 14, lineHeight: 21, fontWeight: "600" },
 
   simHeader: {
     paddingHorizontal: 16,
@@ -769,21 +778,25 @@ const styles = StyleSheet.create({
   },
 
   simRow: { paddingHorizontal: 16, gap: 12, paddingBottom: 10 },
+
   simCard: {
     width: 160,
     borderRadius: 14,
-    backgroundColor: "white",
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: COLORS.border,
     overflow: "hidden",
   },
-  simImgWrap: { height: 128, backgroundColor: "#f3f4f6" },
+  simImgWrap: { height: 128, backgroundColor: "#EEF2EE" },
   simImg: { width: "100%", height: "100%" },
+
   simBody: { padding: 12, gap: 6 },
   simTitle: { fontSize: 13, fontWeight: "900", color: COLORS.text },
   simPrice: { fontSize: 16, fontWeight: "900", color: COLORS.primary },
+
   simMeta: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
-  simMetaText: { fontSize: 11, fontWeight: "800", color: "#9ca3af" },
+  simMetaText: { fontSize: 11, fontWeight: "800", color: COLORS.muted },
+
   heroFavBtn: {
     position: "absolute",
     top: 14,
@@ -795,24 +808,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.92)",
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.08)",
+    borderColor: COLORS.border,
   },
+
   secondaryBtnActive: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
-  secondaryBtnTextActive: {
-    color: "white",
-  },
+  secondaryBtnTextActive: { color: "white" },
+
   compareDot: {
     width: 8,
     height: 8,
     borderRadius: 99,
-    backgroundColor: "#22c55e",
+    backgroundColor: COLORS.accent,
     position: "absolute",
     top: 10,
     right: 10,
     borderWidth: 2,
-    borderColor: "white",
+    borderColor: COLORS.surface,
   },
 });
