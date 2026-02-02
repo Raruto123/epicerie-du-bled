@@ -1,5 +1,7 @@
 import {
+  Animated,
   Dimensions,
+  Easing,
   FlatList,
   Image,
   Pressable,
@@ -8,12 +10,13 @@ import {
   View,
 } from "react-native";
 import { setHasSeenOnboarding } from "../../services/onboardingService";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { COLORS } from "../../constants/colors";
+import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 
 const { width, height } = Dimensions.get("window");
 //Simple logo placeholder : later you can swap this View with your real logo <Image/>
@@ -22,25 +25,55 @@ export function LogoMark() {
   return (
     <View
       style={{
-        width: 100,
-        height: 30,
-        borderRadius: 17,
-        borderWidth: 1,
-        borderBottomWidth: 1,
-        backgroundColor: "transparent",
-        borderColor: COLORS.border,
+        width: 70,
+        height: 70,
+        // borderRadius: 17,
+        // borderWidth: 1,
+        // borderBottomWidth: 1,
+        // backgroundColor: "transparent",
+        // borderColor: COLORS.border,
         alignItems: "center",
         justifyContent: "center",
       }}
     >
-      {/* <Text style={{ color: COLORS.primary, fontWeight: "900" }}>Future Logo</Text> */}
+      {/* <Text style={{ color: COLORS.primary, fontWeight: "900" }}>Mifere</Text> */}
       <Image
-        source={require("../../assets/logo.jpg")}
-        style={{ width: "100%", height: "100%", resizeMode: "contain" }}
+        source={require("../../assets/logo_mifere.png")}
+        style={{ width: "100%", height: "100%" }}
       ></Image>
     </View>
   );
 }
+
+const createFloatAnim = (range = 6, duration = 2800) => {
+  const anim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: duration / 2,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(anim, {
+          toValue: 0,
+          duration: duration / 2,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start();
+  }, []);
+
+  const translateY = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -range],
+  });
+
+  return translateY;
+};
 
 export default function OnboardingScreen({ navigation }) {
   const slides = useMemo(
@@ -48,7 +81,7 @@ export default function OnboardingScreen({ navigation }) {
       {
         id: "1",
         title: "Trouver des ingrédients africains...",
-        text: "...sans faire 3 magasins, sans être sûr du stock, et sans comparer les prix.",
+        text: "...sans faire 3 magasins, sans être sûr du stock, et sans perdre de temps.",
         image: require("../../assets/image1onboarding.png"),
         theme: {
           bg: COLORS.bg,
@@ -60,7 +93,7 @@ export default function OnboardingScreen({ navigation }) {
         id: "2",
         title: "Tout au même endroit",
         text: "Découvre les épiceries africaines autour de toi, les produits disponibles, les prix et la distance.",
-        image: require("../../assets/image2onboarding.png"),
+        image: require("../../assets/image2onboarding_sora.png"),
         theme: {
           bg: COLORS.bg,
           primary: COLORS.primary,
@@ -101,7 +134,7 @@ export default function OnboardingScreen({ navigation }) {
     console.log("wtf");
     // listRef.current?.scrollToIndex({ index: index + 1, animated: true });
     const nextIndex = Math.min(index + 1, slides.length - 1);
-    setIndex(nextIndex);
+    // setIndex(nextIndex);
     listRef.current?.scrollToOffset({
       offset: width * nextIndex,
       animated: true,
@@ -109,6 +142,9 @@ export default function OnboardingScreen({ navigation }) {
   };
 
   const skip = () => finish();
+
+  const floatStore = createFloatAnim(6, 3000);
+  const floatLocation = createFloatAnim(8, 3600);
 
   const renderSlide = ({ item }) => {
     const singleTheme = item.theme;
@@ -167,7 +203,7 @@ export default function OnboardingScreen({ navigation }) {
             {/* Slide 2 : floating mini badges + glass price card */}
             {item.id === "2" && (
               <>
-                <View
+                <Animated.View
                   style={{
                     position: "absolute",
                     right: 12,
@@ -183,14 +219,19 @@ export default function OnboardingScreen({ navigation }) {
                     shadowRadius: 10,
                     shadowOffset: { width: 0, height: 6 },
                     elevation: 4,
-                    transform: [{ rotate: "12deg" }],
+                    transform: [
+                      { rotate: "12deg" },
+                      { translateY: floatStore },
+                    ],
                   }}
                 >
-                  <Text style={{ color: COLORS.accent, fontWeight: "900" }}>
-                    🛒
-                  </Text>
-                </View>
-                <View
+                  <MaterialIcons
+                    name="local-grocery-store"
+                    size={20}
+                    color={COLORS.primary}
+                  ></MaterialIcons>
+                </Animated.View>
+                <Animated.View
                   style={{
                     position: "absolute",
                     left: "10",
@@ -206,15 +247,18 @@ export default function OnboardingScreen({ navigation }) {
                     shadowRadius: 10,
                     shadowOffset: { width: 0, height: 6 },
                     elevation: 4,
-                    transform: [{ rotate: "-6deg" }],
+                    transform: [
+                      { rotate: "-6deg" },
+                      { translateY: floatLocation },
+                    ],
                   }}
                 >
-                  <Text
-                    style={{ color: singleTheme.primary, fontWeight: "900" }}
-                  >
-                    📍
-                  </Text>
-                </View>
+                  <MaterialIcons
+                    name="location-on"
+                    size={20}
+                    color={COLORS.primary}
+                  ></MaterialIcons>
+                </Animated.View>
                 <View
                   style={{
                     position: "absolute",
@@ -253,14 +297,18 @@ export default function OnboardingScreen({ navigation }) {
                           justifyContent: "center",
                         }}
                       >
-                        <Text
+                        {/* <Text
                           style={{
                             color: singleTheme.primary,
                             fontWeight: "900",
                           }}
-                        >
-                          🏪
-                        </Text>
+                        > */}
+                        <MaterialIcons
+                          name="storefront"
+                          size={24}
+                          color={COLORS.primary}
+                        ></MaterialIcons>
+                        {/* </Text> */}
                       </View>
                       <View>
                         <Text
@@ -276,9 +324,15 @@ export default function OnboardingScreen({ navigation }) {
                           style={{
                             color: COLORS.text,
                             fontSize: 10,
+                            fontStyle: "italic",
                           }}
                         >
-                          1.2 km ⚫️ Ouvert
+                          <MaterialIcons
+                            name="near-me"
+                            size={12}
+                            color={COLORS.primary}
+                          ></MaterialIcons>
+                          À 2.4 km de vous
                         </Text>
                       </View>
                     </View>
@@ -349,11 +403,11 @@ export default function OnboardingScreen({ navigation }) {
                     justifyContent: "center",
                   }}
                 >
-                  <Text
-                    style={{ color: singleTheme.primary, fontWeight: "900" }}
-                  >
-                    🏪
-                  </Text>
+                  <FontAwesome5
+                    name="pepper-hot"
+                    size={24}
+                    color={COLORS.text}
+                  ></FontAwesome5>
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text
@@ -363,7 +417,7 @@ export default function OnboardingScreen({ navigation }) {
                       fontWeight: "700",
                     }}
                   >
-                    Maintenant disponible
+                    Actuellement en stock
                   </Text>
                   <Text
                     style={{
@@ -372,7 +426,7 @@ export default function OnboardingScreen({ navigation }) {
                       fontWeight: "900",
                     }}
                   >
-                    Épiceries locales
+                    Piments Rouges
                   </Text>
                 </View>
               </View>
@@ -383,7 +437,7 @@ export default function OnboardingScreen({ navigation }) {
         <View style={{ paddingTop: 0, gap: 10 }}>
           <Text
             style={{
-              fontSize: item.id === "2" ? 30 : 32,
+              fontSize: item.id === "2" ? 30 : 30,
               fontWeight: "900",
               lineHeight: item.id === "2" ? 36 : 38,
               color: singleTheme.darkText,
@@ -573,7 +627,7 @@ export default function OnboardingScreen({ navigation }) {
         </Pressable>
 
         {/* Secondary link only on last slide */}
-        {isLast && (
+        {/* {isLast && (
           <Pressable
             onPress={skip}
             style={{ paddingVertical: 12, alignItems: "center" }}
@@ -582,7 +636,7 @@ export default function OnboardingScreen({ navigation }) {
               J'ai déjà un compte
             </Text>
           </Pressable>
-        )}
+        )} */}
       </View>
     </SafeAreaView>
   );
