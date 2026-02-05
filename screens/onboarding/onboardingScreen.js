@@ -82,7 +82,7 @@ export default function OnboardingScreen({ navigation }) {
         id: "1",
         title: "Trouver des ingrédients africains...",
         text: "...sans faire 3 magasins, sans être sûr du stock, et sans perdre de temps.",
-        image: require("../../assets/image1onboarding.png"),
+        image: require("../../assets/image1onboarding_2.jpg"),
         theme: {
           bg: COLORS.bg,
           primary: COLORS.primary,

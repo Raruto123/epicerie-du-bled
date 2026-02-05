@@ -41,7 +41,7 @@ export default function AuthScreen({ navigation }) {
 
   const title = useMemo(
     () => (mode === "login" ? "Bienvenue !" : "Créer un compte"),
-    [mode]
+    [mode],
   );
 
   const subtitle = useMemo(
@@ -49,7 +49,7 @@ export default function AuthScreen({ navigation }) {
       mode === "login"
         ? "Connectez-vous pour découvrir les épiceries africaines près de chez vous."
         : "Créez votre compte pour acheter ou vendre des produits africains",
-    [mode]
+    [mode],
   );
 
   useEffect(() => {
@@ -216,7 +216,7 @@ export default function AuthScreen({ navigation }) {
                           responder.scrollResponderScrollNativeHandleToKeyboard(
                             node,
                             90,
-                            true
+                            true,
                           );
                         } else {
                           //Fallback
@@ -239,40 +239,55 @@ export default function AuthScreen({ navigation }) {
               </View>
 
               {mode === "signup" && (
-                <View style={styles.roleRow}>
-                  <Pressable
-                    onPress={() => setIsSeller(false)}
-                    style={[
-                      styles.roleChip,
-                      isSeller === false && styles.roleChipActive,
-                    ]}
-                  >
-                    <Text
+                <View style={styles.roleSection}>
+                  <Text style={styles.roleTitle}>Type de compte</Text>
+                  <View style={styles.roleRow}>
+                    <Pressable
+                      onPress={() => setIsSeller(false)}
                       style={[
-                        styles.roleText,
-                        isSeller === false && styles.roleTextActive,
+                        styles.roleChip,
+                        isSeller === false && styles.roleChipActive,
                       ]}
                     >
-                      Acheteur
-                    </Text>
-                  </Pressable>
+                      <Text
+                        style={[
+                          styles.roleText,
+                          isSeller === false && styles.roleTextActive,
+                        ]}
+                      >
+                        Acheteur
+                      </Text>
+                    </Pressable>
 
-                  <Pressable
-                    onPress={() => setIsSeller(true)}
-                    style={[
-                      styles.roleChip,
-                      isSeller === true && styles.roleChipActive,
-                    ]}
-                  >
-                    <Text
+                    <Pressable
+                      onPress={() => setIsSeller(true)}
                       style={[
-                        styles.roleText,
-                        isSeller === true && styles.roleTextActive,
+                        styles.roleChip,
+                        isSeller === true && styles.roleChipActive,
                       ]}
                     >
-                      Vendeur
+                      <Text
+                        style={[
+                          styles.roleText,
+                          isSeller === true && styles.roleTextActive,
+                        ]}
+                      >
+                        Vendeur
+                      </Text>
+                    </Pressable>
+                  </View>
+
+                  {/* encadré explicatif */}
+                  <View style={styles.roleInfoBox}>
+                    <Text style={styles.roleInfoTitle}>
+                      {isSeller ? "Compte Vendeur" : "Compte Acheteur"}
                     </Text>
-                  </Pressable>
+                    <Text style={styles.roleInfoText}>
+                      {isSeller
+                        ? "Pour les propriétaires d'épiceries ou individus vendant des produits africains ! \nPubliez vos produits, gérez votre stock et augmentez votre visibilité."
+                        : "Pour les amateurs d'épiceries ! \nDécouvrez les épiceries africaines les plus proches, comparez les prix et achetez vos produits favoris plus facilement."}
+                    </Text>
+                  </View>
                 </View>
               )}
 
@@ -322,8 +337,8 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.7)",
-    borderWidth:1,
-    borderColor:COLORS.border,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -360,8 +375,8 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 14,
     backgroundColor: "#F1F5F1",
-    borderWidth:1,
-    borderColor:COLORS.border,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     padding: 4,
     flexDirection: "row",
     marginBottom: 20,
@@ -392,8 +407,8 @@ const styles = StyleSheet.create({
   label: {
     fontWeight: "700",
     marginBottom: 4,
-    color:COLORS.text,
-    opacity:0.8
+    color: COLORS.text,
+    opacity: 0.8,
   },
   input: {
     height: 48,
@@ -402,8 +417,8 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     paddingHorizontal: 14,
     backgroundColor: COLORS.surface,
-    color:COLORS.text,
-    fontWeight:"700"
+    color: COLORS.text,
+    fontWeight: "700",
   },
   passwordWrap: {
     position: "relative",
@@ -412,6 +427,15 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 12,
     top: 12,
+  },
+  roleSection: {
+    marginTop: 6,
+    gap: 10,
+  },
+  roleTitle: {
+    fontWeight: "700",
+    color: COLORS.text,
+    opacity: 0.8,
   },
   roleRow: {
     flexDirection: "row",
@@ -438,6 +462,25 @@ const styles = StyleSheet.create({
   },
   roleTextActive: {
     color: COLORS.primary,
+  },
+  roleInfoBox: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: `${COLORS.primary}0D`,
+    padding: 12,
+    borderRadius: 14,
+  },
+  roleInfoTitle: {
+    fontWeight: "900",
+    color: COLORS.primary,
+    marginBottom: 6,
+  },
+  roleInfoText: {
+    color: COLORS.text,
+    opacity: 0.85,
+    lineHeight: 18,
+    fontWeight: "600",
+    fontSize: 12,
   },
   primaryBtn: {
     marginTop: 10,

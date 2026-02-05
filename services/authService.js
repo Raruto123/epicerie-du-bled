@@ -33,66 +33,146 @@ import { auth, db } from "../lib/firebase";
 //   }
 // }
 
+// ------------Helpers-------------
+function isValidEmail(email) {
+  const value = String(email || "")
+    .trim()
+    .toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function cleanEmail(email) {
+  return String(email || "")
+    .trim()
+    .toLowerCase();
+}
+
+function normalizeName(name) {
+  return String(name || "").trim();
+}
+
+function mapFirebaseAuthError(error, context) {
+  const code = error?.code || "";
+  // context: "login" | "signup"
+  // Messages courts, humains
+  switch (code) {
+    case "auth/invalid-email":
+      return "Veuillez entrer une adresse e-mail valide.";
+    case "auth/network-request-failed":
+      return "Problème de connexion. Vérifiez Internet puis réessayez.";
+    case "auth/too-many-requests":
+      return "Trop de tentatives. Réessayez dans quelques minutes.";
+
+    //signup
+    case "auth/email-already-in-use":
+      return "Cet e-mail est déjà utilisé. Essayez de vous connecter.";
+    case "auth/weak-password":
+      return "Le mot de passe est trop faible. Minimum 6 caractères.";
+
+    //Login
+    case "auth/user-not-found":
+    case "auth/wrong-password":
+    case "auth/invalid-credential":
+      return context === "login"
+        ? "E-mail ou mot de passe incorrect."
+        : "Identifiants incorrects.";
+
+    //default
+    default:
+      // fallback propre (au lieu du message brut firebase)
+      return "Une erreur est survenue. Veuillez réessayer";
+  }
+}
+
 export async function signUpWithSellerFlag({
   name,
   email,
   password,
   isSeller,
 }) {
-  const credentials = await createUserWithEmailAndPassword(
-    auth,
-    email,
-    password
-  );
+  // ✅ Validations UI (avant Firebase)
+  const cleanName = normalizeName(name);
+  const cleanMail = cleanEmail(email);
+  const cleanPwd = String(password || "");
 
-  const userRef = doc(db, "users", credentials.user.uid);
+  if (!cleanName) throw new Error("Veuillez entrer votre nom.");
+  if (cleanName.length < 4)
+    throw new Error("Le nom doit contenir au moins 4 caractères.");
 
-  const baseUser = {
-    name,
-    email,
-    isSeller: !!isSeller,
-    photoURL: null,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  };
+  if (!cleanEmail) throw new Error("Veuillez entrer votre e-mail.");
+  if (!isValidEmail(cleanEmail))
+    throw new Error("Veuillez entrer une adresse e-mail valide.");
 
-  // If seller: initialize seller profile fields (can be edited later in SellerBoard)
-  const sellerProfile = !!isSeller
-    ? {
-        seller: {
-          storeName: name, //default = user's name (you can change it)
-          description: "",
-          logoURL: null,
-          coverURL: null,
-          addressText: "",
-          gps: null,
-          addressSource: "unknown",
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        },
-      }
-    : {};
+  if (!cleanPwd) throw new Error("Veuillez entrer un mot de passe.");
+  if (cleanPwd.length < 6)
+    throw new Error("Le mot de passe doit contenir au moins 6 caractères.");
 
-  await setDoc(userRef, { ...baseUser, ...sellerProfile });
+  try {
+    const credentials = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password,
+    );
 
-  //   await setDoc(doc(db, "users", credentials.user.uid), {
-  //     name,
-  //     email,
-  //     isSeller: !!isSeller,
-  //     createdAt: serverTimestamp(),
-  //   });
+    const userRef = doc(db, "users", credentials.user.uid);
 
-  console.log("successfully signed up");
-  return credentials.user;
+    const baseUser = {
+      name,
+      email,
+      isSeller: !!isSeller,
+      photoURL: null,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    // If seller: initialize seller profile fields (can be edited later in SellerBoard)
+    const sellerProfile = !!isSeller
+      ? {
+          seller: {
+            storeName: name, //default = user's name (you can change it)
+            description: "",
+            logoURL: null,
+            coverURL: null,
+            addressText: "",
+            gps: null,
+            addressSource: "unknown",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          },
+        }
+      : {};
+
+    await setDoc(userRef, { ...baseUser, ...sellerProfile });
+
+    //   await setDoc(doc(db, "users", credentials.user.uid), {
+    //     name,
+    //     email,
+    //     isSeller: !!isSeller,
+    //     createdAt: serverTimestamp(),
+    //   });
+
+    console.log("successfully signed up");
+    return credentials.user;
+  } catch (e) {
+    throw new Error(mapFirebaseAuthError(e, "signup"));
+  }
 }
 
 export async function signIn({ email, password }) {
-  const credential = await signInWithEmailAndPassword(auth, email, password);
-  console.log("successfully signed In");
-  return credential.user;
-}
+  // ✅ Validations UI
+  const cleanMail = cleanEmail(email);
+  const cleanPwd = String(password || "");
+  if (!cleanMail) throw new Error("Veuillez entrer votre e-mail.");
+  if (isValidEmail(cleanEmail))
+    throw new Error("Veuillez entrer une adresse e-mail valide.");
 
-// export async function getUserRole(uid) {
-//   const snapchot = await getDoc(doc(db, "users", uid));
-//   if (!snapchot.exists()) return null;
-//   return snapchot.data().isSeller === true ? "seller" : "buyer";
+  if (!cleanPwd) throw new Error("Veuillez entrer votre mot de passe.");
+
+  try {
+    const credential = await signInWithEmailAndPassword(auth, email, password);
+    console.log("successfully signed In");
+    return credential.user;
+  } catch (e) {
+    throw new Error(mapFirebaseAuthError(e, "login"));
+  }
+}
