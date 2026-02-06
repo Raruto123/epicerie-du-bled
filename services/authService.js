@@ -51,6 +51,12 @@ function normalizeName(name) {
   return String(name || "").trim();
 }
 
+function throwFieldError(fields) {
+  const err = new Error("Validation error");
+  err.fields = fields;
+  throw err;
+}
+
 function mapFirebaseAuthError(error, context) {
   const code = error?.code || "";
   // context: "login" | "signup"
@@ -95,17 +101,20 @@ export async function signUpWithSellerFlag({
   const cleanMail = cleanEmail(email);
   const cleanPwd = String(password || "");
 
-  if (!cleanName) throw new Error("Veuillez entrer votre nom.");
+  if (!cleanName) throwFieldError({ name: "Veuillez entrer votre nom." });
   if (cleanName.length < 4)
-    throw new Error("Le nom doit contenir au moins 4 caractères.");
+    throwFieldError({ name: "Le nom doit contenir au moins 4 caractères." });
 
-  if (!cleanEmail) throw new Error("Veuillez entrer votre e-mail.");
-  if (!isValidEmail(cleanEmail))
-    throw new Error("Veuillez entrer une adresse e-mail valide.");
+  if (!cleanMail) throwFieldError({ email: "Veuillez entrer votre e-mail." });
+  if (!isValidEmail(cleanMail))
+    throwFieldError({ email: "Veuillez entrer une adresse e-mail valide." });
 
-  if (!cleanPwd) throw new Error("Veuillez entrer un mot de passe.");
+  if (!cleanPwd)
+    throwFieldError({ password: "Veuillez entrer un mot de passe." });
   if (cleanPwd.length < 6)
-    throw new Error("Le mot de passe doit contenir au moins 6 caractères.");
+    throwFieldError({
+      password: "Le mot de passe doit contenir au moins 6 caractères.",
+    });
 
   try {
     const credentials = await createUserWithEmailAndPassword(
@@ -162,17 +171,19 @@ export async function signIn({ email, password }) {
   // ✅ Validations UI
   const cleanMail = cleanEmail(email);
   const cleanPwd = String(password || "");
-  if (!cleanMail) throw new Error("Veuillez entrer votre e-mail.");
-  if (isValidEmail(cleanEmail))
-    throw new Error("Veuillez entrer une adresse e-mail valide.");
+  if (!cleanMail) throwFieldError({ email: "Veuillez entrer votre e-mail." });
+  if (!isValidEmail(cleanMail))
+    throwFieldError({ email: "Veuillez entrer une adresse e-mail valide." });
 
-  if (!cleanPwd) throw new Error("Veuillez entrer votre mot de passe.");
+  if (!cleanPwd)
+    throwFieldError({ password: "Veuillez entrer votre mot de passe." });
 
   try {
     const credential = await signInWithEmailAndPassword(auth, email, password);
     console.log("successfully signed In");
     return credential.user;
   } catch (e) {
-    throw new Error(mapFirebaseAuthError(e, "login"));
+    const msg = mapFirebaseAuthError(e, "login");
+    throwFieldError({ form: msg });
   }
 }

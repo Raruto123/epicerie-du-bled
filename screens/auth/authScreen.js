@@ -37,7 +37,14 @@ export default function AuthScreen({ navigation }) {
 
   const [secure, setSecure] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState({
+    name: "",
+    email: "",
+    password: "",
+    form: "",
+  });
+
+  const [success, setSuccess] = useState("");
 
   const title = useMemo(
     () => (mode === "login" ? "Bienvenue !" : "Créer un compte"),
@@ -55,33 +62,74 @@ export default function AuthScreen({ navigation }) {
   useEffect(() => {
     // When switching between login/signup, reset form and dismiss keyboard
     Keyboard.dismiss();
-    setError("");
-    setName("");
-    setEmail("");
-    setPassword("");
+    setErrors({ name: "", email: "", password: "", form: "" });
+    // setSuccess("");
+    // setName("");
+    // setEmail("");
+    // setPassword("");
+
     if (mode === "login") setIsSeller(false);
     // Scroll back to top for a clean UX
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   }, [mode]);
 
+  const goLogin = () => {
+    setMode("login");
+    setSuccess("");
+    setErrors({ name: "", email: "", password: "", form: "" });
+    setName("");
+    setPassword("");
+  };
+
+  const goSignup = () => {
+    setMode("signup");
+    setSuccess("");
+    setErrors({ name: "", email: "", password: "", form: "" });
+
+    setName("");
+    setEmail("");
+    setPassword("");
+    setIsSeller(false);
+  };
+
   const submit = async () => {
-    setError("");
+    setErrors({ name: "", email: "", password: "", form: "" });
+    setSuccess("");
     setBusy(true);
     try {
       if (mode === "login") {
         await signIn({ email, password });
         navigation.replace("App");
-      } else {
-        if (!name.trim()) throw new Error("Veuillez entrer votre nom");
-        await signUpWithSellerFlag({
-          name: name.trim(),
-          email,
-          password,
-          isSeller,
-        });
+        return;
       }
+      // if (!name.trim()) throw new Error("Veuillez entrer votre nom");
+      await signUpWithSellerFlag({
+        name,
+        email,
+        password,
+        isSeller,
+      });
+
+      //switch to login
+      setSuccess("Compte crée ! Connectez-vous.");
+      setPassword("");
+      setName("");
+
+      setTimeout(() => {
+        setMode("login");
+        setTimeout(() => {
+          passwordRef.current?.focus?.();
+        }, 150);
+      }, 700);
     } catch (e) {
-      setError(e.message || "Une erreur est survenue");
+      if (e?.fields) {
+        setErrors((prev) => ({ ...prev, ...e.fields }));
+      } else {
+        setErrors((prev) => ({
+          ...prev,
+          form: e?.message || "Une erreur est survenue",
+        }));
+      }
     } finally {
       setBusy(false);
     }
@@ -139,10 +187,7 @@ export default function AuthScreen({ navigation }) {
                   { left: mode === "login" ? 4 : "50%" },
                 ]}
               ></View>
-              <Pressable
-                style={styles.segmentBtn}
-                onPress={() => setMode("login")}
-              >
+              <Pressable style={styles.segmentBtn} onPress={goLogin}>
                 <Text
                   style={[
                     styles.segmentText,
@@ -152,10 +197,7 @@ export default function AuthScreen({ navigation }) {
                   Se connecter
                 </Text>
               </Pressable>
-              <Pressable
-                style={styles.segmentBtn}
-                onPress={() => setMode("signup")}
-              >
+              <Pressable style={styles.segmentBtn} onPress={goSignup}>
                 <Text
                   style={[
                     styles.segmentText,
@@ -175,10 +217,17 @@ export default function AuthScreen({ navigation }) {
                   <TextInput
                     value={name}
                     placeholderTextColor={COLORS.muted}
-                    onChangeText={setName}
-                    style={styles.input}
+                    onChangeText={(v) => {
+                      setName(v);
+                      setSuccess("");
+                      setErrors((p) => ({ ...p, name: "", form: "" }));
+                    }}
+                    style={[styles.input, errors.name && styles.inputError]}
                     placeholder="Votre nom"
                   ></TextInput>
+                  {!!errors.name && (
+                    <Text style={styles.fieldError}>{errors.name}</Text>
+                  )}
                 </View>
               )}
               <View>
@@ -186,11 +235,18 @@ export default function AuthScreen({ navigation }) {
                 <TextInput
                   value={email}
                   placeholderTextColor={COLORS.muted}
-                  onChangeText={setEmail}
-                  style={styles.input}
+                  onChangeText={(v) => {
+                    setEmail(v);
+                    setSuccess("");
+                    setErrors((p) => ({ ...p, email: "", form: "" }));
+                  }}
+                  style={[styles.input, errors.email && styles.inputError]}
                   placeholder="exemple@email.com"
                   autoCapitalize="none"
                 ></TextInput>
+                {!!errors.email && (
+                  <Text style={styles.fieldError}>{errors.email}</Text>
+                )}
               </View>
               <View>
                 <Text style={styles.label}>Mot de passe</Text>
@@ -198,9 +254,17 @@ export default function AuthScreen({ navigation }) {
                   <TextInput
                     ref={passwordRef}
                     placeholderTextColor={COLORS.muted}
-                    style={[styles.input, { paddingRight: 44 }]}
+                    style={[
+                      styles.input,
+                      { paddingRight: 44 },
+                      errors.password && styles.inputError,
+                    ]}
                     value={password}
-                    onChangeText={setPassword}
+                    onChangeText={(v) => {
+                      setPassword(v);
+                      setSuccess("");
+                      setErrors((p) => ({ ...p, password: "", form: "" }));
+                    }}
                     placeholder="Mot de passe"
                     secureTextEntry={secure}
                     onFocus={() => {
@@ -236,8 +300,16 @@ export default function AuthScreen({ navigation }) {
                     ></MaterialIcons>
                   </Pressable>
                 </View>
+                {!!errors.password && (
+                  <Text style={styles.fieldError}>{errors.password}</Text>
+                )}
+                {!!success && (
+                  <Text style={styles.successBanner}>{success}</Text>
+                )}
+                {!!errors.form && (
+                  <Text style={styles.formError}>{errors.form}</Text>
+                )}
               </View>
-
               {mode === "signup" && (
                 <View style={styles.roleSection}>
                   <Text style={styles.roleTitle}>Type de compte</Text>
@@ -290,10 +362,11 @@ export default function AuthScreen({ navigation }) {
                   </View>
                 </View>
               )}
-
-              {error ? <Text style={styles.error}>{error}</Text> : null}
-
-              <Pressable style={styles.primaryBtn} onPress={submit}>
+              <Pressable
+                style={[styles.primaryBtn, busy && { opacity: 0.7 }]}
+                onPress={submit}
+                disabled={busy}
+              >
                 {busy ? (
                   <ActivityIndicator color="white"></ActivityIndicator>
                 ) : (
@@ -498,5 +571,32 @@ const styles = StyleSheet.create({
   error: {
     color: "#b91c1c",
     fontWeight: "700",
+  },
+  inputError: {
+    borderColor: "#b91c1c",
+  },
+  fieldError: {
+    marginTop: 6,
+    color: "#b91c1c",
+    fontWeight: "700",
+    fontSize: 12,
+  },
+  formError: {
+    color: "#b91c1c",
+    fontWeight: "800",
+    textAlign: "center",
+    marginTop: 4,
+  },
+  successBanner: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: "rgba(34,197,94,0.10)",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    color: "#166534",
+    fontWeight: "900",
+    textAlign: "center",
+    marginTop: 4,
   },
 });
