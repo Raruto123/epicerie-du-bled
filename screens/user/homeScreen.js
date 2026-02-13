@@ -20,6 +20,9 @@ import { Modal } from "react-native";
 import { fetchProductsPage } from "../../services/sellerProductsService";
 import { auth } from "../../lib/firebase";
 import { toggleFavoriteProduct } from "../../services/userService";
+import FavButton from "../../components/favButton";
+import { HomeHeader } from "../../components/homeHeader";
+import FiltersModal from "../../components/homeScreenFiltersModal";
 
 //mock categories
 const cats = [
@@ -108,6 +111,8 @@ export default function HomeScreen({
   const [refreshing, setRefreshing] = useState(false);
   const didLoadOnceRef = useRef(false);
   const blockEndReachedRef = useRef(true);
+  const mainListRef = useRef(null);
+  const lastScrollYRef = useRef(0);
 
   //Simulation now but Later with Firestore
   const fetchNextPage = useCallback(async () => {
@@ -241,6 +246,7 @@ export default function HomeScreen({
 
       setCursor(null);
       setHasMore(true);
+      const prevY = lastScrollYRef.current;
 
       try {
         const res = await fetchProductsPage({
@@ -267,6 +273,15 @@ export default function HomeScreen({
         }
       } finally {
         setInitialLoading(false);
+        // ✅ Restore scroll position after data refresh (avoid jumping to top)
+        requestAnimationFrame(() => {
+          if (prevY > 0) {
+            mainListRef.current?.scrollToOffset({
+              offset: prevY,
+              animated: false,
+            });
+          }
+        });
         setRefreshing(false);
         setTimeout(() => {
           blockEndReachedRef.current = false;
@@ -284,152 +299,15 @@ export default function HomeScreen({
     refreshProducts();
   }, [refreshProducts]);
 
-  const renderHeader = () => {
-    return (
-      <View>
-        {/* Top Header */}
-        <View style={[styles.header, { paddingTop: 10 }]}>
-          <Pressable
-            style={styles.locationPill}
-            onPress={onPressLocation}
-            hitSlop={10}
-          >
-            <MaterialIcons
-              name={
-                locationStatus === "granted"
-                  ? "location-on"
-                  : "location-disabled"
-              }
-              size={18}
-              color={locationStatus === "granted" ? COLORS.primary : "#9ca3af"}
-            ></MaterialIcons>
-            <Text
-              style={[
-                styles.locationText,
-                locationStatus !== "granted" && { color: "#9ca3af" },
-              ]}
-              numberOfLines={1}
-            >
-              {locationStatus === "granted"
-                ? locationLabel
-                : "Aucune localisation"}
-            </Text>
-          </Pressable>
-          <MaterialIcons
-            name="keyboard-arrow-down"
-            size={20}
-            color={COLORS.text}
-          ></MaterialIcons>
-        </View>
-
-        {/* Search */}
-        <View style={styles.searchWrap}>
-          <View style={styles.searchBox}>
-            <MaterialIcons
-              name="search"
-              size={18}
-              color="#71717a"
-            ></MaterialIcons>
-            <TextInput
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Attiéké, igname, épices..."
-              placeholderTextColor="#9ca3af"
-              style={styles.searchInput}
-              returnKeyType="search"
-            ></TextInput>
-            {!!query && (
-              <Pressable onPress={() => setQuery("")} hitSlop={10}>
-                <MaterialIcons
-                  name="close"
-                  size={18}
-                  color="#71717a"
-                ></MaterialIcons>
-              </Pressable>
-            )}
-            <Pressable
-              onPress={() => {
-                Keyboard.dismiss();
-                setShowFilters(true);
-              }}
-              style={[
-                styles.filterBtn,
-                hasActiveFilters && styles.filterBtnActive,
-              ]}
-              hitSlop={10}
-            >
-              <MaterialIcons
-                name="tune"
-                size={18}
-                color={hasActiveFilters ? COLORS.surface : COLORS.primary}
-              ></MaterialIcons>
-              {hasActiveFilters && <View style={styles.filterDot}></View>}
-            </Pressable>
-          </View>
-        </View>
-
-        {/* Categories horizontal */}
-        <View style={styles.catsWrap}>
-          <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            data={cats}
-            keyExtractor={(x) => x.key}
-            contentContainerStyle={styles.catsContent}
-            renderItem={({ item }) => {
-              const active = item.key === activeCat;
-              return (
-                <Pressable
-                  onPress={() => setActiveCat(item.key)}
-                  style={[
-                    styles.catPill,
-                    active ? styles.catPillActive : styles.catPillIdle,
-                  ]}
-                >
-                  {!!item.emoji && (
-                    <Text style={styles.catEmoji}>{item.emoji}</Text>
-                  )}
-                  <Text
-                    style={[
-                      styles.catText,
-                      active ? styles.catTextActive : styles.catTextIdle,
-                    ]}
-                  >
-                    {item.key}
-                  </Text>
-                </Pressable>
-              );
-            }}
-          ></FlatList>
-        </View>
-
-        {/* Section title */}
-        <View style={styles.sectionRow}>
-          <Text style={styles.sectionKicker}>Produits ({filtered.length})</Text>
-        </View>
-      </View>
-    );
-  };
-
   const renderItem = ({ item }) => {
     const inStock = !!item.inStock;
     return (
       <Pressable style={styles.card} onPress={() => onOpenProduct(item)}>
         {/* ✅ Favorite button : bloque le clic carte */}
-        <Pressable
-          style={styles.favBtn}
-          onPress={(e) => {
-            e?.stopPropagation?.();
-            onToggleFav(item);
-          }}
-          hitSlop={10}
-        >
-          <MaterialIcons
-            name={item.isFav ? "favorite" : "favorite-border"}
-            size={18}
-            color={item.isFav ? COLORS.primary : "#71717a"}
-          ></MaterialIcons>
-        </Pressable>
+        <FavButton
+          isFav={item.isFav}
+          onPress={() => onToggleFav(item)}
+        ></FavButton>
         {/* Image */}
         <View style={styles.imgWrap}>
           {!!item.photoURL ? (
@@ -480,242 +358,242 @@ export default function HomeScreen({
     );
   };
 
-  function FiltersModal({
-    visible,
-    onClose,
-    sortBy,
-    setSortBy,
-    nearBy,
-    setNearBy,
-    onApply,
-    hasActiveFilters,
-    onReset,
-  }) {
-    return (
-      <Modal
-        visible={visible}
-        transparent
-        animationType="fade"
-        statusBarTranslucent
-        onRequestClose={onClose}
-      >
-        {/* OVerlay */}
-        <Pressable style={styles.modalOverlay} onPress={onClose}>
-          {/* Bottom sheet */}
-          <Pressable
-            style={styles.sheet}
-            onPress={(e) => e?.stopPropagation?.()}
-          >
-            {/* Handle */}
-            <View style={styles.sheetHandle}></View>
-            {/* Header */}
-            <View style={styles.sheetHeader}>
-              <View style={{ flex: 1 }}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 10,
-                  }}
-                >
-                  <Text style={styles.sheetTitle}>Trier par</Text>
+  // function FiltersModal({
+  //   visible,
+  //   onClose,
+  //   sortBy,
+  //   setSortBy,
+  //   nearBy,
+  //   setNearBy,
+  //   onApply,
+  //   hasActiveFilters,
+  //   onReset,
+  // }) {
+  //   return (
+  //     <Modal
+  //       visible={visible}
+  //       transparent
+  //       animationType="fade"
+  //       statusBarTranslucent
+  //       presentationStyle="overFullScreen"
+  //       onRequestClose={onClose}
+  //     >
+  //       {/* OVerlay */}
+  //       <Pressable style={styles.modalOverlay} onPress={onClose}>
+  //         {/* Bottom sheet */}
+  //         <Pressable
+  //           style={styles.sheet}
+  //           onPress={(e) => e?.stopPropagation?.()}
+  //         >
+  //           {/* Handle */}
+  //           <View style={styles.sheetHandle}></View>
+  //           {/* Header */}
+  //           <View style={styles.sheetHeader}>
+  //             <View style={{ flex: 1 }}>
+  //               <View
+  //                 style={{
+  //                   flexDirection: "row",
+  //                   alignItems: "center",
+  //                   gap: 10,
+  //                 }}
+  //               >
+  //                 <Text style={styles.sheetTitle}>Trier par</Text>
 
-                  {hasActiveFilters && (
-                    <View style={styles.activeBadge}>
-                      <Text style={styles.activeBadgeText}>Filtres actifs</Text>
-                    </View>
-                  )}
-                </View>
-              </View>
+  //                 {hasActiveFilters && (
+  //                   <View style={styles.activeBadge}>
+  //                     <Text style={styles.activeBadgeText}>Filtres actifs</Text>
+  //                   </View>
+  //                 )}
+  //               </View>
+  //             </View>
 
-              <View
-                style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
-              >
-                <Pressable
-                  onPress={onReset}
-                  disabled={!hasActiveFilters}
-                  style={[
-                    styles.resetBtn,
-                    !hasActiveFilters && styles.resetBtnDisabled,
-                  ]}
-                  hitSlop={10}
-                >
-                  <MaterialIcons
-                    name="restart-alt"
-                    size={20}
-                    color={!hasActiveFilters ? "#9ca3af" : COLORS.primary}
-                  />
-                </Pressable>
+  //             <View
+  //               style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+  //             >
+  //               <Pressable
+  //                 onPress={onReset}
+  //                 disabled={!hasActiveFilters}
+  //                 style={[
+  //                   styles.resetBtn,
+  //                   !hasActiveFilters && styles.resetBtnDisabled,
+  //                 ]}
+  //                 hitSlop={10}
+  //               >
+  //                 <MaterialIcons
+  //                   name="restart-alt"
+  //                   size={20}
+  //                   color={!hasActiveFilters ? "#9ca3af" : COLORS.primary}
+  //                 />
+  //               </Pressable>
 
-                <Pressable
-                  onPress={onClose}
-                  style={styles.sheetCloseBtn}
-                  hitSlop={10}
-                >
-                  <MaterialIcons name="close" size={22} color="#71717a" />
-                </Pressable>
-              </View>
-            </View>
-            {/* Prix */}
-            <Text style={styles.sheetSectionKicker}>Prix</Text>
-            <Pressable
-              onPress={() => setSortBy("price_low")}
-              style={[
-                styles.choiceRow,
-                sortBy === "price_low"
-                  ? styles.choiceRowActive
-                  : styles.choiceRowIdle,
-              ]}
-            >
-              <View style={styles.choiceLeft}>
-                <MaterialIcons
-                  name="arrow-upward"
-                  size={18}
-                  color={sortBy === "price_low" ? COLORS.primary : "#71717a"}
-                ></MaterialIcons>
-                <Text
-                  style={[
-                    styles.choiceText,
-                    sortBy === "price_low"
-                      ? styles.choiceTextActive
-                      : styles.choiceTextIdle,
-                  ]}
-                >
-                  Prix le plus bas
-                </Text>
-              </View>
-              {sortBy === "price_low" ? (
-                <MaterialIcons
-                  name="check-circle"
-                  size={20}
-                  color={COLORS.primary}
-                ></MaterialIcons>
-              ) : null}
-            </Pressable>
-            <Pressable
-              onPress={() => setSortBy("price_high")}
-              style={[
-                styles.choiceRow,
-                sortBy === "price_high"
-                  ? styles.choiceRowActive
-                  : styles.choiceRowIdle,
-              ]}
-            >
-              <View style={styles.choiceLeft}>
-                <MaterialIcons
-                  name="arrow-downward"
-                  size={18}
-                  color={sortBy === "price_high" ? COLORS.primary : "#71717a"}
-                ></MaterialIcons>
-                <Text
-                  style={[
-                    styles.choiceText,
-                    sortBy === "price_high"
-                      ? styles.choiceTextActive
-                      : styles.choiceTextIdle,
-                  ]}
-                >
-                  Prix le plus haut
-                </Text>
-              </View>
-              {sortBy === "price_high" ? (
-                <MaterialIcons
-                  name="check-circle"
-                  size={20}
-                  color={COLORS.primary}
-                ></MaterialIcons>
-              ) : null}
-            </Pressable>
+  //               <Pressable
+  //                 onPress={onClose}
+  //                 style={styles.sheetCloseBtn}
+  //                 hitSlop={10}
+  //               >
+  //                 <MaterialIcons name="close" size={22} color="#71717a" />
+  //               </Pressable>
+  //             </View>
+  //           </View>
+  //           {/* Prix */}
+  //           <Text style={styles.sheetSectionKicker}>Prix</Text>
+  //           <Pressable
+  //             onPress={() => setSortBy("price_low")}
+  //             style={[
+  //               styles.choiceRow,
+  //               sortBy === "price_low"
+  //                 ? styles.choiceRowActive
+  //                 : styles.choiceRowIdle,
+  //             ]}
+  //           >
+  //             <View style={styles.choiceLeft}>
+  //               <MaterialIcons
+  //                 name="arrow-upward"
+  //                 size={18}
+  //                 color={sortBy === "price_low" ? COLORS.primary : "#71717a"}
+  //               ></MaterialIcons>
+  //               <Text
+  //                 style={[
+  //                   styles.choiceText,
+  //                   sortBy === "price_low"
+  //                     ? styles.choiceTextActive
+  //                     : styles.choiceTextIdle,
+  //                 ]}
+  //               >
+  //                 Prix le plus bas
+  //               </Text>
+  //             </View>
+  //             {sortBy === "price_low" ? (
+  //               <MaterialIcons
+  //                 name="check-circle"
+  //                 size={20}
+  //                 color={COLORS.primary}
+  //               ></MaterialIcons>
+  //             ) : null}
+  //           </Pressable>
+  //           <Pressable
+  //             onPress={() => setSortBy("price_high")}
+  //             style={[
+  //               styles.choiceRow,
+  //               sortBy === "price_high"
+  //                 ? styles.choiceRowActive
+  //                 : styles.choiceRowIdle,
+  //             ]}
+  //           >
+  //             <View style={styles.choiceLeft}>
+  //               <MaterialIcons
+  //                 name="arrow-downward"
+  //                 size={18}
+  //                 color={sortBy === "price_high" ? COLORS.primary : "#71717a"}
+  //               ></MaterialIcons>
+  //               <Text
+  //                 style={[
+  //                   styles.choiceText,
+  //                   sortBy === "price_high"
+  //                     ? styles.choiceTextActive
+  //                     : styles.choiceTextIdle,
+  //                 ]}
+  //               >
+  //                 Prix le plus haut
+  //               </Text>
+  //             </View>
+  //             {sortBy === "price_high" ? (
+  //               <MaterialIcons
+  //                 name="check-circle"
+  //                 size={20}
+  //                 color={COLORS.primary}
+  //               ></MaterialIcons>
+  //             ) : null}
+  //           </Pressable>
 
-            {/* Proximity */}
-            <Text style={[styles.sheetSectionKicker, { marginTop: 18 }]}>
-              Distance
-            </Text>
+  //           {/* Proximity */}
+  //           <Text style={[styles.sheetSectionKicker, { marginTop: 18 }]}>
+  //             Distance
+  //           </Text>
 
-            <View style={styles.nearGrid}>
-              <Pressable
-                onPress={() => setNearBy("near")}
-                style={[
-                  styles.nearCard,
-                  nearBy === "near"
-                    ? styles.nearCardActive
-                    : styles.nearCardIdle,
-                ]}
-              >
-                <MaterialIcons
-                  name="near-me"
-                  size={20}
-                  color={nearBy === "near" ? COLORS.primary : "#71717a"}
-                ></MaterialIcons>
-                <Text
-                  style={[
-                    styles.nearText,
-                    nearBy === "near"
-                      ? styles.nearTextActive
-                      : styles.nearTextIdle,
-                  ]}
-                >
-                  Plus proche
-                </Text>
-                {nearBy === "near" && (
-                  <MaterialIcons
-                    name="check-circle"
-                    size={18}
-                    color={COLORS.primary}
-                  />
-                )}
-              </Pressable>
-              <Pressable
-                onPress={() => setNearBy("far")}
-                style={[
-                  styles.nearCard,
-                  nearBy === "far"
-                    ? styles.nearCardActive
-                    : styles.nearCardIdle,
-                ]}
-              >
-                <MaterialIcons
-                  name="social-distance"
-                  size={20}
-                  color={nearBy === "far" ? COLORS.primary : "#71717a"}
-                ></MaterialIcons>
-                <Text
-                  style={[
-                    styles.nearText,
-                    nearBy === "far"
-                      ? styles.nearTextActive
-                      : styles.nearTextIdle,
-                  ]}
-                >
-                  Plus loin
-                </Text>
-                {nearBy === "near" && (
-                  <MaterialIcons
-                    name="check-circle"
-                    size={18}
-                    color={COLORS.primary}
-                  />
-                )}
-              </Pressable>
-            </View>
-            {/* Apply */}
-            <Pressable
-              style={styles.applyBtn}
-              onPress={() => {
-                onApply?.();
-                onClose?.();
-              }}
-            >
-              <Text style={styles.applyBtnText}>Appliquer les filtres</Text>
-            </Pressable>
+  //           <View style={styles.nearGrid}>
+  //             <Pressable
+  //               onPress={() => setNearBy("near")}
+  //               style={[
+  //                 styles.nearCard,
+  //                 nearBy === "near"
+  //                   ? styles.nearCardActive
+  //                   : styles.nearCardIdle,
+  //               ]}
+  //             >
+  //               <MaterialIcons
+  //                 name="near-me"
+  //                 size={20}
+  //                 color={nearBy === "near" ? COLORS.primary : "#71717a"}
+  //               ></MaterialIcons>
+  //               <Text
+  //                 style={[
+  //                   styles.nearText,
+  //                   nearBy === "near"
+  //                     ? styles.nearTextActive
+  //                     : styles.nearTextIdle,
+  //                 ]}
+  //               >
+  //                 Plus proche
+  //               </Text>
+  //               {nearBy === "near" && (
+  //                 <MaterialIcons
+  //                   name="check-circle"
+  //                   size={18}
+  //                   color={COLORS.primary}
+  //                 />
+  //               )}
+  //             </Pressable>
+  //             <Pressable
+  //               onPress={() => setNearBy("far")}
+  //               style={[
+  //                 styles.nearCard,
+  //                 nearBy === "far"
+  //                   ? styles.nearCardActive
+  //                   : styles.nearCardIdle,
+  //               ]}
+  //             >
+  //               <MaterialIcons
+  //                 name="social-distance"
+  //                 size={20}
+  //                 color={nearBy === "far" ? COLORS.primary : "#71717a"}
+  //               ></MaterialIcons>
+  //               <Text
+  //                 style={[
+  //                   styles.nearText,
+  //                   nearBy === "far"
+  //                     ? styles.nearTextActive
+  //                     : styles.nearTextIdle,
+  //                 ]}
+  //               >
+  //                 Plus loin
+  //               </Text>
+  //               {nearBy === "near" && (
+  //                 <MaterialIcons
+  //                   name="check-circle"
+  //                   size={18}
+  //                   color={COLORS.primary}
+  //                 />
+  //               )}
+  //             </Pressable>
+  //           </View>
+  //           {/* Apply */}
+  //           <Pressable
+  //             style={styles.applyBtn}
+  //             onPress={() => {
+  //               onClose?.();
+  //             }}
+  //           >
+  //             <Text style={styles.applyBtnText}>Appliquer les filtres</Text>
+  //           </Pressable>
 
-            {/* Petit padding IOS */}
-            <View style={{ height: Platform.OS === "ios" ? 6 : 0 }}></View>
-          </Pressable>
-        </Pressable>
-      </Modal>
-    );
-  }
+  //           {/* Petit padding IOS */}
+  //           <View style={{ height: Platform.OS === "ios" ? 6 : 0 }}></View>
+  //         </Pressable>
+  //       </Pressable>
+  //     </Modal>
+  //   );
+  // }
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "right", "left"]}>
@@ -726,12 +604,33 @@ export default function HomeScreen({
         </View>
       ) : (
         <FlatList
+          ref={mainListRef}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          onScroll={(e) => {
+            lastScrollYRef.current = e.nativeEvent.contentOffset.y;
+          }}
+          scrollEventThrottle={16}
           data={filtered}
           keyExtractor={(x) => x.id}
           renderItem={renderItem}
           numColumns={2}
           columnWrapperStyle={styles.colWrap}
-          ListHeaderComponent={renderHeader}
+          ListHeaderComponent={
+            <HomeHeader
+              locationStatus={locationStatus}
+              locationLabel={locationLabel}
+              onPressLocation={onPressLocation}
+              query={query}
+              setQuery={setQuery}
+              hasActiveFilters={hasActiveFilters}
+              setShowFilters={setShowFilters}
+              activeCat={activeCat}
+              setActiveCat={setActiveCat}
+              filteredCount={filtered.length}
+              cats={cats}
+            ></HomeHeader>
+          }
           contentContainerStyle={{ paddingBottom: 18 + insets.bottom }}
           showsVerticalScrollIndicator={false}
           onEndReachedThreshold={0.5}
@@ -773,7 +672,6 @@ export default function HomeScreen({
           setNearBy(DEFAULT_NEAR);
         }}
         onApply={() => {
-          refreshProducts();
           // MVP: on ne fait que log, mais tu peux déclencher un tri réel ici
           console.log("apply filters:", { sortBy, nearBy });
         }}
@@ -787,78 +685,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg,
   },
-  header: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  locationPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    maxWidth: 240,
-  },
-  locationText: {
-    fontSize: 16,
-    fontWeight: "900",
-    color: COLORS.text,
-    maxWidth: 180,
-  },
-  searchWrap: { paddingHorizontal: 16, paddingBottom: 8 },
-  searchBox: {
-    height: 52,
-    borderRadius: 18,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingHorizontal: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: "800",
-    color: COLORS.text,
-  },
-  filterBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(6,105,3,0.10)",
-  },
-  catsWrap: { paddingTop: 4, paddingBottom: 10 },
-  catsContent: { paddingHorizontal: 16, gap: 10, paddingRight: 16 },
-  catPill: {
-    height: 40,
-    paddingHorizontal: 16,
-    borderRadius: 99,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    borderWidth: 1,
-  },
-  catPillActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  catPillIdle: { backgroundColor: COLORS.surface, borderColor: COLORS.border },
-  catEmoji: { fontSize: 16 },
-  catText: { fontSize: 13, fontWeight: "900" },
-  catTextActive: { color: COLORS.surface },
-  catTextIdle: { color: COLORS.text },
-  sectionRow: { paddingHorizontal: 16, paddingBottom: 10 },
-  sectionKicker: {
-    fontSize: 11,
-    fontWeight: "900",
-    color: "#9ca3af",
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-  },
   colWrap: { paddingHorizontal: 16, marginBottom: 12, gap: 12 },
   card: {
     flex: 1,
@@ -867,20 +693,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
     overflow: "hidden",
-  },
-  favBtn: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-    zIndex: 10,
-    width: 34,
-    height: 34,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.92)",
-    borderWidth: 1,
-    borderColor: COLORS.border,
   },
   imgWrap: { width: "100%", aspectRatio: 1, backgroundColor: "#f3f4f6" },
   img: { width: "100%", height: "100%" },
@@ -903,177 +715,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "800",
     color: "#9ca3af",
-  },
-  // Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.40)",
-    justifyContent: "flex-end",
-  },
-  sheet: {
-    backgroundColor: COLORS.surface,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingBottom: 22,
-    paddingTop: 10,
-    paddingHorizontal: 18,
-    // shadow "modal"
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: -8 },
-    elevation: 18,
-  },
-  sheetHandle: {
-    width: 52,
-    height: 6,
-    borderRadius: 99,
-    backgroundColor: "#d1d5db",
-    alignSelf: "center",
-    marginTop: 6,
-    marginBottom: 14,
-  },
-  sheetHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  sheetTitle: {
-    fontSize: 20,
-    fontWeight: "900",
-    color: COLORS.text,
-  },
-  sheetCloseBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.bg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  sheetSectionKicker: {
-    marginTop: 6,
-    marginBottom: 10,
-    fontSize: 12,
-    fontWeight: "900",
-    color: "#71717a",
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-  },
-  choiceRow: {
-    borderRadius: 18,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    borderWidth: 2,
-    marginBottom: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  choiceRowActive: {
-    backgroundColor: "rgba(6,105,3,0.08)",
-    borderColor: "rgba(6,105,3,0.22)",
-  },
-  choiceRowIdle: {
-    backgroundColor: "#f9fafb",
-    borderColor: "transparent",
-  },
-  choiceLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  choiceText: { fontSize: 14 },
-  choiceTextActive: { fontWeight: "900", color: COLORS.text },
-  choiceTextIdle: { fontWeight: "800", color: COLORS.text },
-
-  nearGrid: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  nearCard: {
-    flex: 1,
-    borderRadius: 18,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-  },
-  nearCardActive: {
-    backgroundColor: "rgba(6,105,3,0.08)",
-    borderColor: "rgba(6,105,3,0.22)",
-  },
-  nearCardIdle: {
-    backgroundColor: "#f9fafb",
-    borderColor: "transparent",
-  },
-  nearText: { fontSize: 13 },
-  nearTextActive: { fontWeight: "900", color: COLORS.text },
-  nearTextIdle: { fontWeight: "800", color: COLORS.text },
-
-  applyBtn: {
-    marginTop: 18,
-    height: 54,
-    borderRadius: 18,
-    backgroundColor: COLORS.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: COLORS.primary,
-    shadowOpacity: 0.22,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 10,
-  },
-  applyBtnText: {
-    color: COLORS.surface,
-    fontSize: 15,
-    fontWeight: "900",
-  },
-  // Active filterS
-  filterBtnActive: {
-    backgroundColor: COLORS.primary,
-  },
-  filterDot: {
-    position: "absolute",
-    top: 7,
-    right: 7,
-    width: 8,
-    height: 8,
-    borderRadius: 99,
-    backgroundColor: "#22c55e", // vert comme "actif"
-    borderWidth: 2,
-    borderColor: COLORS.surface,
-  },
-  activeBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,215,4,0.18)",
-    borderWidth: 1,
-    borderColor: "rgba(255,215,4,0.35)",
-  },
-  activeBadgeText: {
-    fontSize: 11,
-    fontWeight: "900",
-    color: COLORS.primary,
-  },
-  resetBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(6,105,3,0.10)",
-    borderWidth: 1,
-    borderColor: "rgba(6,105,3,0.18)",
-  },
-  resetBtnDisabled: {
-    backgroundColor: "#f3f4f6",
-    borderColor: COLORS.border,
   },
 });
