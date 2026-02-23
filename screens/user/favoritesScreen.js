@@ -23,8 +23,15 @@ import {
   getUserFavorites,
   toggleFavoriteProduct,
 } from "../../services/userService";
+import { FavoritesHeader } from "../../components/favoritesHeader";
+import FavButton from "../../components/favButton";
 
-export default function FavoritesScreen({ navigation, favorites = [], userLocation, locationStatus }) {
+export default function FavoritesScreen({
+  navigation,
+  favorites = [],
+  userLocation,
+  locationStatus,
+}) {
   const insets = useSafeAreaInsets();
 
   const [query, setQuery] = useState("");
@@ -39,7 +46,6 @@ export default function FavoritesScreen({ navigation, favorites = [], userLocati
           setLoading(false);
           return;
         }
-
       } catch (e) {
         console.log("❌ getUserFavorites failed:", e?.message ?? e);
       } finally {
@@ -65,42 +71,15 @@ export default function FavoritesScreen({ navigation, favorites = [], userLocati
     }
   }, []);
 
-  const renderHeader = () => (
-    <View>
-      {/* Header sticky style */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Mes Favoris</Text>
-      </View>
-      {/* Search */}
-      <View style={styles.searchWrap}>
-        <View style={styles.searchBox}>
-          <MaterialIcons name="search" size={18} color={COLORS.muted}></MaterialIcons>
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Rechercher dans mes favoris..."
-            placeholderTextColor={COLORS.muted}
-            style={styles.searchInput}
-            returnKeyType="search"
-            onSubmitEditing={() => Keyboard.dismiss()}
-          ></TextInput>
-          {!!query && (
-            <Pressable onPress={() => setQuery("")} hitSlop={10}>
-              <MaterialIcons
-                name="close"
-                size={18}
-                color={COLORS.muted}
-              ></MaterialIcons>
-            </Pressable>
-          )}
-        </View>
-      </View>
-      {/* Kicker */}
-      <View style={styles.sectionRow}>
-        <Text style={styles.sectionKicker}>Favoris ({filtered.length})</Text>
-      </View>
-    </View>
-  );
+  const headerEl = useMemo(() => {
+    return (
+      <FavoritesHeader
+        query={query}
+        setQuery={setQuery}
+        count={filtered.length}
+      ></FavoritesHeader>
+    );
+  }, [query, filtered.length]);
 
   const renderItem = ({ item }) => {
     const inStock = !!item.inStock;
@@ -108,23 +87,12 @@ export default function FavoritesScreen({ navigation, favorites = [], userLocati
     return (
       <Pressable
         style={styles.card}
-        onPress={() => navigation.navigate("ProductDetails", { product: item, userLocation })}
+        onPress={() =>
+          navigation.navigate("ProductDetails", { product: item, userLocation })
+        }
       >
         {/* Favorite (filled) */}
-        <Pressable
-          style={styles.favBtn}
-          onPress={(e) => {
-            e?.stopPropagation?.();
-            onUnfavorite(item);
-          }}
-          hitSlop={10}
-        >
-          <MaterialIcons
-            name="favorite"
-            size={18}
-            color={COLORS.primary}
-          ></MaterialIcons>
-        </Pressable>
+        <FavButton isFav={true} onPress={() => onUnfavorite(item)}></FavButton>
         {/* Image */}
         <View style={styles.imgWrap}>
           {!!item.photoURL ? (
@@ -192,7 +160,7 @@ export default function FavoritesScreen({ navigation, favorites = [], userLocati
             renderItem={renderItem}
             numColumns={2}
             columnWrapperStyle={styles.colWrap}
-            ListHeaderComponent={renderHeader}
+            ListHeaderComponent={headerEl}
             contentContainerStyle={{ paddingBottom: insets.bottom + 18 }}
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
@@ -219,57 +187,6 @@ export default function FavoritesScreen({ navigation, favorites = [], userLocati
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bg },
-  // header
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    backgroundColor: COLORS.bg,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: COLORS.text,
-  },
-
-  // search
-  searchWrap: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 10,
-  },
-  searchBox: {
-    height: 50,
-    borderRadius: 18,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingHorizontal: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: "800",
-    color: COLORS.text,
-  },
-
-  sectionRow: {
-    paddingHorizontal: 16,
-    paddingBottom: 10,
-  },
-  sectionKicker: {
-    fontSize: 11,
-    fontWeight: "900",
-    color: COLORS.muted,
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-  },
-
   // grid
   colWrap: {
     paddingHorizontal: 16,
@@ -283,21 +200,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
     overflow: "hidden",
-  },
-
-  favBtn: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-    zIndex: 10,
-    width: 34,
-    height: 34,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.92)",
-    borderWidth: 1,
-    borderColor: COLORS.border,
   },
 
   imgWrap: {

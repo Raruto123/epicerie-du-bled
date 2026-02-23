@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import {
@@ -29,7 +30,9 @@ import {
   updateProfilePhoto,
   replaceProfilePhoto,
   logout,
+  removeProfilePhoto,
 } from "../../services/profileService";
+import * as Localization from "expo-localization";
 
 export default function ProfileScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -41,6 +44,8 @@ export default function ProfileScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
   const [pictureUri, setPictureUri] = useState("");
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [selectedLang, setSelectedLang] = useState("fr"); //fr|en
 
   useEffect(() => {
     let alive = true;
@@ -76,6 +81,33 @@ export default function ProfileScreen({ navigation }) {
       alive = false;
     };
   }, []);
+
+  useEffect(() => {
+    try {
+      const locales = Localization.getLocales?.() ?? [];
+      const code =
+        locales?.[0]?.languageCode ||
+        locales?.[0]?.languageTag?.split("-")?.[0] ||
+        "fr";
+
+      //FR/EN only
+      if (code?.toLowerCase().startsWith("fr")) {
+        setSelectedLang("fr");
+      } else {
+        setSelectedLang("en");
+      }
+    } catch (e) {
+      setSelectedLang("fr");
+    }
+  }, []);
+
+  const languageOptions = [
+    { key: "fr", label: "Français" },
+    { key: "en", label: "English" },
+  ];
+
+  const selectedLanguageLabel =
+    languageOptions.find((l) => l.key === selectedLang)?.label ?? "Français";
 
   const goSellerSpace = () => {
     navigation.navigate("SellerBoard"); //à voir si je mets navigate ou replace;
@@ -125,24 +157,60 @@ export default function ProfileScreen({ navigation }) {
       setPictureUri(picked.uri);
       // ✅ 2) Upload la photo pickée (PAS pictureUri)
       const finalURL = await replaceProfilePhoto(uid, picked.uri);
-    // sync UI (afficher l’URL distante après)
-    setPictureUri(finalURL);
-    setProfile((p) => (p ? {...p, photoURL : finalURL} : p));
+      // sync UI (afficher l’URL distante après)
+      setPictureUri(finalURL);
+      setProfile((p) => (p ? { ...p, photoURL: finalURL } : p));
 
-      console.log("✅ Photo de profile remplacé et sauvegardé dans Firebase : ", finalURL);
+      console.log(
+        "✅ Photo de profile remplacé et sauvegardé dans Firebase : ",
+        finalURL,
+      );
     } catch (e) {
       console.log("❌pick and saving profile photo error :", e);
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    Keyboard.dismiss();
+    if (!uid || !profile?.photoURL) return;
+
+    const prevUrl = pictureUri;
+
+    setPictureUri("");
+    setProfile((p) => (p ? { ...p, photoURL: null, photoPath: null } : p));
+
+    try {
+      await removeProfilePhoto(uid);
+
+      //re-Sync depuis firestore
+      const fresh = await getUserProfile(uid);
+      if (fresh) {
+        setProfile(fresh);
+        setPictureUri((fresh?.photoURL ?? "").toString());
+      }
+
+      console.log("✅ Photo de profil supprimée");
+    } catch (e) {
+      setPictureUri(prevUrl);
+      setProfile((p) => (p ? { ...p, photoURL: prevUrl } : p));
+      console.log("❌ Remove photo de profile erreur:", e);
     }
   };
 
   const handleLogout = async () => {
     try {
       await logout();
-      navigation.replace("Auth"); 
+      navigation.replace("Auth");
     } catch (e) {
       console.log("❌ logout error :", e);
     }
-  }
+  };
+
+  const avatarInitial = useMemo(() => {
+    const source = (profile?.name ?? name ?? "").trim();
+    if (!source) return "A"; //fallback
+    return source.charAt(0).toUpperCase();
+  }, [profile?.name, name]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
@@ -152,157 +220,232 @@ export default function ProfileScreen({ navigation }) {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
       >
-        <ScrollView
-          contentContainerStyle={[
-            styles.container,
-            { paddingBottom: 24 + insets.bottom },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          showsVerticalScrollIndicator={false}
+        <TouchableWithoutFeedback
+          onPress={() => {
+            Keyboard.dismiss();
+            setLangMenuOpen(false);
+          }}
         >
-          {loading && (
-            <View style={styles.loadingRow}>
-              <ActivityIndicator size="small"></ActivityIndicator>
-              <Text style={styles.loadingText}>Chargement du profil...</Text>
-            </View>
-          )}
-          {/* Top Bar */}
-          <View style={styles.topBar}>
-            <Text style={styles.topTitle}>Mon Profil</Text>
-          </View>
-
-          {/* Profile Header */}
-          <View style={styles.profileHeader}>
-            <View style={styles.avatarWrap}>
-              <View style={styles.avatar}>
-                {!!pictureUri && (
-                  <Image
-                    source={{ uri: pictureUri }}
-                    style={styles.avatarImg}
-                  ></Image>
-                )}
+          <ScrollView
+            contentContainerStyle={[
+              styles.container,
+              { paddingBottom: 24 + insets.bottom },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}
+          >
+            {loading && (
+              <View style={styles.loadingRow}>
+                <ActivityIndicator size="small"></ActivityIndicator>
+                <Text style={styles.loadingText}>Chargement du profil...</Text>
               </View>
-              <Pressable
-                style={styles.cameraBtn}
-                hitSlop={10}
-                onPress={pickAndSavePhoto}
-              >
-                <MaterialIcons
-                  name="photo-camera"
-                  size={18}
-                  color="white"
-                ></MaterialIcons>
-              </Pressable>
+            )}
+            {/* Top Bar */}
+            <View style={styles.topBar}>
+              <Text style={styles.topTitle}>Mon Profil</Text>
             </View>
 
-            <View style={styles.profileText}>
-              <Text style={styles.name}>{profile?.name ?? ""}</Text>
-              <Text style={styles.email}>{profile?.email ?? ""}</Text>
-            </View>
-          </View>
-
-          {/* Seller card (ONLY IF seller) */}
-          {profile?.isSeller && (
-            <View style={styles.sellerCard}>
-              <View style={styles.sellerCardLeft}>
-                <View style={styles.sellerKickerRow}>
-                  <MaterialIcons
-                    name="storefront"
-                    size={18}
-                    color={COLORS.primary}
-                  ></MaterialIcons>
-                  <Text style={styles.sellerKicker}>ESPACE VENDEUR</Text>
+            {/* Profile Header */}
+            <View style={styles.profileHeader}>
+              <View style={styles.avatarWrap}>
+                <View style={styles.avatar}>
+                  {!!pictureUri ? (
+                    <Image
+                      source={{ uri: pictureUri }}
+                      style={styles.avatarImg}
+                    ></Image>
+                  ) : (
+                    <View style={styles.avatarInitialWrap}>
+                      <Text style={styles.avatarInitialText}>
+                        {avatarInitial}
+                      </Text>
+                    </View>
+                  )}
                 </View>
-
-                <Text style={styles.sellerTitle}>Gérez votre boutique</Text>
-                <Text style={styles.sellerDesc}>
-                  Ouvrer votre épicerie en ligne et toucher des milliers de
-                  clients
-                </Text>
-
-                <Pressable onPress={goSellerSpace} style={styles.sellerBtn}>
-                  <Text style={styles.sellerBtnText}>Accéder</Text>
+                <Pressable
+                  style={styles.cameraBtn}
+                  hitSlop={10}
+                  onPress={pickAndSavePhoto}
+                >
                   <MaterialIcons
-                    name="arrow-forward"
+                    name="photo-camera"
                     size={18}
                     color="white"
                   ></MaterialIcons>
                 </Pressable>
               </View>
-
-              <View style={styles.sellerCardRight}></View>
-            </View>
-          )}
-
-          {/* Infos persos */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Informations Personnelles</Text>
-            <View style={styles.card}>
-              <Text style={styles.labelSmall}>NOM D'AFFICHAGE</Text>
-
-              <View style={styles.inputRow}>
-                <TextInput
-                  value={name}
-                  onChangeText={setName}
-                  style={styles.nameInput}
-                  placeholder="Votre nom"
-                  returnKeyType="done"
-                  onSubmitEditing={saveName}
-                  placeholderTextColor={COLORS.muted}
-                ></TextInput>
-                <MaterialIcons
-                  name="edit"
-                  size={18}
-                  color={COLORS.muted}
-                ></MaterialIcons>
-              </View>
-
-              <Pressable
-                onPress={saveName}
-                disabled={saving}
-                style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
-              >
-                {saving ? (
-                  <ActivityIndicator color="white"></ActivityIndicator>
-                ) : (
-                  <Text style={styles.saveBtnText}>Enregistrer</Text>
-                )}
-              </Pressable>
-            </View>
-          </View>
-
-          {/* Préférences */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Préférences</Text>
-            <View style={styles.listCard}>
-              <Pressable style={styles.rowItem}>
-                <View style={styles.rowLeft}>
-                  <View style={styles.rowIcon}>
-                    <MaterialIcons
-                      name="language"
-                      size={22}
-                      color={COLORS.text}
-                    ></MaterialIcons>
-                  </View>
-                  <View>
-                    <Text style={styles.rowTitle}>Langue</Text>
-                    <Text style={styles.rowSub}>Langue de l'interface</Text>
-                  </View>
-                </View>
-                <View style={styles.rowRight}>
-                  <Text style={styles.rowValue}>Français (CA)</Text>
+              {!!pictureUri && (
+                <Pressable
+                  style={styles.removePhotoBtn}
+                  onPress={handleRemovePhoto}
+                  hitSlop={10}
+                >
                   <MaterialIcons
-                    name="chevron-right"
-                    size={22}
+                    name="delete-outline"
+                    size={16}
+                    color="#ef4444"
+                  ></MaterialIcons>
+                  <Text style={styles.removePhotoText}>Supprimer la photo</Text>
+                </Pressable>
+              )}
+
+              <View style={styles.profileText}>
+                <Text style={styles.name}>{profile?.name ?? ""}</Text>
+                <Text style={styles.email}>{profile?.email ?? ""}</Text>
+              </View>
+            </View>
+
+            {/* Seller card (ONLY IF seller) */}
+            {profile?.isSeller && (
+              <View style={styles.sellerCard}>
+                <View style={styles.sellerCardLeft}>
+                  <View style={styles.sellerKickerRow}>
+                    <MaterialIcons
+                      name="storefront"
+                      size={18}
+                      color={COLORS.primary}
+                    ></MaterialIcons>
+                    <Text style={styles.sellerKicker}>ESPACE VENDEUR</Text>
+                  </View>
+
+                  <Text style={styles.sellerTitle}>Gérez votre boutique</Text>
+                  <Text style={styles.sellerDesc}>
+                    Ouvrer votre épicerie en ligne et toucher des milliers de
+                    clients
+                  </Text>
+
+                  <Pressable onPress={goSellerSpace} style={styles.sellerBtn}>
+                    <Text style={styles.sellerBtnText}>Accéder</Text>
+                    <MaterialIcons
+                      name="arrow-forward"
+                      size={18}
+                      color="white"
+                    ></MaterialIcons>
+                  </Pressable>
+                </View>
+
+                <View style={styles.sellerCardRight}></View>
+              </View>
+            )}
+
+            {/* Infos persos */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Informations Personnelles</Text>
+              <View style={styles.card}>
+                <Text style={styles.labelSmall}>NOM D'AFFICHAGE</Text>
+
+                <View style={styles.inputRow}>
+                  <TextInput
+                    value={name}
+                    onChangeText={setName}
+                    style={styles.nameInput}
+                    placeholder="Votre nom"
+                    returnKeyType="done"
+                    onSubmitEditing={saveName}
+                    placeholderTextColor={COLORS.muted}
+                  ></TextInput>
+                  <MaterialIcons
+                    name="edit"
+                    size={18}
                     color={COLORS.muted}
                   ></MaterialIcons>
                 </View>
-              </Pressable>
 
-              <View style={styles.divider}></View>
+                <Pressable
+                  onPress={saveName}
+                  disabled={saving}
+                  style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+                >
+                  {saving ? (
+                    <ActivityIndicator color="white"></ActivityIndicator>
+                  ) : (
+                    <Text style={styles.saveBtnText}>Enregistrer</Text>
+                  )}
+                </Pressable>
+              </View>
+            </View>
 
-              <Pressable style={styles.rowItem}>
+            {/* Préférences */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Préférences</Text>
+              <View style={styles.listCard}>
+                <Pressable
+                  style={styles.rowItem}
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    setLangMenuOpen((v) => !v);
+                  }}
+                >
+                  <View style={styles.rowLeft}>
+                    <View style={styles.rowIcon}>
+                      <MaterialIcons
+                        name="language"
+                        size={22}
+                        color={COLORS.text}
+                      ></MaterialIcons>
+                    </View>
+                    <View>
+                      <Text style={styles.rowTitle}>Langue</Text>
+                      <Text style={styles.rowSub}>Langue de l'interface</Text>
+                    </View>
+                  </View>
+                  <View style={styles.rowRight}>
+                    <Text style={styles.rowValue}>{selectedLanguageLabel}</Text>
+                    <MaterialIcons
+                      name={
+                        langMenuOpen
+                          ? "keyboard-arrow-up"
+                          : "keyboard-arrow-down"
+                      }
+                      size={22}
+                      color={COLORS.muted}
+                    ></MaterialIcons>
+                  </View>
+                </Pressable>
+
+                {langMenuOpen && (
+                  <View style={styles.langDropdown}>
+                    {languageOptions.map((lang, idx) => {
+                      const active = selectedLang === lang.key;
+                      return (
+                        <Pressable
+                          key={lang.key}
+                          style={[
+                            styles.langOption,
+                            idx !== languageOptions.length - 1 &&
+                              styles.langOptionDivider,
+                          ]}
+                          onPress={() => {
+                            setSelectedLang(lang.key);
+                            setLangMenuOpen(false);
+                          }}
+                        >
+                          <Text
+                            style={[
+                              styles.langOptionText,
+                              active && styles.langOptionTextActive,
+                            ]}
+                          >
+                            {lang.label}
+                          </Text>
+
+                          {active && (
+                            <MaterialIcons
+                              name="check"
+                              size={18}
+                              color={COLORS.primary}
+                            ></MaterialIcons>
+                          )}
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                )}
+
+                <View style={styles.divider}></View>
+
+                {/* <Pressable style={styles.rowItem}>
                 <View style={styles.rowLeft}>
                   <View style={styles.rowIcon}>
                     <MaterialIcons
@@ -321,26 +464,25 @@ export default function ProfileScreen({ navigation }) {
                   size={22}
                   color={COLORS.muted}
                 ></MaterialIcons>
-              </Pressable>
+              </Pressable> */}
+              </View>
             </View>
-          </View>
 
-          {/* Logout */}
-          <View style={styles.footer}>
-            <Pressable style={styles.logoutBtn} onPress={handleLogout}>
-              <MaterialIcons
-                name="logout"
-                size={20}
-                color={COLORS.primary}
-              ></MaterialIcons>
-              <Text style={styles.logoutText}>Se déconnecter</Text>
-            </Pressable>
+            {/* Logout */}
+            <View style={styles.footer}>
+              <Pressable style={styles.logoutBtn} onPress={handleLogout}>
+                <MaterialIcons
+                  name="logout"
+                  size={20}
+                  color={COLORS.primary}
+                ></MaterialIcons>
+                <Text style={styles.logoutText}>Se déconnecter</Text>
+              </Pressable>
 
-            <Text style={styles.version}>
-              Version 0.0.1 ⚫️ AfroMarket Canada
-            </Text>
-          </View>
-        </ScrollView>
+              <Text style={styles.version}>Version 0.0.1 ⚫️ Mifere</Text>
+            </View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -370,11 +512,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#EEF2EE",
     borderWidth: 4,
     borderColor: COLORS.surface,
-    overflow:"hidden",
+    overflow: "hidden",
   },
-  avatarImg:{
-    width:"100%",
-    height:"100%"
+  avatarImg: {
+    width: "100%",
+    height: "100%",
   },
   cameraBtn: {
     position: "absolute",
@@ -534,8 +676,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    borderWidth:1,
-    borderColor:"rgba(255,215,4,0.35)"
+    borderWidth: 1,
+    borderColor: "rgba(255,215,4,0.35)",
   },
   logoutText: { fontWeight: "800", color: COLORS.text },
   version: {
@@ -557,4 +699,46 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: COLORS.muted,
   },
+  removePhotoBtn: {
+    marginTop: 10,
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "rgba(239,68,68,0.20)",
+  },
+  removePhotoText: { fontSize: 12, fontWeight: "800", color: "#ef4444" },
+  langDropdown: {
+    marginTop: -4,
+    marginHorizontal: 14,
+    marginBottom: 10,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: "hidden",
+  },
+  langOption: {
+    minHeight: 46,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  langOptionDivider: { borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  langOptionText: { fontSize: 13, color: COLORS.text },
+  langOptionTextActive: { color: COLORS.primary },
+  avatarInitialWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(6,105,3,0.10)",
+  },
+  avatarInitialText: { fontSize: 42, fontWeight: "900", color: COLORS.primary },
 });

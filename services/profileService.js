@@ -39,7 +39,7 @@ export async function updateProfileName(uid, newName) {
         name: newName,
         updatedAt: serverTimestamp(),
       },
-      { merge: true }
+      { merge: true },
     );
   }
 }
@@ -63,7 +63,7 @@ export async function pickProfilePicture() {
             text: "Ouvrir les réglages",
             onPress: () => Linking.openSettings(),
           },
-        ]
+        ],
       );
       return null;
     }
@@ -127,14 +127,14 @@ export async function uploadPictureImage({ userUid, localUri }) {
 
 export async function replaceProfilePhoto(uid, localUri) {
   if (!uid) throw new Error("Missing uid");
-  if (!uid) throw new Error("Missing localUri");
+  if (!localUri) throw new Error("Missing localUri");
 
   // 1) Lire l'ancienne photo (path) depuis Firestore
   const userRef = doc(db, "users", uid);
   const snapshot = await getDoc(userRef);
 
   const prevFilename = snapshot.exists()
-    ? snapshot.data()?.photoPath ?? null
+    ? (snapshot.data()?.photoPath ?? null)
     : null;
   // 2) Upload la nouvelle photo
   const { downloadURL, filename } = await uploadPictureImage({
@@ -150,7 +150,7 @@ export async function replaceProfilePhoto(uid, localUri) {
       photoPath: filename,
       updatedAt: serverTimestamp(),
     },
-    { merge: true }
+    { merge: true },
   );
 
   // 4) Supprimer l'ancienne photo (best-effort)
@@ -170,6 +170,38 @@ export async function replaceProfilePhoto(uid, localUri) {
   return downloadURL;
 }
 
+export async function removeProfilePhoto(uid) {
+  if (!uid) throw new Error("Missing uid");
+
+  const userRef = doc(db, "users", uid);
+  const snapshot = await getDoc(userRef);
+
+  if (!snapshot.exists()) return;
+
+  const prevFilename = snapshot.data()?.photoPath ?? null;
+
+  // 1) Retirer la photo du profil dans Firestore
+  await setDoc(
+    userRef,
+    { photoURL: null, photoPath: null, updatedAt: serverTimestamp() },
+    { merge: true },
+  );
+
+  // 2) Supprimer l'image dans Storage (best effort)
+  if (prevFilename) {
+    try {
+      await deleteObject(ref(storage, prevFilename));
+      console.log("🗑️ Profile photo deleted from storage:", prevFilename);
+    } catch (e) {
+      console.log("⚠️ Delete profile photo file failed:", {
+        code: e?.code,
+        message: e?.message,
+        prevFilename,
+      });
+    }
+  }
+}
+
 export async function logout() {
-  await signOut(auth); 
+  await signOut(auth);
 }
