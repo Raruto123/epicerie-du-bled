@@ -32,6 +32,7 @@ import {
   subscribeCompareProduct,
 } from "../../services/userCompareService";
 import CompareBubble from "../../components/compareBubble";
+import FavButton from "../../components/favButton";
 // Petit helper (MVP) : ouvrir Google Maps / Apple Maps
 function openMapsWithAddress(address) {
   const q = encodeURIComponent(address ?? "");
@@ -329,17 +330,7 @@ export default function ProductDetailsScreen({ navigation, route }) {
               </View>
             </View>
             {/* Fav button (top-right) */}
-            <Pressable
-              style={styles.heroFavBtn}
-              onPress={onToggleFav}
-              hitSlop={10}
-            >
-              <MaterialIcons
-                name={isFav ? "favorite" : "favorite-border"}
-                size={22}
-                color={isFav ? COLORS.primary : "#71717a"}
-              />
-            </Pressable>
+            <FavButton isFav={isFav} onPress={onToggleFav}></FavButton>
           </View>
         </View>
         {/* Title+CaT+price */}
@@ -467,9 +458,9 @@ export default function ProductDetailsScreen({ navigation, route }) {
         <View style={{ marginTop: 22 }}>
           <View style={styles.simHeader}>
             <Text style={styles.sectionKicker}>Produits similaires</Text>
-            <Pressable onPress={() => {}} hitSlop={10}>
+            {/* <Pressable onPress={() => {}} hitSlop={10}>
               <Text style={styles.seeAll}>Voir tout</Text>
-            </Pressable>
+            </Pressable> */}
           </View>
 
           {loadingSimilar ? (
@@ -797,19 +788,19 @@ const styles = StyleSheet.create({
   simMeta: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
   simMetaText: { fontSize: 11, fontWeight: "800", color: COLORS.muted },
 
-  heroFavBtn: {
-    position: "absolute",
-    top: 14,
-    right: 14,
-    width: 42,
-    height: 42,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.92)",
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
+  // heroFavBtn: {
+  //   position: "absolute",
+  //   top: 14,
+  //   right: 14,
+  //   width: 42,
+  //   height: 42,
+  //   borderRadius: 999,
+  //   alignItems: "center",
+  //   justifyContent: "center",
+  //   backgroundColor: "rgba(255,255,255,0.92)",
+  //   borderWidth: 1,
+  //   borderColor: COLORS.border,
+  // },
 
   secondaryBtnActive: {
     backgroundColor: COLORS.primary,

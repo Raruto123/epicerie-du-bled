@@ -6,6 +6,8 @@ import {
   View,
   Keyboard,
   TextInput,
+  Platform,
+  Linking,
 } from "react-native";
 import { COLORS } from "../../constants/colors";
 import {
@@ -29,6 +31,8 @@ import {
   toggleFavoriteProduct,
 } from "../../services/userService";
 import { onAuthStateChanged } from "firebase/auth";
+import FavButton from "../../components/favButton";
+import GroceryStoreHeader from "../../components/groceryStoreHeader";
 
 // ✅ Catégories style "sections"
 const SECTION_ORDER = [
@@ -70,6 +74,37 @@ export default function GroceryStoreScreen({ navigation, route }) {
 
   const favIdsRef = useRef(new Set());
 
+  function openMapsForGrocery({ gps, address }) {
+    const hasCoords =
+      gps &&
+      gps.latitude != null &&
+      gps.longitude != null &&
+      !Number.isNaN(Number(gps.latitude)) &&
+      !Number.isNaN(Number(gps.longitude));
+
+    let url = "";
+    if (hasCoords) {
+      const lat = Number(gps.latitude);
+      const lng = Number(gps.longitude);
+
+      url =
+        Platform.OS === "ios"
+          ? `https://maps.apple.com/?q=${lat},${lng}`
+          : `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    } else if (address?.trim()) {
+      const q = encodeURIComponent(address.trim());
+      url =
+        Platform.OS === "ios"
+          ? `https://maps.apple.com/?q=${q}`
+          : `https://www.google.com/maps/search/?api=1&query=${q}`;
+    } else {
+      console.log("⚠️ aucune coordonnée GPS ni adresse disponible");
+      return;
+    }
+    Linking.openURL(url).catch((e) => {
+      console.log("❌ openMapsForGrocery failed:", e?.message ?? e);
+    });
+  }
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, (user) => {
       setUid(user?.uid ?? null);
@@ -230,144 +265,6 @@ export default function GroceryStoreScreen({ navigation, route }) {
     return orderedKeys.map((k) => ({ key: k, items: map.get(k) || [] }));
   }, [filtered]);
 
-  const GroceryHeader = React.memo(function GroceryHeader({
-    navigation,
-    groceryId,
-    groceryName,
-    groceryDesc,
-    groceryAddress,
-    groceryDistance,
-    logoSource,
-    query,
-    setQuery,
-  }) {
-    return (
-      <View>
-        <View style={styles.headerShell}>
-          <View style={styles.headerRow}>
-            <Pressable
-              onPress={() => navigation.goBack()}
-              style={styles.backBtn}
-              hitSlop={10}
-            >
-              <MaterialIcons
-                name="arrow-back-ios-new"
-                size={18}
-                color={COLORS.primary}
-              />
-            </Pressable>
-          </View>
-
-          <View style={styles.identityWrap}>
-            <View style={styles.logoOuter}>
-              {logoSource ? (
-                <Image
-                  source={logoSource}
-                  style={styles.logoImg}
-                  fadeDuration={0}
-                />
-              ) : (
-                <View style={styles.logoImg} />
-              )}
-            </View>
-
-            <View style={{ flex: 1 }}>
-              <Text style={styles.storeName} numberOfLines={2}>
-                {groceryName}
-              </Text>
-            </View>
-          </View>
-
-          <Text style={styles.storeDesc}>{groceryDesc}</Text>
-        </View>
-
-        <View style={{ paddingHorizontal: 16, paddingTop: 16, gap: 14 }}>
-          <View style={styles.locationCard}>
-            <View style={styles.locationIcon}>
-              <MaterialIcons
-                name="location-on"
-                size={26}
-                color={COLORS.primary}
-              />
-            </View>
-
-            <View style={{ flex: 1 }}>
-              <Text style={styles.locationKicker}>Localisation</Text>
-              <Text style={styles.locationAddr} numberOfLines={2}>
-                {groceryAddress}
-              </Text>
-              <Text style={styles.locationSub}>
-                {groceryDistance == null
-                  ? "Distance inconnue"
-                  : `À ${groceryDistance.toFixed(1)} km de votre position`}
-              </Text>
-            </View>
-
-            <Pressable
-              style={styles.mapBtn}
-              onPress={() => console.log("open map for grocery:", groceryId)}
-              hitSlop={10}
-            >
-              <MaterialIcons name="map" size={18} color="#71717a" />
-            </Pressable>
-          </View>
-          <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-            <View style={styles.searchBox}>
-              <MaterialIcons
-                name="search"
-                size={18}
-                color={COLORS.muted}
-              ></MaterialIcons>
-              <TextInput
-                value={query}
-                onChangeText={setQuery}
-                placeholder="Rechercher un produit..."
-                placeholderTextColor={COLORS.muted}
-                style={styles.searchInput}
-                returnKeyType="search"
-                onSubmitEditing={Keyboard.dismiss}
-              ></TextInput>
-              {!!query && (
-                <Pressable onPress={() => setQuery("")} hitSlop={10}>
-                  <MaterialIcons
-                    name="close"
-                    size={18}
-                    color={COLORS.muted}
-                  ></MaterialIcons>
-                </Pressable>
-              )}
-            </View>
-          </View>
-        </View>
-      </View>
-    );
-  });
-
-  const headerNode = useMemo(() => {
-    return (
-      <GroceryHeader
-        navigation={navigation}
-        groceryId={groceryId}
-        groceryName={groceryName}
-        groceryDesc={groceryDesc}
-        groceryAddress={groceryAddress}
-        groceryDistance={groceryDistance}
-        logoSource={logoSource}
-        query={query}
-        setQuery={setQuery}
-      />
-    );
-  }, [
-    navigation,
-    groceryId,
-    groceryName,
-    groceryDesc,
-    groceryAddress,
-    groceryDistance,
-    logoSource,
-    query,
-  ]);
-
   const renderSection = ({ item: section }) => {
     const data = section.items || [];
     if (!data.length) return null;
@@ -422,20 +319,10 @@ export default function GroceryStoreScreen({ navigation, route }) {
                   </View>
 
                   {/* Fav btn */}
-                  <Pressable
-                    style={[styles.favBtn, item.isFav && styles.favBtnActive]}
-                    onPress={(e) => {
-                      e.stopPropagation?.();
-                      onToggleFav(item);
-                    }}
-                    hitSlop={10}
-                  >
-                    <MaterialIcons
-                      name={item.isFav ? "favorite" : "favorite-border"}
-                      size={16}
-                      color={item.isFav ? COLORS.primary : "#71717a"}
-                    />
-                  </Pressable>
+                  <FavButton
+                    isFav={item.isFav}
+                    onPress={() => onToggleFav(item)}
+                  ></FavButton>
                 </View>
 
                 <View style={styles.pBody}>
@@ -474,7 +361,25 @@ export default function GroceryStoreScreen({ navigation, route }) {
           data={sections}
           keyExtractor={(s) => s.key}
           renderItem={renderSection}
-          ListHeaderComponent={headerNode}
+          ListHeaderComponent={
+            <GroceryStoreHeader
+              groceryAddress={groceryAddress}
+              groceryDesc={groceryDesc}
+              navigation={navigation}
+              groceryId={groceryId}
+              groceryName={groceryName}
+              groceryDistance={groceryDistance}
+              logoSource={logoSource}
+              query={query}
+              setQuery={setQuery}
+              onPressMap={() =>
+                openMapsForGrocery({
+                  gps: grocery?.gps,
+                  address: groceryAddress,
+                })
+              }
+            ></GroceryStoreHeader>
+          }
           contentContainerStyle={{ paddingBottom: 110 + insets.bottom }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -496,124 +401,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bg },
 
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
-
-  // Header block
-  headerShell: {
-    backgroundColor: COLORS.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    paddingTop: 14,
-    paddingBottom: 18,
-    paddingHorizontal: 16,
-  },
-  headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 14 },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 999,
-    backgroundColor: COLORS.bg,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-
-  identityWrap: { flexDirection: "row", alignItems: "center", gap: 12 },
-  logoOuter: {
-    width: 84,
-    height: 84,
-    borderRadius: 18,
-    backgroundColor: COLORS.surface,
-    padding: 4,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    overflow: "hidden",
-  },
-  logoImg: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 14,
-    backgroundColor: "#f3f4f6",
-  },
-
-  storeName: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: COLORS.text,
-    lineHeight: 26,
-  },
-  storeDesc: {
-    marginTop: 12,
-    fontSize: 13,
-    lineHeight: 18,
-    color: COLORS.muted,
-    fontWeight: "700",
-  },
-
-  // Location card
-  locationCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 18,
-    padding: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  locationIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,215,4,0.22)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255,215,4,0.35)",
-  },
-  locationKicker: {
-    fontSize: 10,
-    fontWeight: "900",
-    color: COLORS.primary,
-    letterSpacing: 1.1,
-    textTransform: "uppercase",
-  },
-  locationAddr: {
-    marginTop: 2,
-    fontSize: 13,
-    fontWeight: "900",
-    color: COLORS.text,
-  },
-  locationSub: {
-    marginTop: 2,
-    fontSize: 11,
-    fontWeight: "700",
-    color: COLORS.muted,
-  },
-  mapBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: COLORS.bg,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-
-  // Search
-  searchBox: {
-    height: 50,
-    borderRadius: 18,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingHorizontal: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  searchInput: { flex: 1, fontSize: 13, fontWeight: "800", color: COLORS.text },
 
   // Section header
   sectionHeader: {

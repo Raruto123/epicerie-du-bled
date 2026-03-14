@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Keyboard,
   KeyboardAvoidingView,
@@ -109,6 +110,13 @@ export default function ProfileScreen({ navigation }) {
   const selectedLanguageLabel =
     languageOptions.find((l) => l.key === selectedLang)?.label ?? "Français";
 
+  const hasNameChanged = useMemo(() => {
+    const trimmedName = name.trim();
+    const currentProfileName = (profile?.name ?? "").trim();
+
+    return !!trimmedName && trimmedName !== currentProfileName;
+  }, [name, profile?.name]);
+
   const goSellerSpace = () => {
     navigation.navigate("SellerBoard"); //à voir si je mets navigate ou replace;
   };
@@ -119,6 +127,7 @@ export default function ProfileScreen({ navigation }) {
 
     const nextName = name.trim();
     if (!nextName) return;
+    if (nextName === (profile?.name ?? "").trim()) return;
 
     // Optimistic UI update
     const prevName = profile?.name ?? "";
@@ -195,6 +204,20 @@ export default function ProfileScreen({ navigation }) {
       setProfile((p) => (p ? { ...p, photoURL: prevUrl } : p));
       console.log("❌ Remove photo de profile erreur:", e);
     }
+  };
+
+  const confirmRemovePhoto = () => {
+    Keyboard.dismiss();
+    if (!uid || !profile?.photoURL) return;
+    Alert.alert(
+      "Supprimer la photo ?",
+      "Cette action supprimera votre photo de profil actuelle.",
+      [
+        { text: "Annuler", style: "cancel" },
+        { text: "Supprimer", style: "destructive", onPress: handleRemovePhoto },
+      ],
+      { cancelable: true },
+    );
   };
 
   const handleLogout = async () => {
@@ -278,7 +301,7 @@ export default function ProfileScreen({ navigation }) {
               {!!pictureUri && (
                 <Pressable
                   style={styles.removePhotoBtn}
-                  onPress={handleRemovePhoto}
+                  onPress={confirmRemovePhoto}
                   hitSlop={10}
                 >
                   <MaterialIcons
@@ -311,7 +334,7 @@ export default function ProfileScreen({ navigation }) {
 
                   <Text style={styles.sellerTitle}>Gérez votre boutique</Text>
                   <Text style={styles.sellerDesc}>
-                    Ouvrer votre épicerie en ligne et toucher des milliers de
+                    Ouvrez votre épicerie en ligne et toucher des milliers de
                     clients
                   </Text>
 
@@ -325,7 +348,11 @@ export default function ProfileScreen({ navigation }) {
                   </Pressable>
                 </View>
 
-                <View style={styles.sellerCardRight}></View>
+                <Image
+                  source={require("../../assets/image1onboarding.jpg")}
+                  style={styles.sellerCardRight}
+                  resizeMode="cover"
+                ></Image>
               </View>
             )}
 
@@ -354,8 +381,11 @@ export default function ProfileScreen({ navigation }) {
 
                 <Pressable
                   onPress={saveName}
-                  disabled={saving}
-                  style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+                  disabled={saving || !hasNameChanged}
+                  style={[
+                    styles.saveBtn,
+                    (saving || !hasNameChanged) && styles.saveBtnDisabled,
+                  ]}
                 >
                   {saving ? (
                     <ActivityIndicator color="white"></ActivityIndicator>
@@ -549,7 +579,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   sellerCardLeft: { flex: 1, padding: 16 },
-  sellerCardRight: { width: 86, backgroundColor: "rgba(255,215,4,0.18)" },
+  sellerCardRight: { width: 86, height: "100%" },
   sellerKickerRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   sellerKicker: {
     fontSize: 11,
@@ -626,7 +656,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  saveBtnDisabled: { opacity: 0.8 },
+  saveBtnDisabled: { opacity: 0.55 },
   saveBtnText: { color: "white", fontWeight: "900" },
   listCard: {
     backgroundColor: COLORS.surface,
