@@ -33,6 +33,7 @@ import {
 import { onAuthStateChanged } from "firebase/auth";
 import FavButton from "../../components/favButton";
 import GroceryStoreHeader from "../../components/groceryStoreHeader";
+import NoLocationToast from "../../components/noLocationToast";
 
 // ✅ Catégories style "sections"
 const SECTION_ORDER = [
@@ -55,7 +56,7 @@ export default function GroceryStoreScreen({ navigation, route }) {
 
   const groceryId = grocery?.id ?? "g-0";
   const groceryName = grocery?.name ?? "Épicerie";
-  const groceryAddress = grocery?.address ?? "Adresse inconnue";
+  const groceryAddress = grocery?.address ?? null;
   const groceryDistance =
     grocery?.distanceKm == null ? null : Number(grocery.distanceKm);
   const groceryDesc = grocery?.description ?? "Aucune description kgjgjg";
@@ -72,7 +73,17 @@ export default function GroceryStoreScreen({ navigation, route }) {
 
   const [favIdsSet, setFavIdsSet] = useState(new Set());
 
+  const [toast, setToast] = useState({
+    visible: false,
+    message: "",
+    type: "info",
+  });
+
   const favIdsRef = useRef(new Set());
+
+  const showToast = useCallback((message, type = "info") => {
+    setToast({ visible: true, message, type });
+  }, []);
 
   function openMapsForGrocery({ gps, address }) {
     const hasCoords =
@@ -98,11 +109,15 @@ export default function GroceryStoreScreen({ navigation, route }) {
           ? `https://maps.apple.com/?q=${q}`
           : `https://www.google.com/maps/search/?api=1&query=${q}`;
     } else {
-      console.log("⚠️ aucune coordonnée GPS ni adresse disponible");
+      showToast(
+        "L'épicier n'a spécifié aucune localisation. Impossible d'ouvrir la carte.",
+        "error",
+      );
       return;
     }
     Linking.openURL(url).catch((e) => {
       console.log("❌ openMapsForGrocery failed:", e?.message ?? e);
+      showToast("Impossible d'ouvrir l'application de cartes.", "error")
     });
   }
   useEffect(() => {
@@ -393,6 +408,13 @@ export default function GroceryStoreScreen({ navigation, route }) {
           }
         />
       )}
+      <NoLocationToast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        bottom={96 + insets.bottom}
+        onHide={() => setToast((prev) => ({ ...prev, visible: false }))}
+      ></NoLocationToast>
     </SafeAreaView>
   );
 }

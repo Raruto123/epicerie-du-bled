@@ -23,16 +23,6 @@ export default function GroceryStoreHeader({
   setQuery,
   onPressMap,
 }) {
-  function openMapsWithAddress(address) {
-    const q = encodeURIComponent(address ?? "");
-    const url =
-      Platform.OS === "ios"
-        ? `https://maps.apple.com/?q=${q}`
-        : `https://www.google.com/maps/search/?api=1&quert=${q}`;
-    Linking.openURL(url).catch((e) => {
-      console.log("❌ openMapsWithAddress failed:", e?.message ?? e);
-    });
-  }
   return (
     <View>
       <View style={styles.headerShell}>
@@ -81,7 +71,7 @@ export default function GroceryStoreHeader({
           <View style={{ flex: 1 }}>
             <Text style={styles.locationKicker}>Localisation</Text>
             <Text style={styles.locationAddr} numberOfLines={2}>
-              {groceryAddress}
+              {groceryAddress === null ? "Adresse non renseignée" : groceryAddress}
             </Text>
             <Text style={styles.locationSub}>
               {groceryDistance == null

@@ -143,7 +143,7 @@ export default function GroceriesListScreen({
             color={COLORS.muted}
           ></MaterialIcons>
           <Text style={styles.addrText} numberOfLines={2}>
-            {item.address}
+            {item.address ?? "Adresse non renseignée"}
           </Text>
         </View>
         <View style={styles.distRow}>
@@ -153,7 +153,7 @@ export default function GroceriesListScreen({
             color={COLORS.primary}
           ></MaterialIcons>
           <Text style={styles.distText}>
-            {Number(item.distanceKm ?? 0).toFixed(1)} km
+            {item.distanceKm == null ? "Distance inconnue" : `${Number(item.distanceKm)} km`}
           </Text>
         </View>
       </View>

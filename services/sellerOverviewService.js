@@ -42,7 +42,7 @@ export async function updateSellerProfile(uid, patch) {
 // Save GPS coords (you can call this after your LocationGateModal)
 export async function updateSellerGpsLocation(
   uid,
-  { latitude, longitude, accuracy, timestamp }
+  { latitude, longitude, accuracy, timestamp },
 ) {
   const userRef = doc(db, "users", uid);
 
@@ -61,7 +61,7 @@ export async function updateSellerGpsLocation(
       },
       updatedAt: serverTimestamp(),
     },
-    { merge: true }
+    { merge: true },
   );
 }
 
@@ -82,7 +82,7 @@ export async function pickSellerLogo() {
             text: "Ouvrir les réglages",
             onPress: () => Linking.openSettings(),
           },
-        ]
+        ],
       );
       return null;
     }
@@ -137,7 +137,7 @@ export async function replaceSellerLogo(uid, localUri) {
   //1) Read previous path from Firestore
   const snapshot = await getDoc(userRef);
   const prevFilename = snapshot.exists()
-    ? snapshot.data()?.seller?.logoPath ?? null
+    ? (snapshot.data()?.seller?.logoPath ?? null)
     : null;
 
   //2) Upload new logo
@@ -157,7 +157,7 @@ export async function replaceSellerLogo(uid, localUri) {
       },
       updatedAt: serverTimestamp(),
     },
-    { merge: true }
+    { merge: true },
   );
 
   //4) delete previous logo
@@ -167,6 +167,41 @@ export async function replaceSellerLogo(uid, localUri) {
       console.log("🗑️ deleted previous seller logo :", prevFilename);
     } catch (e) {
       console.log("⚠️ delete previous seller logo failed : ", {
+        code: e?.code,
+        message: e?.message,
+        prevFilename,
+      });
+    }
+  }
+}
+
+export async function removeSellerLogo(uid) {
+  if (!uid) throw new Error("Missing uid");
+
+  const userRef = doc(db, "users", uid);
+  const snapshot = await getDoc(userRef);
+
+  if (!snapshot.exists()) return;
+
+  const prevFilename = snapshot.data()?.seller?.logoPath ?? null;
+
+  // 1) Retirer le logo dans Firestore
+  await setDoc(
+    userRef,
+    {
+      seller: { logoURL: null, logoPath: null, updatedAt: serverTimestamp() },
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
+
+  // 2) Supprimer le fichier dans Storage
+  if (prevFilename) {
+    try {
+      await deleteObject(ref(storage, prevFilename));
+      console.log("🗑️ Seller logo deleted from storage:", prevFilename);
+    } catch (e) {
+      console.log("⚠️ Delete seller logo file failed:", {
         code: e?.code,
         message: e?.message,
         prevFilename,

@@ -33,15 +33,7 @@ import {
 } from "../../services/userCompareService";
 import CompareBubble from "../../components/compareBubble";
 import FavButton from "../../components/favButton";
-// Petit helper (MVP) : ouvrir Google Maps / Apple Maps
-function openMapsWithAddress(address) {
-  const q = encodeURIComponent(address ?? "");
-  const url =
-    Platform.OS === "ios"
-      ? `https://maps.apple.com/?q=${q}`
-      : `https://www.google.com/maps/Search/?api=1&query=${q}`;
-  Linking.openURL(url).catch(() => {});
-}
+import NoLocationToast from "../../components/noLocationToast";
 
 export default function ProductDetailsScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -61,6 +53,53 @@ export default function ProductDetailsScreen({ navigation, route }) {
   const [authReady, setAuthReady] = useState(false);
   const [uid, setUid] = useState(null);
 
+  const [toast, setToast] = useState({
+    visible: false,
+    message: "",
+    type: "info",
+  });
+
+  const showToast = (message, type = "info") => {
+    setToast({ visible: true, message, type });
+  };
+
+  function openMapsForProduct({ gps, address }) {
+    const hasCoords =
+      gps &&
+      gps.latitude != null &&
+      gps.longitude != null &&
+      !Number.isNaN(Number(gps.latitude)) &&
+      !Number.isNaN(Number(gps.longitude));
+
+    let url = "";
+
+    if (hasCoords) {
+      const lat = Number(gps.latitude);
+      const lng = Number(gps.longitude);
+
+      url =
+        Platform.OS === "ios"
+          ? `https://maps.apple.com/?q=${lat},${lng}`
+          : `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    } else if (address?.trim()) {
+      const q = encodeURIComponent(address.trim());
+      url =
+        Platform.OS === "ios"
+          ? `https://maps.apple.com/?q=${q}`
+          : `https://www.google.com/maps/search/?api=1&query=${q}`;
+    } else {
+      showToast(
+        "L'épicier n'a spécifié aucune localisation. Impossible d'ouvrir la carte.",
+        "error",
+      );
+      return;
+    }
+
+    Linking.openURL(url).catch((e) => {
+      console.log("❌ openMapsForProduct failed:", e?.message ?? e);
+      showToast("Impossible d'ouvrir l'application.", "error");
+    });
+  }
   const [compareProduct, setCompareProductState] = useState(null);
   useEffect(() => {
     const unsub = subscribeCompareProduct((p) => setCompareProductState(p));
@@ -130,14 +169,12 @@ export default function ProductDetailsScreen({ navigation, route }) {
       photoURL:
         p?.photoURL ??
         "https://images.unsplash.com/photo-1604908176997-125b5bd7be3d?auto=format&fit=crop&w=1000&q=80",
-      desc: p?.desc ?? "Aucune description bitch",
+      desc: p?.desc ?? null,
       seller: {
         id: p?.sellerId ?? null,
         name: p?.sellerName ?? "Épicerie",
-        distanceKm: p?.distanceKm ?? 99.2,
-        address:
-          p?.sellerAddress ??
-          "1234 Rue Saint-Hubert, Montréal, QC H2L 3Y7, Canada",
+        distanceKm: p?.distanceKm ?? null,
+        address: p?.sellerAddress ?? null,
         logoURL:
           p?.sellerLogoURL ??
           "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80",
@@ -322,7 +359,9 @@ export default function ProductDetailsScreen({ navigation, route }) {
                 <Text
                   style={[
                     styles.stockPillText,
-                    data.inStock ? { color: COLORS.primary} : { color: "#ef4444" },
+                    data.inStock
+                      ? { color: COLORS.primary }
+                      : { color: "#ef4444" },
                   ]}
                 >
                   {data.inStock ? "En stock" : "Rupture"}
@@ -396,8 +435,9 @@ export default function ProductDetailsScreen({ navigation, route }) {
                     color={COLORS.primary}
                   ></MaterialIcons>
                   <Text style={styles.sellerDistText}>
-                    À {Number(data.seller.distanceKm ?? 0).toFixed(1)} km de
-                    vous
+                    {data.seller.distanceKm == null
+                      ? "Distance inconnue"
+                      : `À ${Number(data.seller.distanceKm).toFixed(1)} km de vous`}
                   </Text>
                 </View>
               </View>
@@ -409,12 +449,19 @@ export default function ProductDetailsScreen({ navigation, route }) {
                 size={16}
                 color={COLORS.muted}
               ></MaterialIcons>
-              <Text style={styles.addrText}>{data.seller.address}</Text>
+              <Text style={styles.addrText}>
+                {data.seller.address ?? "Adresse non renseignée"}
+              </Text>
             </View>
 
             <View style={styles.sellerBtns}>
               <Pressable
-                onPress={() => openMapsWithAddress(data.seller.address)}
+                onPress={() =>
+                  openMapsForProduct({
+                    gps: data.seller.gps,
+                    address: data.seller.address,
+                  })
+                }
                 style={styles.primaryBtn}
               >
                 <MaterialIcons
@@ -504,7 +551,9 @@ export default function ProductDetailsScreen({ navigation, route }) {
                             paddingHorizontal: 8,
                             paddingVertical: 4,
                             borderRadius: 8,
-                            backgroundColor: inStock ? COLORS.primary : "#ef4444",
+                            backgroundColor: inStock
+                              ? COLORS.primary
+                              : "#ef4444",
                           }}
                         >
                           <Text
@@ -561,6 +610,13 @@ export default function ProductDetailsScreen({ navigation, route }) {
           console.log("Bubble pressed");
         }}
       ></CompareBubble>
+      <NoLocationToast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        bottom={96 + insets.bottom}
+        onHide={() => setToast((prev) => ({ ...prev, visible: false }))}
+      ></NoLocationToast>
     </SafeAreaView>
   );
 }

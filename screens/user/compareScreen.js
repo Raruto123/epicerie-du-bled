@@ -8,15 +8,8 @@ import { StyleSheet } from "react-native";
 import { Image } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Pressable } from "react-native";
-
-function openMapsWithAddress(address) {
-  const q = encodeURIComponent(address ?? "");
-  const url =
-    Platform.OS === "ios"
-      ? `https://maps.apple.com/?q=${q}`
-      : `https://www.google.com/maps/Search/?api=1&query=${q}`;
-  Linking.openURL(url).catch(() => {});
-}
+import { useCallback, useState } from "react";
+import NoLocationToast from "../../components/noLocationToast";
 
 /** ---------- UI subcomponents ---------- */
 function ImageCard({ uri }) {
@@ -71,7 +64,7 @@ function StockPill({ inStock }) {
 }
 
 function DistancePill({ km }) {
-  const val = km;
+  const hasDistance = km != null && !Number.isNaN(Number(km));
   return (
     <View style={styles.centerRow}>
       <MaterialIcons
@@ -79,7 +72,9 @@ function DistancePill({ km }) {
         size={16}
         color={COLORS.muted}
       ></MaterialIcons>
-      <Text style={styles.valueText}>{val} km</Text>
+      <Text style={styles.valueText}>
+        {hasDistance ? `${Number(km).toFixed(1)} km` : "Distance inconnue"}
+      </Text>
     </View>
   );
 }
@@ -91,7 +86,7 @@ function SellerBlock({ name, address }) {
         {name || "Épicerie"}
       </Text>
       <Text style={styles.sellerSub} numberOfLines={1}>
-        {address}
+        {address || "Adresse non renseignée"}
       </Text>
     </View>
   );
@@ -104,6 +99,55 @@ export default function CompareScreen({ navigation, route }) {
 
   console.log("first = ", first);
   console.log("second = ", second);
+
+  const [toast, setToast] = useState({
+    visible: false,
+    message: "",
+    type: "info",
+  });
+
+  const showToast = useCallback((message, type = "info") => {
+    setToast({ visible: true, message, type });
+  }, []);
+
+  function openMapsForCompare({ gps, address }) {
+    const hasCoords =
+      gps &&
+      gps.latitude != null &&
+      gps.longitude != null &&
+      !Number.isNaN(Number(gps.latitude)) &&
+      !Number.isNaN(Number(gps.longitude));
+
+    let url = "";
+
+    if (hasCoords) {
+      const lat = Number(gps.latitude);
+      const lng = Number(gps.longitude);
+
+      url =
+        Platform.OS === "ios"
+          ? `https://maps.apple.com/?q=${lat},${lng}`
+          : `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    } else if (address?.trim()) {
+      const q = encodeURIComponent(address.trim());
+
+      url =
+        Platform.OS === "ios"
+          ? `https://maps.apple.com/?q=${q}`
+          : `https://www.google.com/maps/search/?api=1&query=${q}`;
+    } else {
+      showToast(
+        "L'épicier n'a spécifié aucune localisation. Impossible d'ouvrir la carte.",
+        "error",
+      );
+      return;
+    }
+
+    Linking.openURL(url).catch((e) => {
+      console.log("❌ openMapsForCompare failed:", e?.message ?? e);
+      showToast("Impossible d'ouvrir l'application de cartes.", "error");
+    });
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "right", "left"]}>
@@ -152,14 +196,14 @@ export default function CompareScreen({ navigation, route }) {
             left={
               <View style={styles.priceCell}>
                 <Text style={[styles.priceText, { color: COLORS.primary }]}>
-                  {first.price} $
+                  {Number(first?.price ?? 0).toFixed(2)} $
                 </Text>
               </View>
             }
             right={
               <View style={styles.priceCell}>
                 <Text style={[styles.priceText, { color: COLORS.primary }]}>
-                  {second.price} $
+                  {Number(second?.price ?? 0).toFixed(2)} $
                 </Text>
               </View>
             }
@@ -193,7 +237,12 @@ export default function CompareScreen({ navigation, route }) {
           <View style={styles.btnRow}>
             <Pressable
               style={styles.primaryBtn}
-              onPress={() => openMapsWithAddress(first.sellerAddress)}
+              onPress={() =>
+                openMapsForCompare({
+                  gps: first?.sellerGps,
+                  address: first?.sellerAddress,
+                })
+              }
             >
               <MaterialIcons
                 name="directions"
@@ -206,7 +255,12 @@ export default function CompareScreen({ navigation, route }) {
             </Pressable>
             <Pressable
               style={styles.secondaryBtn}
-              onPress={() => openMapsWithAddress(second.sellerAddress)}
+              onPress={() =>
+                openMapsForCompare({
+                  gps: second?.sellerGps,
+                  address: second?.sellerAddress,
+                })
+              }
             >
               <MaterialIcons
                 name="directions"
@@ -220,6 +274,13 @@ export default function CompareScreen({ navigation, route }) {
           </View>
         </View>
       </ScrollView>
+      <NoLocationToast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        bottom={96 + insets.bottom}
+        onHide={() => setToast((prev) => ({ ...prev, visible: false }))}
+      ></NoLocationToast>
     </SafeAreaView>
   );
 }
@@ -245,7 +306,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor:COLORS.surface,
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
@@ -303,7 +364,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
     position: "relative",
-    overflow:"visible"
+    overflow: "visible",
   },
   rowHighlight: { backgroundColor: "rgba(255,215,4,0.12)" },
 
@@ -311,10 +372,10 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     top: 0,
-    right:0,
-    bottom:0,
-    alignItems:"center",
-    justifyContent:"center",
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
     zIndex: 10,
   },
   rowLabelPill: {
@@ -322,8 +383,8 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 999,
     backgroundColor: COLORS.bg,
-    borderWidth:1,
-    borderColor:COLORS.border
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   rowLabel: {
     fontSize: 10,
@@ -342,7 +403,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    paddingRight: 30,
+    paddingRight: 45,
     alignItems: "center",
     borderRightWidth: 1,
     borderRightColor: COLORS.border,
@@ -351,7 +412,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    paddingLeft: 30,
+    paddingLeft: 45,
     alignItems: "center",
   },
 

@@ -133,7 +133,7 @@ export async function fetchGroceriesList({
       id: d.id,
       name: seller.storeName ?? u.name ?? "Épicerie",
       address:
-        seller.addressText ?? u?.lastAddress?.formatted ?? "Adresse inconnue",
+        seller.addressText ?? null,
       photoURL: seller.logoURL ?? null,
       gps,
       distanceKm,

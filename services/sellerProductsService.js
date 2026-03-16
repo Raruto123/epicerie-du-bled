@@ -246,7 +246,7 @@ if (base.sellerId) {
 
   const sellerName = seller?.storeName ?? null;
   const sellerAddress =
-    seller?.addressText ?? u?.lastAddress?.formatted ?? null;
+    seller?.addressText ?? null;
   const sellerLogoURL = seller?.logoURL ?? null;
   const sellerGps = seller?.gps ?? null;
   const sellerDescription = seller?.description ?? null;

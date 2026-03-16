@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Keyboard,
   KeyboardAvoidingView,
@@ -21,6 +22,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { auth } from "../../lib/firebase";
 import {
   pickSellerLogo,
+  removeSellerLogo,
   replaceSellerLogo,
   updateSellerGpsLocation,
   updateSellerProfile,
@@ -138,7 +140,8 @@ export default function SellerOverviewScreen({ navigation }) {
 
   const goBack = () => {
     // SellerOverviewScreen -> Tab (SellerTabs) -> Stack (SellerBoard) -> Root Stack
- navigation.goBack();  };
+    navigation.goBack();
+  };
 
   const saveField = async (field) => {
     Keyboard.dismiss();
@@ -237,6 +240,58 @@ export default function SellerOverviewScreen({ navigation }) {
     }
   };
 
+  const handleRemovePhoto = async () => {
+    Keyboard.dismiss();
+    if (!uid || !profile?.seller?.logoURL || savingLogo) return;
+
+    const prevLogo = logoUri;
+
+    setLogoUri("");
+    setProfile((p) =>
+      p
+        ? {
+            ...p,
+            seller: { ...(p.seller ?? {}), logoURL: null, logoPath: null },
+          }
+        : p,
+    );
+
+    try {
+      setSavingLogo(true);
+      await removeSellerLogo(uid);
+
+      const fresh = await getUserProfile(uid);
+      if (fresh) {
+        setProfile(fresh);
+        setLogoUri((fresh?.seller?.logoURL ?? "").toString());
+      }
+      console.log("✅ Seller logo removed");
+    } catch (e) {
+      setLogoUri(prevLogo);
+      setProfile((p) =>
+        p ? { ...p, seller: { ...(p.seller ?? {}), logoURL: prevLogo } } : p,
+      );
+      console.log("❌ Failed to remove seller logo:", e);
+    } finally {
+      setSavingLogo(false);
+    }
+  };
+
+  const confirmRemoveLogo = () => {
+    Keyboard.dismiss();
+    if (!uid || !profile?.seller?.logoURL || savingLogo) return;
+
+    Alert.alert(
+      "Supprimer le logo ?",
+      "Cette action supprimera le logo actuel de votre boutique.",
+      [
+        { text: "Annuler", style: "cancel" },
+        { text: "Supprimer", style: "destructive", onPress: handleRemovePhoto },
+      ],
+      { cancelable: true },
+    );
+  };
+
   const updateGps = () => {
     navigation.navigate("SellerLocationPicker", {
       initialLocation: profile?.seller?.gps ?? null,
@@ -288,11 +343,15 @@ export default function SellerOverviewScreen({ navigation }) {
           <View style={styles.visualWrap}>
             <View style={styles.logoWrap}>
               <View style={styles.logo}>
-                {!!logoUri && (
+                {!!logoUri ?(
                   <Image
                     source={{ uri: logoUri }}
                     style={styles.logoImg}
                   ></Image>
+                ) : (
+                  <View style={styles.logoFallback}>
+                    <MaterialIcons name="storefront" size={42} color={COLORS.primary}></MaterialIcons>
+                  </View>
                 )}
                 {savingLogo && (
                   <View style={styles.logoLoadingOverlay}>
@@ -313,6 +372,21 @@ export default function SellerOverviewScreen({ navigation }) {
                 ></MaterialIcons>
               </Pressable>
             </View>
+            {!!logoUri && (
+              <Pressable
+                style={styles.removeLogoBtn}
+                onPress={confirmRemoveLogo}
+                hitSlop={10}
+                disabled={savingLogo}
+              >
+                <MaterialIcons
+                  name="delete-outline"
+                  size={16}
+                  color="#ef4444"
+                ></MaterialIcons>
+                <Text style={styles.removeLogoText}>Supprimer le logo</Text>
+              </Pressable>
+            )}
           </View>
 
           <View style={styles.centerHeader}>
@@ -393,7 +467,7 @@ export default function SellerOverviewScreen({ navigation }) {
                   onChangeText={setAddressText}
                   style={styles.addressInput}
                   onSubmitEditing={() => saveField("addressText")}
-                  placeholder="Numéro, Rue, Ville"
+                  placeholder="Numéro, Rue, Ville. Ex : 4605 Avenue Walkley"
                 ></TextInput>
               </View>
               <Pressable
@@ -651,9 +725,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: COLORS.bg,
     borderWidth: 1,
-    borderColor:COLORS.border,
+    borderColor: COLORS.border,
     marginTop: 4,
-    overflow:"hidden"
+    overflow: "hidden",
   },
   mapEmptyOverlay: {
     flex: 1,
@@ -673,8 +747,8 @@ const styles = StyleSheet.create({
     marginTop: 14,
     borderRadius: 14,
     backgroundColor: COLORS.surface,
-    borderWidth:1,
-    borderColor:COLORS.primary,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
     padding: 12,
     flexDirection: "row",
     gap: 10,
@@ -711,4 +785,19 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   loadingText: { fontSize: 12, fontWeight: "800", color: COLORS.muted },
+  removeLogoBtn: {
+    marginTop: 12,
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "rgba(239,68,68,0.20)",
+  },
+  removeLogoText: { fontSize: 12, fontWeight: "800", color: "#ef4444" },
+  logoFallback:{flex:1, alignItems:"center",justifyContent:"center", backgroundColor:"rgba(10, 148, 5, 0.1)"}
 });
