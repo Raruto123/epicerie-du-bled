@@ -81,6 +81,7 @@ export default function GroceryStoreScreen({ navigation, route }) {
 
   const favIdsRef = useRef(new Set());
 
+
   const showToast = useCallback((message, type = "info") => {
     setToast({ visible: true, message, type });
   }, []);

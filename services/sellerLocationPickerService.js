@@ -38,3 +38,17 @@ export function clampLatLng({ latitude, longitude }) {
   const lng = Math.max(-180, Math.min(180, longitude));
   return { latitude: lat, longitude: lng };
 }
+
+let pickedSellerLocation = null;
+
+export function setPickerSellerLocation(location) {
+  pickedSellerLocation = location ?? null;
+}
+
+export function getPickedSellerLocation() {
+  return pickedSellerLocation;
+}
+
+export function clearPickedSellerLocation() {
+  pickedSellerLocation = null
+}

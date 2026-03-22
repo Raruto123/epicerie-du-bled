@@ -10,6 +10,7 @@ import {
   clampLatLng,
   ensureLocationPermission,
   getDeviceLocation,
+  setPickerSellerLocation,
 } from "../../services/sellerLocationPickerService";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS } from "../../constants/colors";
@@ -25,7 +26,7 @@ export default function SellerLocationPickerScreen({ navigation, route }) {
   const [marker, setMarker] = useState(
     initial
       ? { latitude: initial.latitude, longitude: initial.longitude }
-      : { latitude: 45.5017, longitude: -73.5673 } //fallback Montréal
+      : { latitude: 45.5017, longitude: -73.5673 }, //fallback Montréal
   );
 
   const [accuracy, setAccuracy] = useState(null);
@@ -36,7 +37,7 @@ export default function SellerLocationPickerScreen({ navigation, route }) {
       latitudeDelta: 0.02,
       longitudeDelta: 0.02,
     }),
-    [marker]
+    [marker],
   );
 
   useEffect(() => {
@@ -69,7 +70,7 @@ export default function SellerLocationPickerScreen({ navigation, route }) {
               latitudeDelta: 0.02,
               longitudeDelta: 0.02,
             },
-            350
+            350,
           );
         });
       } finally {
@@ -110,7 +111,7 @@ export default function SellerLocationPickerScreen({ navigation, route }) {
           latitudeDelta: 0.02,
           longitudeDelta: 0.02,
         },
-        350
+        350,
       );
     } finally {
       setBusy(false);
@@ -124,31 +125,10 @@ export default function SellerLocationPickerScreen({ navigation, route }) {
       accuracy: accuracy ?? null,
       timestamp: Date.now(),
     };
-    navigation.navigate(
-      "SellerBoard",
-      {
-        screen: "SellerTabs",
-        params: {
-          screen: "APERÇU",
-          params: { pickedLocation },
-        },
-        merge : true
-      },
-    );
-    // navigation.navigate({
-    //   name: "SellerBoard",
-    //   screen: "SellerTabs",
-    //   params: {
-    //     screen: "APERÇU",
-    //     pickedLocation: {
-    //       latitude: marker.latitude,
-    //       longitude: marker.longitude,
-    //       accuracy: accuracy ?? null,
-    //       timestamp: Date.now(),
-    //     },
-    //   },
-    //   merge: true,
-    // });
+
+    setPickerSellerLocation(pickedLocation)
+
+    navigation.goBack()
   };
   return (
     <SafeAreaView style={styles.safe} edges={["right", "left", "top"]}>

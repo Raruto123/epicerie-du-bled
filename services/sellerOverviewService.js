@@ -209,3 +209,39 @@ export async function removeSellerLogo(uid) {
     }
   }
 }
+
+export async function removeSellerAddress(uid) {
+  if (!uid) throw new Error("Missing uid");
+
+  const userRef = doc(db, "users", uid);
+
+  await setDoc(
+    userRef,
+    {
+      seller: {
+        addressText: null,
+        updatedAt: serverTimestamp(),
+      },
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
+}
+
+export async function removeSellerGpsLocation(uid) {
+  if (!uid) throw new Error("Missing uid");
+
+  const userRef = doc(db, "users", uid);
+
+  await setDoc(
+    userRef,
+    {
+      seller: {
+        gps: null,
+        updatedAt: serverTimestamp(),
+      },
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
+}

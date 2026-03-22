@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -22,6 +22,8 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { auth } from "../../lib/firebase";
 import {
   pickSellerLogo,
+  removeSellerAddress,
+  removeSellerGpsLocation,
   removeSellerLogo,
   replaceSellerLogo,
   updateSellerGpsLocation,
@@ -29,8 +31,13 @@ import {
 } from "../../services/sellerOverviewService";
 import { getUserProfile } from "../../services/profileService";
 import { formatDateFr } from "../../utils/dateFormat";
-import { useRoute } from "@react-navigation/native";
+import { useFocusEffect, useRoute } from "@react-navigation/native";
 import MapView, { Marker } from "react-native-maps";
+import {
+  clearPickedSellerLocation,
+  getPickedSellerLocation,
+} from "../../services/sellerLocationPickerService";
+import SellerRulesModal from "../../components/sellerRulesModal";
 
 export default function SellerOverviewScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -44,6 +51,7 @@ export default function SellerOverviewScreen({ navigation }) {
   const [addressText, setAddressText] = useState("");
   const [logoUri, setLogoUri] = useState("");
   const [savingLogo, setSavingLogo] = useState(false);
+  const [rulesVisible, setRulesVisible] = useState(false);
 
   const lastUpdated = profile?.seller?.updatedAt ?? null;
   const route = useRoute();
@@ -95,26 +103,36 @@ export default function SellerOverviewScreen({ navigation }) {
   }, []);
 
   //pour la localisation
-  useEffect(() => {
-    const picked = route.params?.pickedLocation;
-    if (!picked || !uid) return;
+  useFocusEffect(
+    React.useCallback(() => {
+      let active = true;
+      (async () => {
+        const picked = getPickedSellerLocation();
+        if (!picked || !uid) return;
 
-    (async () => {
-      try {
-        await updateSellerGpsLocation(uid, picked);
-        const fresh = await getUserProfile(uid);
-        if (fresh) {
-          setProfile(fresh);
+        try {
+          await updateSellerGpsLocation(uid, picked);
+          const fresh = await getUserProfile(uid);
+
+          if (active && fresh) {
+            setProfile(fresh);
+          }
+
+          clearPickedSellerLocation();
+          console.log("📍 Position boutique enregistrée :", picked);
+        } catch (e) {
+          console.log("❌ Failed to save seller GPS location", e);
         }
-        console.log("📍 Position boutique enregistrée :", picked);
-      } catch (e) {
-        console.log("❌ Failed to save seller GPS location", e);
-      }
-    })();
-  }, [route.params?.pickedLocation]);
+      })();
+
+      return () => {
+        active = false;
+      };
+    }, [uid]),
+  );
 
   const mapCoord = useMemo(() => {
-    if (!gps?.latitude || !gps?.longitude) return null;
+    if (gps?.latitude == null || gps?.longitude == null) return null;
     return {
       latitude: Number(gps.latitude),
       longitude: Number(gps.longitude),
@@ -152,7 +170,8 @@ export default function SellerOverviewScreen({ navigation }) {
     if (field === "description") nextValue = description.trim();
     if (field === "addressText") nextValue = addressText.trim();
 
-    if (!nextValue) return;
+    if (field === "storeName" && !nextValue) return;
+    if (field === "addressText" && !nextValue) return;
 
     // Optimistic UI (on garde une copie pour rollback)
     const prev = {
@@ -292,6 +311,98 @@ export default function SellerOverviewScreen({ navigation }) {
     );
   };
 
+  const handleRemoveAddress = async () => {
+    Keyboard.dismiss();
+    if (!uid || !profile?.seller?.addressText || savingField === "addressText")
+      return;
+
+    const prevAddress = addressText;
+    const prevProfile = profile;
+
+    setAddressText("");
+    setProfile((p) =>
+      p ? { ...p, seller: { ...(p.seller ?? {}), addressText: null } } : p,
+    );
+
+    try {
+      setSavingField("addressText");
+      await removeSellerAddress(uid);
+
+      const fresh = await getUserProfile(uid);
+      if (fresh) {
+        setProfile(fresh);
+        setAddressText((fresh?.seller?.addressText ?? "").toString());
+      }
+
+      console.log("✅ Seller address removed");
+    } catch (e) {
+      setAddressText(prevAddress);
+      setProfile(prevProfile);
+      console.log("❌ Failed to remove seller address:", e);
+    } finally {
+      setSavingField(null);
+    }
+  };
+
+  const confirmRemoveAddress = () => {
+    Keyboard.dismiss();
+    if (!uid || !profile?.seller?.addressText || savingField === "addressText")
+      return;
+
+    Alert.alert(
+      "Supprimer l'adresse ?",
+      "Cette action supprimera l'adresse civique actuelle de votre épicerie.",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: handleRemoveAddress,
+        },
+      ],
+      { cancelable: true },
+    );
+  };
+
+  const handleRemoveGps = async () => {
+    Keyboard.dismiss();
+    if (!uid || !profile?.seller.gps || savingField === "gps") return;
+
+    const prevProfile = profile;
+
+    setProfile((p) =>
+      p ? { ...p, seller: { ...(p.seller ?? {}), gps: null } } : p,
+    );
+
+    try {
+      setSavingField("gps");
+      const fresh = await removeSellerGpsLocation(uid);
+      if (fresh) {
+        setProfile(fresh);
+      }
+      console.log("✅ Seller GPS removed");
+    } catch (e) {
+      setProfile(prevProfile);
+      console.log("❌ Failed to remove seller GPS:", e);
+    } finally {
+      setSavingField(null);
+    }
+  };
+
+  const confirmRemoveGps = () => {
+    Keyboard.dismiss();
+    if (!uid || !profile?.seller?.gps || savingField === "gps") return;
+
+    Alert.alert(
+      "Supprimer la position GPS ?",
+      "Cette action supprimera la position GPS actuelle de votre épicerie",
+      [
+        { text: "Annuler", style: "cancel" },
+        { text: "Supprimer", style: "destructive", onPress: handleRemoveGps },
+      ],
+      { cancelable: true },
+    );
+  };
   const updateGps = () => {
     navigation.navigate("SellerLocationPicker", {
       initialLocation: profile?.seller?.gps ?? null,
@@ -343,14 +454,18 @@ export default function SellerOverviewScreen({ navigation }) {
           <View style={styles.visualWrap}>
             <View style={styles.logoWrap}>
               <View style={styles.logo}>
-                {!!logoUri ?(
+                {!!logoUri ? (
                   <Image
                     source={{ uri: logoUri }}
                     style={styles.logoImg}
                   ></Image>
                 ) : (
                   <View style={styles.logoFallback}>
-                    <MaterialIcons name="storefront" size={42} color={COLORS.primary}></MaterialIcons>
+                    <MaterialIcons
+                      name="storefront"
+                      size={42}
+                      color={COLORS.primary}
+                    ></MaterialIcons>
                   </View>
                 )}
                 {savingLogo && (
@@ -484,6 +599,24 @@ export default function SellerOverviewScreen({ navigation }) {
                   <Text style={styles.smallSaveText}>Enregistrer</Text>
                 )}
               </Pressable>
+
+              {!!profile?.seller?.addressText && (
+                <Pressable
+                  style={styles.removeAddressBtn}
+                  onPress={confirmRemoveAddress}
+                  hitSlop={10}
+                  disabled={savingField === "addressText"}
+                >
+                  <MaterialIcons
+                    name="delete-outline"
+                    size={16}
+                    color="#ef4444"
+                  ></MaterialIcons>
+                  <Text style={styles.removeAddressText}>
+                    Supprimer l'adresse
+                  </Text>
+                </Pressable>
+              )}
             </View>
 
             <Pressable onPress={updateGps} style={styles.gpsRow}>
@@ -506,6 +639,28 @@ export default function SellerOverviewScreen({ navigation }) {
                 color={COLORS.primary}
               ></MaterialIcons>
             </Pressable>
+
+            {!!profile?.seller?.gps && (
+              <View style={styles.gpsRemoveWrap}>
+                <Pressable
+                  style={styles.removeGpsBtn}
+                  onPress={confirmRemoveGps}
+                  hitSlop={10}
+                  disabled={savingField === "gps"}
+                >
+                  <MaterialIcons
+                    name="delete-outline"
+                    size={16}
+                    color="#ef4444"
+                  ></MaterialIcons>
+                  <Text style={styles.removeGpsText}>
+                    {savingField === "gps"
+                      ? "Suppression..."
+                      : "Supprimer la position GPS"}
+                  </Text>
+                </Pressable>
+              </View>
+            )}
           </View>
 
           {/* Map preview */}
@@ -533,17 +688,27 @@ export default function SellerOverviewScreen({ navigation }) {
           </View>
 
           {/* Info */}
-          <View style={styles.infoBox}>
-            <MaterialIcons
-              name="info"
-              size={18}
-              color={COLORS.muted}
-            ></MaterialIcons>
-            <Text style={styles.infoText}>
-              Les modifications apportées à votre nom commercial et à votre
-              adresse seront visibles immédiatement par vos clients
-            </Text>
-          </View>
+          <Pressable
+            style={styles.rulesCard}
+            onPress={() => setRulesVisible(true)}
+          >
+            <View style={styles.rulesCardLeft}>
+              <View style={styles.rulesIconWrap}>
+                <MaterialIcons
+                  name="info-outline"
+                  size={22}
+                  color={COLORS.primary}
+                ></MaterialIcons>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rulesTitle}>Règles et consignes</Text>
+                <Text style={styles.rulesSub}>
+                  Lire les bonnes pratiques pour maximiser votre visibilité
+                  auprès des clients
+                </Text>
+              </View>
+            </View>
+          </Pressable>
 
           <Text style={styles.lastUpdate}>
             {lastUpdated
@@ -552,6 +717,10 @@ export default function SellerOverviewScreen({ navigation }) {
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
+      <SellerRulesModal
+        visible={rulesVisible}
+        onClose={() => setRulesVisible(false)}
+      ></SellerRulesModal>
     </SafeAreaView>
   );
 }
@@ -799,5 +968,83 @@ const styles = StyleSheet.create({
     borderColor: "rgba(239,68,68,0.20)",
   },
   removeLogoText: { fontSize: 12, fontWeight: "800", color: "#ef4444" },
-  logoFallback:{flex:1, alignItems:"center",justifyContent:"center", backgroundColor:"rgba(10, 148, 5, 0.1)"}
+  logoFallback: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(10, 148, 5, 0.1)",
+  },
+  removeAddressBtn: {
+    marginTop: 10,
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "rgba(239,68,68,0.20)",
+  },
+  removeAddressText: { fontSize: 12, fontWeight: "800", color: "#ef4444" },
+  gpsRemoveWrap: {
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 14,
+    backgroundColor: "rgba(239, 68, 68, 0.08)",
+  },
+  removeGpsBtn: {
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "rgba(239,68,68,0.20)",
+  },
+  removeGpsText: { fontSize: 12, fontWeight: "800", color: "#ef4444" },
+  rulesCard: {
+    marginTop: 14,
+    borderRadius: 16,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  rulesCardLeft: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  rulesIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,215,4,0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(255,215,4,0.16)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rulesTitle: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: COLORS.text,
+  },
+  rulesSub: {
+    marginTop: 4,
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "700",
+    color: COLORS.muted,
+  },
 });
