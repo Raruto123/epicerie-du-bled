@@ -25,6 +25,7 @@ import {
 } from "../../services/userService";
 import { FavoritesHeader } from "../../components/favoritesHeader";
 import FavButton from "../../components/favButton";
+import { normalizeText } from "../../utils/normalizeText";
 
 export default function FavoritesScreen({
   navigation,
@@ -55,9 +56,12 @@ export default function FavoritesScreen({
   }, []);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = normalizeText(query);
     if (!q) return favorites;
-    return favorites.filter((p) => (p.name ?? "").toLowerCase().includes(q));
+    return favorites.filter((p) => {
+      const name = normalizeText(p?.name);
+      return name.includes(q);
+    });
   }, [favorites, query]);
 
   // ✅ unfav (UI) — plus tard: Firestore
@@ -128,7 +132,9 @@ export default function FavoritesScreen({
               color={COLORS.muted}
             ></MaterialIcons>
             <Text style={styles.metaText}>
-              {Number(item.distanceKm ?? 0).toFixed(1)} km
+              {item.distanceKm == null
+                ? "Distance inconnue"
+                : `${Number(item.distanceKm).toFixed(1)} km`}
             </Text>
           </View>
           <View style={styles.priceRow}>

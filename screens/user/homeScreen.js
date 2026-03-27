@@ -23,6 +23,7 @@ import { toggleFavoriteProduct } from "../../services/userService";
 import FavButton from "../../components/favButton";
 import { HomeHeader } from "../../components/homeHeader";
 import FiltersModal from "../../components/homeScreenFiltersModal";
+import { normalizeText } from "../../utils/normalizeText";
 
 //mock categories
 const cats = [
@@ -35,54 +36,54 @@ const cats = [
 ];
 
 //mock data
-function makeMockProducts(page = 0, size = 10) {
-  const base = page * size;
-  const samples = [
-    {
-      name: "Plantain Mûr",
-      price: 1.99,
-      distanceKm: 1.2,
-      inStock: true,
-      cat: "Poissons",
-      photoURL:
-        "https://images.unsplash.com/photo-1603048297172-c92544798d3a?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      name: "Attiéké Premium",
-      price: 5.5,
-      distanceKm: 2.5,
-      inStock: true,
-      photoURL:
-        "https://images.unsplash.com/photo-1604909053196-6f1e8b9e3c7f?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      name: "Poisson Fumé",
-      price: 12.0,
-      distanceKm: 0.8,
-      inStock: false,
-      photoURL:
-        "https://images.unsplash.com/photo-1548946526-f69e2424cf45?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      name: "Huile de Palme",
-      price: 8.99,
-      distanceKm: 3.1,
-      inStock: true,
-      photoURL:
-        "https://images.unsplash.com/photo-1604908176997-125b5bd7be3d?auto=format&fit=crop&w=800&q=80",
-    },
-  ];
+// function makeMockProducts(page = 0, size = 10) {
+//   const base = page * size;
+//   const samples = [
+//     {
+//       name: "Plantain Mûr",
+//       price: 1.99,
+//       distanceKm: 1.2,
+//       inStock: true,
+//       cat: "Poissons",
+//       photoURL:
+//         "https://images.unsplash.com/photo-1603048297172-c92544798d3a?auto=format&fit=crop&w=800&q=80",
+//     },
+//     {
+//       name: "Attiéké Premium",
+//       price: 5.5,
+//       distanceKm: 2.5,
+//       inStock: true,
+//       photoURL:
+//         "https://images.unsplash.com/photo-1604909053196-6f1e8b9e3c7f?auto=format&fit=crop&w=800&q=80",
+//     },
+//     {
+//       name: "Poisson Fumé",
+//       price: 12.0,
+//       distanceKm: 0.8,
+//       inStock: false,
+//       photoURL:
+//         "https://images.unsplash.com/photo-1548946526-f69e2424cf45?auto=format&fit=crop&w=800&q=80",
+//     },
+//     {
+//       name: "Huile de Palme",
+//       price: 8.99,
+//       distanceKm: 3.1,
+//       inStock: true,
+//       photoURL:
+//         "https://images.unsplash.com/photo-1604908176997-125b5bd7be3d?auto=format&fit=crop&w=800&q=80",
+//     },
+//   ];
 
-  return Array.from({ length: size }).map((_, i) => {
-    const s = samples[(base + i) % samples.length];
-    return {
-      id: `mock-${base + i}`,
-      ...s,
-      //pseudo variations
-      price: Number((s.price + ((base + i) % 3) * 0.3).toFixed(2)),
-    };
-  });
-}
+//   return Array.from({ length: size }).map((_, i) => {
+//     const s = samples[(base + i) % samples.length];
+//     return {
+//       id: `mock-${base + i}`,
+//       ...s,
+//       //pseudo variations
+//       price: Number((s.price + ((base + i) % 3) * 0.3).toFixed(2)),
+//     };
+//   });
+// }
 export default function HomeScreen({
   navigation,
   locationStatus,
@@ -155,14 +156,14 @@ export default function HomeScreen({
 
   //filter locally with cat + search+ filters
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = normalizeText(query);
 
     const base = items.filter((p) => {
+      const normalizedName = normalizeText(p.name);
+      const normalizedPrice = normalizeText(p.price);
       const matchCat = activeCat === "Tout" ? true : true;
       const matchQuery =
-        !q ||
-        (p.name ?? "").toLowerCase().includes(q) ||
-        String(p.price ?? "").includes(q);
+        !q || normalizedName.includes(q) || normalizedPrice.includes(q);
       return matchCat && matchQuery;
     });
 

@@ -23,6 +23,7 @@ import { fetchGroceriesList } from "../../services/userService";
 import { useFocusEffect } from "@react-navigation/native";
 import { GroceriesHeader } from "../../components/groceriesListHeader";
 import { GroceriesFiltersModal } from "../../components/groceriesListFiltersModal";
+import { normalizeText } from "../../utils/normalizeText";
 
 export default function GroceriesListScreen({
   navigation,
@@ -85,12 +86,12 @@ export default function GroceriesListScreen({
   const hasActiveFilters = useMemo(() => nearBy !== DEFAULT_NEAR, [nearBy]);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = normalizeText(query);
 
     const base = groceries.filter((g) => {
       if (!q) return true;
-      const name = (g?.name ?? "").toLowerCase();
-      const address = (g?.address ?? "").toLowerCase();
+      const name = normalizeText(g?.name);
+      const address = normalizeText(g?.address);
       return name.includes(q) || address.includes(q);
     });
 
@@ -153,7 +154,9 @@ export default function GroceriesListScreen({
             color={COLORS.primary}
           ></MaterialIcons>
           <Text style={styles.distText}>
-            {item.distanceKm == null ? "Distance inconnue" : `${Number(item.distanceKm)} km`}
+            {item.distanceKm == null
+              ? "Distance inconnue"
+              : `${Number(item.distanceKm).toFixed(1)} km`}
           </Text>
         </View>
       </View>
