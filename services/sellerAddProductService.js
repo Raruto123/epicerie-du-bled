@@ -32,7 +32,7 @@ import { Alert, Linking } from "react-native";
 export async function pickProductImage() {
   // 1) Vérifie l’état actuel
   const current = await ImagePicker.getMediaLibraryPermissionsAsync();
-  console.log("Media permission : ", current)
+  console.log("Media permission : ", current);
 
   // 2) Si pas accordé → on demande
   if (!current.granted) {
@@ -48,7 +48,7 @@ export async function pickProductImage() {
             text: "Ouvrir les réglages",
             onPress: () => Linking.openSettings(),
           },
-        ]
+        ],
       );
 
       // IMPORTANT : on renvoie null (pas throw)
@@ -115,6 +115,11 @@ export async function createProduct({
   if (!cat?.trim()) throw new Error("Missing category");
   if (!Number.isFinite(price)) throw new Error("Invalid price");
 
+  const finalPhotoURL =
+    typeof photoURL === "string" && photoURL.trim()
+      ? photoURL.trim()
+      : null;
+
   const docRef = await addDoc(collection(db, "products"), {
     sellerId,
     name: name.trim(),
@@ -122,7 +127,7 @@ export async function createProduct({
     price,
     inStock: !!inStock,
     desc: (desc ?? "").toString().trim(),
-    photoURL: photoURL ?? null,
+    photoURL: finalPhotoURL,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -140,7 +145,7 @@ export function listenSellerProducts(sellerId, callback) {
   const q = query(
     collection(db, "products"),
     where("sellerId", "==", sellerId),
-    orderBy("createdAt", "desc")
+    orderBy("createdAt", "desc"),
   );
 
   const unsub = onSnapshot(
@@ -152,7 +157,7 @@ export function listenSellerProducts(sellerId, callback) {
     (err) => {
       console.log("❌ listenSellerProducts error : ", err);
       callback([]);
-    }
+    },
   );
   return unsub;
 }

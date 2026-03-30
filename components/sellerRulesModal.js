@@ -54,7 +54,7 @@ export default function SellerRulesModal({ visible, onClose }) {
     {
       title: "Adresse civique",
       items: [
-        "Ajoutez une adresse précise pour aider les clients à identifier votre boutique.",
+        "Ajoutez une adresse précise pour aider les clients à identifier votre épicerie.",
         "Vérifiez l’orthographe du numéro, de la rue et de la ville.",
         "Vous pouvez supprimer l’adresse civique si vous ne souhaitez pas l’afficher.",
       ],

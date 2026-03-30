@@ -24,6 +24,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { GroceriesHeader } from "../../components/groceriesListHeader";
 import { GroceriesFiltersModal } from "../../components/groceriesListFiltersModal";
 import { normalizeText } from "../../utils/normalizeText";
+import { GROCERY_FALLBACK_IMAGE, GROCERY_LIST_FALLBACK_IMAGE } from "../../constants/fallbackImages";
 
 export default function GroceriesListScreen({
   navigation,
@@ -127,11 +128,12 @@ export default function GroceriesListScreen({
   const renderItem = ({ item }) => (
     <Pressable style={styles.card} onPress={() => onOpenGrocery(item)}>
       <View style={styles.cardImgWrap}>
-        {!!item.photoURL ? (
-          <Image source={{ uri: item.photoURL }} style={styles.cardImg}></Image>
-        ) : (
-          <View style={styles.cardImg}></View>
-        )}
+        <Image
+          source={
+            item.photoURL ? { uri: item.photoURL } : GROCERY_LIST_FALLBACK_IMAGE
+          }
+          style={styles.cardImg}
+        ></Image>
       </View>
       <View style={styles.cardBody}>
         <Text style={styles.cardTitle} numberOfLines={1}>

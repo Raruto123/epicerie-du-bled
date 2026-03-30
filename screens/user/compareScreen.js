@@ -10,16 +10,16 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Pressable } from "react-native";
 import { useCallback, useState } from "react";
 import NoLocationToast from "../../components/noLocationToast";
+import { PRODUCT_FALLBACK_IMAGE } from "../../constants/fallbackImages";
 
 /** ---------- UI subcomponents ---------- */
 function ImageCard({ uri }) {
   return (
     <View style={styles.imgCard}>
-      {uri ? (
-        <Image source={{ uri }} style={styles.img}></Image>
-      ) : (
-        <View style={styles.img}></View>
-      )}
+      <Image
+        source={uri ? { uri } : PRODUCT_FALLBACK_IMAGE}
+        style={styles.img}
+      ></Image>
     </View>
   );
 }

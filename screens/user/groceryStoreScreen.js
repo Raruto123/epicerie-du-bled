@@ -34,6 +34,8 @@ import { onAuthStateChanged } from "firebase/auth";
 import FavButton from "../../components/favButton";
 import GroceryStoreHeader from "../../components/groceryStoreHeader";
 import NoLocationToast from "../../components/noLocationToast";
+import { normalizeText } from "../../utils/normalizeText";
+import { PRODUCT_FALLBACK_IMAGE } from "../../constants/fallbackImages";
 
 // ✅ Catégories style "sections"
 const SECTION_ORDER = [
@@ -80,7 +82,6 @@ export default function GroceryStoreScreen({ navigation, route }) {
   });
 
   const favIdsRef = useRef(new Set());
-
 
   const showToast = useCallback((message, type = "info") => {
     setToast({ visible: true, message, type });
@@ -253,13 +254,14 @@ export default function GroceryStoreScreen({ navigation, route }) {
   );
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = normalizeText(query);
     if (!q) return items;
     return items.filter((p) => {
-      const name = (p?.name ?? "").toLowerCase();
-      const cat = (p?.cat ?? "").toLowerCase();
+      const name = normalizeText(p?.name);
+      const cat = normalizeText(p?.cat);
+      const price = String(p?.price ?? "");
       return (
-        name.includes(q) || cat.includes(q) || String(p.price ?? "").includes(q)
+        name.includes(q) || cat.includes(q) || price.includes(q)
       );
     });
   }, [items, query]);
@@ -311,14 +313,10 @@ export default function GroceryStoreScreen({ navigation, route }) {
                 onPress={() => openProduct(item)}
               >
                 <View style={[styles.hImgWrap, !inStock && styles.pImgWrapOut]}>
-                  {!!item.photoURL ? (
                     <Image
-                      source={{ uri: item.photoURL }}
+                      source={item.photoURL ? { uri: item.photoURL } : PRODUCT_FALLBACK_IMAGE}
                       style={[styles.pImg, !inStock && styles.pImgOut]}
                     />
-                  ) : (
-                    <View style={styles.pImg} />
-                  )}
 
                   {/* Badge stock */}
                   <View style={styles.badgeWrap}>

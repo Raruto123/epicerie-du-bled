@@ -24,6 +24,7 @@ import FavButton from "../../components/favButton";
 import { HomeHeader } from "../../components/homeHeader";
 import FiltersModal from "../../components/homeScreenFiltersModal";
 import { normalizeText } from "../../utils/normalizeText";
+import { PRODUCT_FALLBACK_IMAGE } from "../../constants/fallbackImages";
 
 //mock categories
 const cats = [
@@ -311,14 +312,10 @@ export default function HomeScreen({
         ></FavButton>
         {/* Image */}
         <View style={styles.imgWrap}>
-          {!!item.photoURL ? (
             <Image
-              source={{ uri: item.photoURL }}
+              source={item.photoURL ? { uri: item.photoURL } : PRODUCT_FALLBACK_IMAGE}
               style={[styles.img, !inStock && styles.imgOut]}
             ></Image>
-          ) : (
-            <View style={styles.img}></View>
-          )}
           <View style={styles.stockBadgeWrap}>
             <View
               style={[

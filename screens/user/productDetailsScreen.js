@@ -34,6 +34,11 @@ import {
 import CompareBubble from "../../components/compareBubble";
 import FavButton from "../../components/favButton";
 import NoLocationToast from "../../components/noLocationToast";
+import {
+  GROCERY_FALLBACK_IMAGE,
+  PRODUCT_FALLBACK_IMAGE,
+  SIMILAR_PRODUCT_FALLBACK_IMAGE,
+} from "../../constants/fallbackImages";
 
 export default function ProductDetailsScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -166,18 +171,14 @@ export default function ProductDetailsScreen({ navigation, route }) {
       cat: p?.cat ?? "Légumes",
       price: Number(p?.price ?? 4.99),
       inStock: !!inStock,
-      photoURL:
-        p?.photoURL ??
-        "https://images.unsplash.com/photo-1604908176997-125b5bd7be3d?auto=format&fit=crop&w=1000&q=80",
+      photoURL: p?.photoURL ?? null,
       desc: p?.desc ?? null,
       seller: {
         id: p?.sellerId ?? null,
         name: p?.sellerName ?? "Épicerie",
         distanceKm: p?.distanceKm ?? null,
         address: p?.sellerAddress ?? null,
-        logoURL:
-          p?.sellerLogoURL ??
-          "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80",
+        logoURL: p?.sellerLogoURL ?? null,
         description: p?.sellerDescription ?? null,
         gps: p?.sellerGps ?? null,
       },
@@ -334,14 +335,12 @@ export default function ProductDetailsScreen({ navigation, route }) {
         {/* Image hero */}
         <View style={styles.heroWrap}>
           <View style={styles.heroCard}>
-            {!!data.photoURL ? (
-              <Image
-                source={{ uri: data.photoURL }}
-                style={styles.heroImg}
-              ></Image>
-            ) : (
-              <View style={styles.heroImg}></View>
-            )}
+            <Image
+              source={
+                data.photoURL ? { uri: data.photoURL } : PRODUCT_FALLBACK_IMAGE
+              }
+              style={styles.heroImg}
+            ></Image>
             {/* Stock badge */}
             <View style={styles.stockPillWrap}>
               <View
@@ -397,14 +396,14 @@ export default function ProductDetailsScreen({ navigation, route }) {
           <View style={styles.sellerCard}>
             <View style={styles.sellerTop}>
               <View style={styles.sellerLogo}>
-                {!!data.seller.logoURL ? (
-                  <Image
-                    source={{ uri: data.seller.logoURL }}
-                    style={styles.sellerLogoImg}
-                  ></Image>
-                ) : (
-                  <View style={styles.sellerLogoImg}></View>
-                )}
+                <Image
+                  source={
+                    data.seller.logoURL
+                      ? { uri: data.seller.logoURL }
+                      : GROCERY_FALLBACK_IMAGE
+                  }
+                  style={styles.sellerLogoImg}
+                ></Image>
               </View>
               <View style={{ flex: 1 }}>
                 <Pressable
@@ -534,14 +533,10 @@ export default function ProductDetailsScreen({ navigation, route }) {
                     }
                   >
                     <View style={styles.simImgWrap}>
-                      {!!p.photoURL ? (
                         <Image
-                          source={{ uri: p.photoURL }}
+                          source={p.photoURL ? { uri: p.photoURL } : SIMILAR_PRODUCT_FALLBACK_IMAGE}
                           style={[styles.simImg, !inStock && { opacity: 0.8 }]}
                         ></Image>
-                      ) : (
-                        <View style={styles.simImg}></View>
-                      )}
                       {/* Badge stock */}
                       <View
                         style={{ position: "absolute", left: 10, bottom: 10 }}

@@ -29,6 +29,8 @@ import {
   deleteProductWithImage,
   updateProductStock,
 } from "../../services/sellerProductsService";
+import { normalizeText } from "../../utils/normalizeText";
+import { PRODUCT_FALLBACK_IMAGE } from "../../constants/fallbackImages";
 
 export default function SellerProductsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -69,7 +71,7 @@ export default function SellerProductsScreen({ navigation }) {
       "Légumes",
       "Poissons",
     ],
-    []
+    [],
   );
 
   //observe si le seller a des produits si oui il affiche sinon il affiche rien
@@ -90,7 +92,7 @@ export default function SellerProductsScreen({ navigation }) {
   }, [uid]);
 
   const filtered = useMemo(() => {
-    const aQuery = query.trim().toLowerCase();
+    const aQuery = normalizeText(query);
 
     //helpers prix
     const toNum = (v) => {
@@ -111,9 +113,9 @@ export default function SellerProductsScreen({ navigation }) {
       const matchCat = activeCat === "Tous" || p.cat === activeCat;
 
       //search
-      const name = (p?.name ?? "").toString().toLowerCase();
-      const cat = (p?.cat ?? "").toString().toLowerCase();
-      const desc = (p?.desc ?? "").toString().toLowerCase();
+      const name = normalizeText(p?.name);
+      const cat = normalizeText(p?.cat);
+      const desc = normalizeText(p?.desc);
 
       const matchQuery =
         name.includes(aQuery) || cat.includes(aQuery) || desc.includes(aQuery);
@@ -177,7 +179,9 @@ export default function SellerProductsScreen({ navigation }) {
     const prevValue = !!item?.inStock;
 
     setProducts((prev) =>
-      prev.map((p) => (p.id === productId ? { ...p, inStock: !!nextValue } : p))
+      prev.map((p) =>
+        p.id === productId ? { ...p, inStock: !!nextValue } : p,
+      ),
     );
 
     setUpdatingStock((m) => ({ ...m, [productId]: true }));
@@ -188,7 +192,9 @@ export default function SellerProductsScreen({ navigation }) {
       console.log("❌update stock failed :", e);
 
       setProducts((prev) =>
-        prev.map((p) => (p.id === productId ? { ...p, inStock: prevValue } : p))
+        prev.map((p) =>
+          p.id === productId ? { ...p, inStock: prevValue } : p,
+        ),
       );
     } finally {
       setUpdatingStock((m) => {
@@ -370,14 +376,14 @@ export default function SellerProductsScreen({ navigation }) {
               return (
                 <View style={styles.productCard}>
                   <View style={styles.productTop}>
-                    {item.photoURL ? (
-                      <Image
-                        source={{ uri: item.photoURL }}
-                        style={styles.thumb}
-                      ></Image>
-                    ) : (
-                      <View style={styles.thumb}></View>
-                    )}
+                    <Image
+                      source={
+                        item.photoURL
+                          ? { uri: item.photoURL }
+                          : PRODUCT_FALLBACK_IMAGE
+                      }
+                      style={styles.thumb}
+                    ></Image>
                     <View style={{ flex: 1 }}>
                       <View style={styles.productTitleRow}>
                         <Text style={styles.productName}>{item.name}</Text>
@@ -860,7 +866,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
-  catPillIdle: { backgroundColor: COLORS.surface, borderColor: COLORS.border},
+  catPillIdle: { backgroundColor: COLORS.surface, borderColor: COLORS.border },
   catText: { fontSize: 13, fontWeight: "900" },
   catTextActive: { color: "white" },
   catTextIdle: { color: COLORS.text },
@@ -907,8 +913,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 999,
     backgroundColor: "rgba(255,215,4,0.18)",
-    borderWidth:1,
-    borderColor:"rgba(255,215,4,0.35)"
+    borderWidth: 1,
+    borderColor: "rgba(255,215,4,0.35)",
   },
   tagText: { fontSize: 10, fontWeight: "900", color: COLORS.primary },
   productBottom: {
@@ -1039,14 +1045,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: COLORS.bg,
-    borderWidth:1,
-    borderColor:COLORS.border
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   tabsWrap: {
     flexDirection: "row",
     backgroundColor: COLORS.bg,
-    borderWidth:1,
-    borderColor:COLORS.border,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     borderRadius: 18,
     padding: 4,
     marginBottom: 16,
@@ -1151,8 +1157,8 @@ const styles = StyleSheet.create({
     height: 54,
     borderRadius: 16,
     backgroundColor: COLORS.bg,
-    borderWidth:1,
-    borderColor:COLORS.border,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     alignItems: "center",
     justifyContent: "center",
   },

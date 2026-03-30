@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { COLORS } from "../constants/colors";
+import { GROCERY_FALLBACK_IMAGE } from "../constants/fallbackImages";
 
 export default function GroceryStoreHeader({
   navigation,
@@ -41,15 +42,11 @@ export default function GroceryStoreHeader({
         </View>
         <View style={styles.identityWrap}>
           <View style={styles.logoOuter}>
-            {logoSource ? (
               <Image
-                source={logoSource}
+                source={logoSource ?? GROCERY_FALLBACK_IMAGE}
                 style={styles.logoImg}
                 fadeDuration={0}
               ></Image>
-            ) : (
-              <View style={styles.logoImg}></View>
-            )}
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.storeName} numberOfLines={2}>

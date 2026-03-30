@@ -9,6 +9,7 @@ import {
   StyleSheet,
   View,
 } from "react-native";
+import { PRODUCT_FALLBACK_IMAGE } from "../constants/fallbackImages";
 
 const BUBBLE_SIZE = 72;
 const PADDING = 12;
@@ -130,14 +131,14 @@ export default function CompareBubble({
         {...panResponder.panHandlers}
       >
         <Pressable onPress={onPress} style={styles.inner} hitSlop={10}>
-          {!!product?.photoURL ? (
-            <Image
-              source={{ uri: product.photoURL }}
-              style={styles.img}
-            ></Image>
-          ) : (
-            <View style={styles.img}></View>
-          )}
+          <Image
+            source={
+              product.photoURL
+                ? { uri: product.photoURL }
+                : PRODUCT_FALLBACK_IMAGE
+            }
+            style={styles.img}
+          ></Image>
 
           {/* Badge comparE */}
           <View style={styles.badge}>
@@ -175,7 +176,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     elevation: 6,
   },
-  img: { width: "100%", height: "100%", },
+  img: { width: "100%", height: "100%" },
 
   badge: {
     position: "absolute",

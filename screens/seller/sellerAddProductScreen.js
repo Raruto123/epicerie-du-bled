@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -28,6 +28,7 @@ import {
 
 export default function SellerAddProductScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef(null);
 
   const categories = useMemo(
     () => [
@@ -39,6 +40,15 @@ export default function SellerAddProductScreen({ navigation }) {
     [],
   );
 
+  const scrollToField = (y) => {
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({
+        y,
+        animated: true,
+      });
+    }, 120);
+  };
+
   const [name, setName] = useState("");
   const [cat, setCat] = useState("Tubercules");
   const [price, setPrice] = useState("");
@@ -46,11 +56,41 @@ export default function SellerAddProductScreen({ navigation }) {
   const [desc, setDesc] = useState("");
   const [pictureUri, setPictureUri] = useState("");
   const [publishing, setPublishing] = useState(false);
+  const [errors, setErrors] = useState({
+    name: "",
+    price: "",
+  });
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  function validateForm() {
+    const nextErrors = { name: "", price: "" };
+
+    const productName = name.trim();
+    const rawPrice = (price ?? "").toString().trim().replace(",", ".");
+    const productPrice = Number(rawPrice);
+
+    if (!productName) {
+      nextErrors.name = "Le nom du produit est obligatoire.";
+    }
+
+    if (!rawPrice) {
+      nextErrors.price = "Le prix est obligatoire.";
+    } else if (!Number.isFinite(productPrice) || productPrice <= 0) {
+      nextErrors.price = "Entrez un prix valide supérieur à 0.";
+    }
+
+    setErrors(nextErrors);
+
+    return !nextErrors.name && !nextErrors.price;
+  }
 
   const publish = async () => {
     Keyboard.dismiss();
     const sellerId = auth.currentUser?.uid;
     if (!sellerId) return;
+
+    const isValid = validateForm();
+    if (!isValid) return;
 
     const productName = name.trim();
     const productCat = (cat ?? "").toString();
@@ -60,9 +100,9 @@ export default function SellerAddProductScreen({ navigation }) {
     const rawPrice = (price ?? "").toString().trim().replace(",", ".");
     const productPrice = Number(rawPrice);
 
-    if (!productName) return;
-    if (!productCat) return;
-    if (!Number.isFinite(productPrice) || productPrice <= 0) return;
+    // if (!productName) return;
+    // if (!productCat) return;
+    // if (!Number.isFinite(productPrice) || productPrice <= 0) return;
 
     setPublishing(true);
     try {
@@ -91,6 +131,7 @@ export default function SellerAddProductScreen({ navigation }) {
       setCat("Tubercules");
       setInStock(true);
       setPictureUri("");
+      setErrors({ name: "", price: "" });
       navigation.goBack();
     } catch (e) {
       console.log("❌ Failed to create product : ", e);
@@ -109,12 +150,32 @@ export default function SellerAddProductScreen({ navigation }) {
     }
   };
 
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, () => {
+      setKeyboardVisible(true);
+    });
+
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardVisible(false);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <KeyboardAvoidingView
         style={styles.safe}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 24 : 0}
       >
         <View style={styles.wrap}>
           {/* Top bar */}
@@ -135,9 +196,10 @@ export default function SellerAddProductScreen({ navigation }) {
           </View>
 
           <ScrollView
+            ref={scrollRef}
             contentContainerStyle={[
               styles.scrollContent,
-              { paddingBottom: 110 + insets.bottom },
+              { paddingBottom: (keyboardVisible ? 40:150) + insets.bottom },
             ]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
@@ -174,10 +236,19 @@ export default function SellerAddProductScreen({ navigation }) {
               <Text style={styles.label}>Nom du produit</Text>
               <TextInput
                 value={name}
-                onChangeText={setName}
-                style={styles.input}
+                onFocus={() => scrollToField(120)}
+                onChangeText={(text) => {
+                  setName(text);
+                  if (errors.name) {
+                    setErrors((prev) => ({ ...prev, name: "" }));
+                  }
+                }}
+                style={[styles.input, errors.name && styles.inputError]}
                 placeholder="Ex: Igname, Piment oiseau, Attieké..."
               ></TextInput>
+              {!!errors.name && (
+                <Text style={styles.errorText}>{errors.name}</Text>
+              )}
             </View>
 
             {/* Category */}
@@ -223,13 +294,26 @@ export default function SellerAddProductScreen({ navigation }) {
                 <View style={styles.priceWrap}>
                   <TextInput
                     value={price}
-                    onChangeText={setPrice}
-                    style={[styles.input, { paddingRight: 36 }]}
+                    onFocus={() => scrollToField(260)}
+                    onChangeText={(text) => {
+                      setPrice(text);
+                      if (errors.price) {
+                        setErrors((prev) => ({ ...prev, price: "" }));
+                      }
+                    }}
+                    style={[
+                      styles.input,
+                      { paddingRight: 36 },
+                      errors.price && styles.inputError,
+                    ]}
                     placeholder="0.00"
                     keyboardType="decimal-pad"
                   ></TextInput>
                   <Text style={styles.priceSuffix}>$</Text>
                 </View>
+                {!!errors.price && (
+                  <Text style={styles.errorText}>{errors.price}</Text>
+                )}
               </View>
 
               <View style={{ flex: 1 }}>
@@ -256,6 +340,7 @@ export default function SellerAddProductScreen({ navigation }) {
               <Text style={styles.label}>Description (Optionnel)</Text>
               <TextInput
                 value={desc}
+                onFocus={() => scrollToField(420)}
                 onChangeText={setDesc}
                 style={[styles.input, styles.textarea]}
                 placeholder="Origine du produit, conseils de conservation..."
@@ -265,27 +350,31 @@ export default function SellerAddProductScreen({ navigation }) {
             </View>
           </ScrollView>
 
-          {/* Footer fixed */}
-          <View style={[styles.footer, { paddingBottom: 14 + insets.bottom }]}>
-            <Pressable
-              onPress={publish}
-              style={[styles.publishBtn, publishing && { opacity: 0.8 }]}
-              disabled={publishing}
+          {/* Footer */}
+          {!keyboardVisible && (
+            <View
+              style={[styles.footer, { paddingBottom: 14 + insets.bottom }]}
             >
-              {publishing ? (
-                <ActivityIndicator color="white"></ActivityIndicator>
-              ) : (
-                <>
-                  <MaterialIcons
-                    name="publish"
-                    size={20}
-                    color="white"
-                  ></MaterialIcons>
-                  <Text style={styles.publishText}>Publier le produit</Text>
-                </>
-              )}
-            </Pressable>
-          </View>
+              <Pressable
+                onPress={publish}
+                style={[styles.publishBtn, publishing && { opacity: 0.8 }]}
+                disabled={publishing}
+              >
+                {publishing ? (
+                  <ActivityIndicator color="white"></ActivityIndicator>
+                ) : (
+                  <>
+                    <MaterialIcons
+                      name="publish"
+                      size={20}
+                      color="white"
+                    ></MaterialIcons>
+                    <Text style={styles.publishText}>Publier le produit</Text>
+                  </>
+                )}
+              </Pressable>
+            </View>
+          )}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -435,5 +524,14 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.96)",
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
+  },
+  inputError: {
+    borderColor: "#ef4444",
+  },
+  errorText: {
+    marginTop: 6,
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#ef4444",
   },
 });
