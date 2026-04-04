@@ -224,7 +224,10 @@ export default function FiltersModal({
             </View>
             {/* Apply */}
             <Pressable
-              style={styles.applyBtn}
+              style={({ pressed }) => [
+                styles.applyBtn,
+                pressed && styles.applyBtnPressed,
+              ]}
               onPress={() => {
                 onApply?.();
                 onClose?.();
@@ -364,6 +367,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     elevation: 10,
   },
+  applyBtnPressed: { opacity: 0.92, transform: [{ scale: 0.985 }] },
   applyBtnText: {
     color: COLORS.surface,
     fontSize: 15,

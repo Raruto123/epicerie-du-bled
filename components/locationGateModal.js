@@ -44,7 +44,7 @@ export default function LocationGateModal({
         else if (perm.status === "denied") setStep("denied");
         else setStep("ask");
       } catch {
-        setStep("ask")
+        setStep("ask");
       }
     })();
   }, [visible]);
@@ -214,7 +214,11 @@ export default function LocationGateModal({
                 <Pressable
                   onPress={request}
                   disabled={busy}
-                  style={[styles.primaryBtn, busy && styles.primaryBtnDisabled]}
+                  style={({ pressed }) => [
+                    styles.primaryBtn,
+                    busy && styles.primaryBtnDisabled,
+                    pressed && !busy && styles.primaryBtnPressed,
+                  ]}
                 >
                   {busy ? (
                     <ActivityIndicator color="white" />
@@ -228,7 +232,13 @@ export default function LocationGateModal({
                   )}
                 </Pressable>
 
-                <Pressable onPress={close} style={styles.secondaryBtn}>
+                <Pressable
+                  onPress={close}
+                  style={({ pressed }) => [
+                    styles.secondaryBtn,
+                    pressed && styles.secondaryBtnPressed,
+                  ]}
+                >
                   <Text style={styles.secondaryBtnText}>
                     Continuer sans localisation
                   </Text>
@@ -246,9 +256,10 @@ export default function LocationGateModal({
                 <Pressable
                   onPress={refresh}
                   disabled={refreshing}
-                  style={[
+                  style={({ pressed }) => [
                     styles.secondaryBtnFilled,
                     refreshing && { opacity: 0.8 },
+                    pressed && !refreshing && styles.secondaryBtnFilledPressed,
                   ]}
                 >
                   {refreshing ? (
@@ -267,7 +278,13 @@ export default function LocationGateModal({
                   )}
                 </Pressable>
 
-                <Pressable onPress={close} style={styles.primaryBtn}>
+                <Pressable
+                  onPress={close}
+                  style={({ pressed }) => [
+                    styles.primaryBtn,
+                    pressed && styles.primaryBtnPressed,
+                  ]}
+                >
                   <View style={styles.primaryBtnRow}>
                     <Text style={styles.primaryBtnText}>Continuer</Text>
                     <MaterialIcons
@@ -285,7 +302,10 @@ export default function LocationGateModal({
               <View style={styles.modalActions}>
                 <Pressable
                   onPress={openLocationSettings}
-                  style={styles.secondaryBtnFilled}
+                  style={({ pressed }) => [
+                    styles.secondaryBtnFilled,
+                    pressed && styles.secondaryBtnFilledPressed,
+                  ]}
                 >
                   <View style={styles.secondaryBtnRow}>
                     <MaterialIcons
@@ -299,7 +319,13 @@ export default function LocationGateModal({
                   </View>
                 </Pressable>
 
-                <Pressable onPress={close} style={styles.primaryBtn}>
+                <Pressable
+                  onPress={close}
+                  style={({ pressed }) => [
+                    styles.primaryBtn,
+                    pressed && styles.primaryBtnPressed,
+                  ]}
+                >
                   <View style={styles.primaryBtnRow}>
                     <Text style={styles.primaryBtnText}>
                       Continuer sans localisation
@@ -407,6 +433,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  primaryBtnPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
+  },
   primaryBtnDisabled: { opacity: 0.8 },
   primaryBtnRow: {
     flexDirection: "row",
@@ -423,6 +453,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  secondaryBtnPressed: {
+    opacity: 0.65,
+  },
   secondaryBtnText: { fontSize: 13, fontWeight: "800", color: "#6b7280" },
 
   // ✅ bouton “gris rempli” (refresh / retry)
@@ -435,6 +468,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  secondaryBtnFilledPressed: { opacity: 0.9, transform: [{ scale: 0.98 }] },
   secondaryBtnRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   secondaryBtnFilledText: {
     fontSize: 14,

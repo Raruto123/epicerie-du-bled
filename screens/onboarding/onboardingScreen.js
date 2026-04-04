@@ -591,18 +591,26 @@ export default function OnboardingScreen({ navigation }) {
         {/* Primary action */}
         <Pressable
           onPress={next}
-          style={{
+          style={({ pressed }) => ({
             height: 56,
             borderRadius: 16,
-            backgroundColor: isLast ? COLORS.accent : COLORS.primary,
+            backgroundColor: isLast
+              ? pressed
+                ? "#e4c315"
+                : COLORS.accent
+              : pressed
+                ? "#0a7d05"
+                : COLORS.primary,
             justifyContent: "center",
+            opacity : pressed ? 0.92 : 1,
+            transform : [{scale : pressed ? 0.985 : 1}],
             shadowColor: isLast ? COLORS.accent : COLORS.primary,
-            shadowOpacity: 0.25,
-            shadowRadius: 18,
-            shadowOffset: { width: 0, height: 10 },
-            elevation: 4,
+            shadowOpacity: pressed ? 0.14 : 0.25,
+            shadowRadius: pressed ? 8 : 18,
+            shadowOffset: { width: 0, height: pressed ? 4 : 10 },
+            elevation: pressed ? 2 : 4,
             alignItems: "center",
-          }}
+          })}
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Text

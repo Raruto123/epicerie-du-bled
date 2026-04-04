@@ -363,7 +363,11 @@ export default function AuthScreen({ navigation }) {
                 </View>
               )}
               <Pressable
-                style={[styles.primaryBtn, busy && { opacity: 0.7 }]}
+                style={({ pressed }) => [
+                  styles.primaryBtn,
+                  busy && styles.primaryBtnDisabled,
+                  pressed && !busy && styles.primaryBtnPressed,
+                ]}
                 onPress={submit}
                 disabled={busy}
               >
@@ -562,6 +566,17 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: COLORS.primary,
+    elevation: 4,
+  },
+  primaryBtnDisabled: { opacity: 0.7 },
+  primaryBtnPressed: {
+    opacity: 0.88,
+    transform: [{ scale: 0.97 }],
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 1,
   },
   primaryText: {
     color: "white",
