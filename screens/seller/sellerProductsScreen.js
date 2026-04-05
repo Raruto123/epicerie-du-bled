@@ -394,6 +394,10 @@ export default function SellerProductsScreen({ navigation }) {
                               product: item,
                             })
                           }
+                          style={({ pressed }) => [
+                            styles.editBtn,
+                            pressed && styles.editBtnPressed,
+                          ]}
                         >
                           <MaterialIcons
                             name="edit-note"
@@ -441,10 +445,8 @@ export default function SellerProductsScreen({ navigation }) {
                           (isUpdating || !!deleting[item.id]) &&
                             styles.trashBtnDisabled,
                           pressed &&
-                            !(
-                              isUpdating ||
-                              (!!deleting[item.id] && { opacity: 0.7 })
-                            ),
+                            !(isUpdating || !!deleting[item.id]) &&
+                            styles.trashBtnPressed,
                         ]}
                       >
                         <MaterialIcons
@@ -792,14 +794,20 @@ export default function SellerProductsScreen({ navigation }) {
                   setPriceLte("");
                   setStockMode("all");
                 }}
-                style={styles.resetBtn}
+                style={({ pressed }) => [
+                  styles.resetBtn,
+                  pressed && styles.filterBtnPressed,
+                ]}
               >
                 <Text style={styles.resetText}>Réinitialiser</Text>
               </Pressable>
 
               <Pressable
                 onPress={() => setFiltersOpen(false)}
-                style={styles.applyBtn}
+                style={({ pressed }) => [
+                  styles.applyBtn,
+                  pressed && styles.filterBtnPressed,
+                ]}
               >
                 <Text style={styles.applyText}>Appliquer</Text>
               </Pressable>
@@ -810,7 +818,11 @@ export default function SellerProductsScreen({ navigation }) {
       {/* FAB */}
       <Pressable
         onPress={() => navigation.navigate("SellerAddProduct")}
-        style={[styles.fab, { bottom: 18 + insets.bottom }]}
+        style={({ pressed }) => [
+          styles.fab,
+          { bottom: 18 + insets.bottom },
+          pressed && styles.fabPressed,
+        ]}
         hitSlop={10}
       >
         <MaterialIcons name="add" size={30} color="white"></MaterialIcons>
@@ -1195,4 +1207,15 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   trashBtnDisabled: { opacity: 0.4 },
+  editBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  editBtnPressed: { transform: [{ scale: 0.92 }], backgroundColor: "#e5e7eb" },
+  trashBtnPressed: { transform: [{ scale: 0.9 }] },
+  filterBtnPressed: { transform: [{ scale: 0.97 }], opacity: 0.9 },
+  fabPressed: { opacity: 0.88, transform: [{ scale: 0.94 }] },
 });

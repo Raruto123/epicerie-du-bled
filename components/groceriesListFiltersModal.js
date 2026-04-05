@@ -146,7 +146,10 @@ export function GroceriesFiltersModal({
             </Pressable>
           </View>
           <Pressable
-            style={styles.applyBtn}
+            style={({ pressed }) => [
+              styles.applyBtn,
+              pressed && styles.applyBtnPressed,
+            ]}
             onPress={() => {
               onApply?.();
               onClose?.();
@@ -269,6 +272,10 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 10 },
     elevation: 10,
+  },
+  applyBtnPressed: {
+    opacity: 0.92,
+    transform: [{ scale: 0.98 }],
   },
   applyBtnText: { color: "white", fontSize: 15, fontWeight: "900" },
 });

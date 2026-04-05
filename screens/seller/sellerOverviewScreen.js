@@ -489,7 +489,7 @@ export default function SellerOverviewScreen({ navigation }) {
             </View>
             {!!logoUri && (
               <Pressable
-                style={styles.removeLogoBtn}
+                style={({pressed}) => [styles.removeLogoBtn, pressed && styles.buttonPressed]}
                 onPress={confirmRemoveLogo}
                 hitSlop={10}
                 disabled={savingLogo}
@@ -526,9 +526,10 @@ export default function SellerOverviewScreen({ navigation }) {
             <Pressable
               onPress={() => saveField("storeName")}
               disabled={savingField === "storeName"}
-              style={[
+              style={({pressed}) => [
                 styles.smallSaveBtn,
                 savingField === "storeName" && { opacity: 0.7 },
+                pressed && savingField !== "storeName" && styles.buttonPressed
               ]}
             >
               {savingField === "storeName" ? (
@@ -553,9 +554,10 @@ export default function SellerOverviewScreen({ navigation }) {
             <Pressable
               onPress={() => saveField("description")}
               disabled={savingField === "description"}
-              style={[
+              style={({pressed}) => [
                 styles.smallSaveBtn,
                 savingField === "description" && { opacity: 0.7 },
+                pressed && savingField !== "description" && styles.buttonPressed
               ]}
             >
               {savingField === "description" ? (
@@ -588,9 +590,10 @@ export default function SellerOverviewScreen({ navigation }) {
               <Pressable
                 onPress={() => saveField("addressText")}
                 disabled={savingField === "addressText"}
-                style={[
+                style={({pressed}) => [
                   styles.smallSaveBtn,
                   savingField === "addressText" && { opacity: 0.7 },
+                  pressed && savingField !== "addressText" && styles.buttonPressed
                 ]}
               >
                 {savingField === "addressText" ? (
@@ -602,7 +605,7 @@ export default function SellerOverviewScreen({ navigation }) {
 
               {!!profile?.seller?.addressText && (
                 <Pressable
-                  style={styles.removeAddressBtn}
+                  style={({pressed}) => [styles.removeAddressBtn, pressed && styles.buttonPressed]}
                   onPress={confirmRemoveAddress}
                   hitSlop={10}
                   disabled={savingField === "addressText"}
@@ -643,7 +646,7 @@ export default function SellerOverviewScreen({ navigation }) {
             {!!profile?.seller?.gps && (
               <View style={styles.gpsRemoveWrap}>
                 <Pressable
-                  style={styles.removeGpsBtn}
+                  style={({pressed}) => [styles.removeGpsBtn, pressed && styles.buttonPressed]}
                   onPress={confirmRemoveGps}
                   hitSlop={10}
                   disabled={savingField === "gps"}
@@ -689,7 +692,7 @@ export default function SellerOverviewScreen({ navigation }) {
 
           {/* Info */}
           <Pressable
-            style={styles.rulesCard}
+            style={({pressed}) => [styles.rulesCard, pressed && styles.buttonPressed]}
             onPress={() => setRulesVisible(true)}
           >
             <View style={styles.rulesCardLeft}>
@@ -1047,4 +1050,5 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: COLORS.muted,
   },
+  buttonPressed: { opacity: 0.92, transform: [{ scale: 0.98 }] },
 });

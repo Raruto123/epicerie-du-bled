@@ -300,7 +300,7 @@ export default function ProfileScreen({ navigation }) {
               </View>
               {!!pictureUri && (
                 <Pressable
-                  style={styles.removePhotoBtn}
+                  style={({pressed}) => [styles.removePhotoBtn, pressed && styles.buttonPressed]}
                   onPress={confirmRemovePhoto}
                   hitSlop={10}
                 >
@@ -338,7 +338,13 @@ export default function ProfileScreen({ navigation }) {
                     clients
                   </Text>
 
-                  <Pressable onPress={goSellerSpace} style={styles.sellerBtn}>
+                  <Pressable
+                    onPress={goSellerSpace}
+                    style={({ pressed }) => [
+                      styles.sellerBtn,
+                      pressed && styles.buttonPressed,
+                    ]}
+                  >
                     <Text style={styles.sellerBtnText}>Accéder</Text>
                     <MaterialIcons
                       name="arrow-forward"
@@ -382,9 +388,12 @@ export default function ProfileScreen({ navigation }) {
                 <Pressable
                   onPress={saveName}
                   disabled={saving || !hasNameChanged}
-                  style={[
+                  style={({ pressed }) => [
                     styles.saveBtn,
                     (saving || !hasNameChanged) && styles.saveBtnDisabled,
+                    pressed &&
+                      !(saving || !hasNameChanged) &&
+                      styles.buttonPressed,
                   ]}
                 >
                   {saving ? (
@@ -500,7 +509,13 @@ export default function ProfileScreen({ navigation }) {
 
             {/* Logout */}
             <View style={styles.footer}>
-              <Pressable style={styles.logoutBtn} onPress={handleLogout}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.logoutBtn,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={handleLogout}
+              >
                 <MaterialIcons
                   name="logout"
                   size={20}
@@ -657,6 +672,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   saveBtnDisabled: { opacity: 0.55 },
+  buttonPressed: { opacity: 0.92, transform: [{ scale: 0.98 }] },
   saveBtnText: { color: "white", fontWeight: "900" },
   listCard: {
     backgroundColor: COLORS.surface,
