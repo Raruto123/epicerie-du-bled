@@ -93,7 +93,7 @@ export default function OnboardingScreen({ navigation }) {
         id: "2",
         title: "Tout au même endroit",
         text: "Découvre les épiceries africaines autour de toi, les produits disponibles, les prix et la distance.",
-        image: require("../../assets/image2onboarding_sora.png"),
+        image: require("../../assets/image2onboarding_rela.jpg"),
         theme: {
           bg: COLORS.bg,
           primary: COLORS.primary,

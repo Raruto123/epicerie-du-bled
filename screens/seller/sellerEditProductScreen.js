@@ -1,4 +1,4 @@
-import { act, useMemo, useState } from "react";
+import { act, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -25,30 +25,30 @@ import { COLORS } from "../../constants/colors";
 import { KeyboardAvoidingView } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { ScrollView } from "react-native";
+import { PRODUCT_CATEGORIES } from "../../constants/productCategories.js";
 
 export default function SellerEditProductScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef(null);
 
   const product = route?.params?.product ?? null;
 
   //sécurité si on arrive sans product
   const productId = product?.id ?? null;
 
-  const categories = useMemo(
-    () => [
-      { key: "Tubercules", icon: "agriculture" },
-      { key: "Poissons", icon: "set-meal" },
-      { key: "Épices", icon: "whatshot" },
-      { key: "Légumes", icon: "eco" },
-    ],
-    []
-  );
+  const categories = useMemo(() => PRODUCT_CATEGORIES, [])
+
+  const scrollToField = (y) => {
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({ y, animated: true });
+    }, 120);
+  };
 
   // ✅ pré-remplissage avec les données du produit
   const [name, setName] = useState((product?.name ?? "").toString());
   const [cat, setCat] = useState((product?.cat ?? "Tubercules").toString());
   const [price, setPrice] = useState(
-    product?.price != null ? String(product.price) : ""
+    product?.price != null ? String(product.price) : "",
   );
   const [inStock, setInStock] = useState(!!product?.inStock);
   const [desc, setDesc] = useState((product?.desc ?? "").toString());
@@ -56,10 +56,32 @@ export default function SellerEditProductScreen({ navigation, route }) {
   //photo
   const [pictureUri, setPictureUri] = useState(""); //local photo (si modifiée)
   const [photoURL, setPhotoURL] = useState(
-    (product?.photoURL ?? "").toString()
+    (product?.photoURL ?? "").toString(),
   );
 
   const [saving, setSaving] = useState(false);
+
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, () => {
+      setKeyboardVisible(true);
+    });
+
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardVisible(false);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const save = async () => {
     Keyboard.dismiss();
@@ -69,7 +91,7 @@ export default function SellerEditProductScreen({ navigation, route }) {
     const productName = name.trim();
     const productCat = (cat ?? "").toString();
     const productDesc = desc.trim();
-    const rawPrice = price ?? "".toString().trim().replace(",", ".");
+    const rawPrice = (price ?? "").toString().trim().replace(",", ".");
     const productPrice = Number(rawPrice);
 
     if (!productName) return;
@@ -144,9 +166,10 @@ export default function SellerEditProductScreen({ navigation, route }) {
             <View style={styles.backBtnGhost}></View>
           </View>
           <ScrollView
+            ref={scrollRef}
             contentContainerStyle={[
               styles.scrollContent,
-              { paddingBottom: 110 + insets.bottom },
+              { paddingBottom: (keyboardVisible ? 40 : 150) + insets.bottom },
             ]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
@@ -183,6 +206,7 @@ export default function SellerEditProductScreen({ navigation, route }) {
               <Text style={styles.label}>Nom du produit</Text>
               <TextInput
                 value={name}
+                onFocus={() => scrollToField(120)}
                 onChangeText={setName}
                 style={styles.input}
                 placeholder="Ex : Igname, Piment, Attiéké..."
@@ -232,6 +256,7 @@ export default function SellerEditProductScreen({ navigation, route }) {
                 <View style={styles.priceWrap}>
                   <TextInput
                     value={price}
+                    onFocus={() => scrollToField(260)}
                     onChangeText={setPrice}
                     style={[styles.input, { paddingRight: 36 }]}
                     placeholder="0.00"
@@ -264,6 +289,7 @@ export default function SellerEditProductScreen({ navigation, route }) {
               <Text style={styles.label}>Description (Optionnel)</Text>
               <TextInput
                 value={desc}
+                onFocus={() => scrollToField(420)}
                 onChangeText={setDesc}
                 style={[styles.input, styles.textarea]}
                 placeholder="Origine du produit, informations, conseils de conservation.."
@@ -274,26 +300,34 @@ export default function SellerEditProductScreen({ navigation, route }) {
           </ScrollView>
 
           {/* Footer fixed */}
-          <View style={[styles.footer, { paddingBottom: 14 + insets.bottom }]}>
-            <Pressable
-              onPress={save}
-              style={[styles.publishBtn, saving && { opacity: 0.8 }]}
-              disabled={saving}
+          {!keyboardVisible && (
+            <View
+              style={[styles.footer, { paddingBottom: 14 + insets.bottom }]}
             >
-              {saving ? (
-                <ActivityIndicator color="white"></ActivityIndicator>
-              ) : (
-                <>
-                  <MaterialIcons
-                    name="save"
-                    size={20}
-                    color="white"
-                  ></MaterialIcons>
-                  <Text style={styles.publishText}>Enregistrer</Text>
-                </>
-              )}
-            </Pressable>
-          </View>
+              <Pressable
+                onPress={save}
+                style={({ pressed }) => [
+                  styles.publishBtn,
+                  saving && styles.publishBtnDisabled,
+                  pressed && !saving && styles.publishBtnPressed,
+                ]}
+                disabled={saving}
+              >
+                {saving ? (
+                  <ActivityIndicator color="white"></ActivityIndicator>
+                ) : (
+                  <>
+                    <MaterialIcons
+                      name="save"
+                      size={20}
+                      color="white"
+                    ></MaterialIcons>
+                    <Text style={styles.publishText}>Enregistrer</Text>
+                  </>
+                )}
+              </Pressable>
+            </View>
+          )}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -371,7 +405,12 @@ const styles = StyleSheet.create({
   field: {
     marginTop: 10,
   },
-  label: { fontSize: 13, fontWeight: "800", color: COLORS.muted, marginBottom: 8 },
+  label: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: COLORS.muted,
+    marginBottom: 8,
+  },
   input: {
     height: 54,
     borderRadius: 14,
@@ -452,4 +491,6 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   publishText: { color: "white", fontSize: 15, fontWeight: "900" },
+  publishBtnDisabled: { opacity: 0.8 },
+  publishBtnPressed: { opacity: 0.9, transform: [{ scale: 0.97 }] },
 });

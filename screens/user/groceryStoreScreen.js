@@ -36,14 +36,9 @@ import GroceryStoreHeader from "../../components/groceryStoreHeader";
 import NoLocationToast from "../../components/noLocationToast";
 import { normalizeText } from "../../utils/normalizeText";
 import { PRODUCT_FALLBACK_IMAGE } from "../../constants/fallbackImages";
+import { CATEGORY_ORDER } from "../../constants/productCategories";
 
 // ✅ Catégories style "sections"
-const SECTION_ORDER = [
-  "Tubercules",
-  "Épices & Condiments",
-  "Légumes",
-  "Poissons",
-];
 
 function formatPrice(x) {
   const n = Number(x ?? 0);
@@ -100,16 +95,18 @@ export default function GroceryStoreScreen({ navigation, route }) {
       const lat = Number(gps.latitude);
       const lng = Number(gps.longitude);
 
-      url =
-        Platform.OS === "ios"
-          ? `https://maps.apple.com/?q=${lat},${lng}`
-          : `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+      // url =
+      //   Platform.OS === "ios"
+      //     ? `https://maps.apple.com/?q=${lat},${lng}`
+      //     : `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+      url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
     } else if (address?.trim()) {
       const q = encodeURIComponent(address.trim());
-      url =
-        Platform.OS === "ios"
-          ? `https://maps.apple.com/?q=${q}`
-          : `https://www.google.com/maps/search/?api=1&query=${q}`;
+      // url =
+      //   Platform.OS === "ios"
+      //     ? `https://maps.apple.com/?q=${q}`
+      //     : `https://www.google.com/maps/search/?api=1&query=${q}`;
+      url = `https://www.google.com/maps/search/?api=1&query=${q}`;
     } else {
       showToast(
         "L'épicier n'a spécifié aucune localisation. Impossible d'ouvrir la carte.",
@@ -276,8 +273,8 @@ export default function GroceryStoreScreen({ navigation, route }) {
     }
 
     const orderedKeys = [
-      ...SECTION_ORDER.filter((k) => map.has(k)),
-      ...Array.from(map.keys()).filter((k) => !SECTION_ORDER.includes(k)),
+      ...CATEGORY_ORDER.filter((k) => map.has(k)),
+      ...Array.from(map.keys()).filter((k) => !CATEGORY_ORDER.includes(k)),
     ];
 
     return orderedKeys.map((k) => ({ key: k, items: map.get(k) || [] }));

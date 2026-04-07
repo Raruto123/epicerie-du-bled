@@ -33,10 +33,12 @@ import {
   logout,
   removeProfilePhoto,
 } from "../../services/profileService";
-import * as Localization from "expo-localization";
+import { useTranslation } from "react-i18next";
+import { setAppLanguage } from "../../i18n";
 
 export default function ProfileScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+  const { t, i18n } = useTranslation();
 
   const uid = auth.currentUser?.uid;
 
@@ -46,7 +48,9 @@ export default function ProfileScreen({ navigation }) {
   const [profile, setProfile] = useState(null);
   const [pictureUri, setPictureUri] = useState("");
   const [langMenuOpen, setLangMenuOpen] = useState(false);
-  const [selectedLang, setSelectedLang] = useState("fr"); //fr|en
+  const [selectedLang, setSelectedLang] = useState(
+    i18n.language.startsWith("fr") ? "fr" : "en",
+  ); //fr|en
 
   useEffect(() => {
     let alive = true;
@@ -84,27 +88,12 @@ export default function ProfileScreen({ navigation }) {
   }, []);
 
   useEffect(() => {
-    try {
-      const locales = Localization.getLocales?.() ?? [];
-      const code =
-        locales?.[0]?.languageCode ||
-        locales?.[0]?.languageTag?.split("-")?.[0] ||
-        "fr";
-
-      //FR/EN only
-      if (code?.toLowerCase().startsWith("fr")) {
-        setSelectedLang("fr");
-      } else {
-        setSelectedLang("en");
-      }
-    } catch (e) {
-      setSelectedLang("fr");
-    }
-  }, []);
+    setSelectedLang(i18n.language.startsWith("fr") ? "fr" : "en");
+  }, [i18n.language]);
 
   const languageOptions = [
-    { key: "fr", label: "Français" },
-    { key: "en", label: "English" },
+    { key: "fr", label: t("languages.fr") },
+    { key: "en", label: t("languages.en") },
   ];
 
   const selectedLanguageLabel =
@@ -210,11 +199,11 @@ export default function ProfileScreen({ navigation }) {
     Keyboard.dismiss();
     if (!uid || !profile?.photoURL) return;
     Alert.alert(
-      "Supprimer la photo ?",
-      "Cette action supprimera votre photo de profil actuelle.",
+      t("profile.removePhotoTitle"),
+      t("profile.removePhotoMessage"),
       [
-        { text: "Annuler", style: "cancel" },
-        { text: "Supprimer", style: "destructive", onPress: handleRemovePhoto },
+        { text: t("profile.cancel"), style: "cancel" },
+        { text: t("profile.delete"), style: "destructive", onPress: handleRemovePhoto },
       ],
       { cancelable: true },
     );
@@ -261,12 +250,12 @@ export default function ProfileScreen({ navigation }) {
             {loading && (
               <View style={styles.loadingRow}>
                 <ActivityIndicator size="small"></ActivityIndicator>
-                <Text style={styles.loadingText}>Chargement du profil...</Text>
+                <Text style={styles.loadingText}>{t("profile.loading")}</Text>
               </View>
             )}
             {/* Top Bar */}
             <View style={styles.topBar}>
-              <Text style={styles.topTitle}>Mon Profil</Text>
+              <Text style={styles.topTitle}>{t("profile.title")}</Text>
             </View>
 
             {/* Profile Header */}
@@ -300,7 +289,10 @@ export default function ProfileScreen({ navigation }) {
               </View>
               {!!pictureUri && (
                 <Pressable
-                  style={({pressed}) => [styles.removePhotoBtn, pressed && styles.buttonPressed]}
+                  style={({ pressed }) => [
+                    styles.removePhotoBtn,
+                    pressed && styles.buttonPressed,
+                  ]}
                   onPress={confirmRemovePhoto}
                   hitSlop={10}
                 >
@@ -309,7 +301,7 @@ export default function ProfileScreen({ navigation }) {
                     size={16}
                     color="#ef4444"
                   ></MaterialIcons>
-                  <Text style={styles.removePhotoText}>Supprimer la photo</Text>
+                  <Text style={styles.removePhotoText}>{t("profile.removePhoto")}</Text>
                 </Pressable>
               )}
 
@@ -329,13 +321,12 @@ export default function ProfileScreen({ navigation }) {
                       size={18}
                       color={COLORS.primary}
                     ></MaterialIcons>
-                    <Text style={styles.sellerKicker}>ESPACE VENDEUR</Text>
+                    <Text style={styles.sellerKicker}>{t("profile.sellerSpaceKicker")}</Text>
                   </View>
 
-                  <Text style={styles.sellerTitle}>Gérez votre boutique</Text>
+                  <Text style={styles.sellerTitle}>{t("profile.sellerSpaceTitle")}</Text>
                   <Text style={styles.sellerDesc}>
-                    Ouvrez votre épicerie en ligne et toucher des milliers de
-                    clients
+                    {t("profile.sellerSpaceDesc")}
                   </Text>
 
                   <Pressable
@@ -345,7 +336,7 @@ export default function ProfileScreen({ navigation }) {
                       pressed && styles.buttonPressed,
                     ]}
                   >
-                    <Text style={styles.sellerBtnText}>Accéder</Text>
+                    <Text style={styles.sellerBtnText}>{t("profile.access")}</Text>
                     <MaterialIcons
                       name="arrow-forward"
                       size={18}
@@ -364,16 +355,16 @@ export default function ProfileScreen({ navigation }) {
 
             {/* Infos persos */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Informations Personnelles</Text>
+              <Text style={styles.sectionTitle}>{t("profile.personalInfo")}</Text>
               <View style={styles.card}>
-                <Text style={styles.labelSmall}>NOM D'AFFICHAGE</Text>
+                <Text style={styles.labelSmall}>{t("profile.displayName")}</Text>
 
                 <View style={styles.inputRow}>
                   <TextInput
                     value={name}
                     onChangeText={setName}
                     style={styles.nameInput}
-                    placeholder="Votre nom"
+                    placeholder={t("profile.yourName")}
                     returnKeyType="done"
                     onSubmitEditing={saveName}
                     placeholderTextColor={COLORS.muted}
@@ -399,7 +390,7 @@ export default function ProfileScreen({ navigation }) {
                   {saving ? (
                     <ActivityIndicator color="white"></ActivityIndicator>
                   ) : (
-                    <Text style={styles.saveBtnText}>Enregistrer</Text>
+                    <Text style={styles.saveBtnText}>{t("profile.save")}</Text>
                   )}
                 </Pressable>
               </View>
@@ -407,7 +398,7 @@ export default function ProfileScreen({ navigation }) {
 
             {/* Préférences */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Préférences</Text>
+              <Text style={styles.sectionTitle}>{t("profile.preferences")}</Text>
               <View style={styles.listCard}>
                 <Pressable
                   style={styles.rowItem}
@@ -425,8 +416,8 @@ export default function ProfileScreen({ navigation }) {
                       ></MaterialIcons>
                     </View>
                     <View>
-                      <Text style={styles.rowTitle}>Langue</Text>
-                      <Text style={styles.rowSub}>Langue de l'interface</Text>
+                      <Text style={styles.rowTitle}>{t("profile.language")}</Text>
+                      <Text style={styles.rowSub}>{t("profile.interfaceLanguage")}</Text>
                     </View>
                   </View>
                   <View style={styles.rowRight}>
@@ -455,7 +446,8 @@ export default function ProfileScreen({ navigation }) {
                             idx !== languageOptions.length - 1 &&
                               styles.langOptionDivider,
                           ]}
-                          onPress={() => {
+                          onPress={async () => {
+                            await setAppLanguage(lang.key)
                             setSelectedLang(lang.key);
                             setLangMenuOpen(false);
                           }}
@@ -521,10 +513,10 @@ export default function ProfileScreen({ navigation }) {
                   size={20}
                   color={COLORS.primary}
                 ></MaterialIcons>
-                <Text style={styles.logoutText}>Se déconnecter</Text>
+                <Text style={styles.logoutText}>{t("profile.logout")}</Text>
               </Pressable>
 
-              <Text style={styles.version}>Version 0.0.1 ⚫️ Mifere</Text>
+              <Text style={styles.version}>{t("profile.version")}</Text>
             </View>
           </ScrollView>
         </TouchableWithoutFeedback>

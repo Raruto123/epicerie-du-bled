@@ -25,20 +25,13 @@ import {
   pickProductImage,
   uploadProductImage,
 } from "../../services/sellerAddProductService";
+import { PRODUCT_CATEGORIES } from "../../constants/productCategories";
 
 export default function SellerAddProductScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const scrollRef = useRef(null);
 
-  const categories = useMemo(
-    () => [
-      { key: "Tubercules", icon: "agriculture" },
-      { key: "Poissons", icon: "set-meal" },
-      { key: "Épices", icon: "whatshot" },
-      { key: "Légumes", icon: "eco" },
-    ],
-    [],
-  );
+  const categories = useMemo(() => PRODUCT_CATEGORIES, [])
 
   const scrollToField = (y) => {
     setTimeout(() => {
@@ -199,7 +192,7 @@ export default function SellerAddProductScreen({ navigation }) {
             ref={scrollRef}
             contentContainerStyle={[
               styles.scrollContent,
-              { paddingBottom: (keyboardVisible ? 40:150) + insets.bottom },
+              { paddingBottom: (keyboardVisible ? 40 : 150) + insets.bottom },
             ]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
@@ -357,7 +350,11 @@ export default function SellerAddProductScreen({ navigation }) {
             >
               <Pressable
                 onPress={publish}
-                style={[styles.publishBtn, publishing && { opacity: 0.8 }]}
+                style={({ pressed }) => [
+                  styles.publishBtn,
+                  publishing && styles.publishBtnDisabled,
+                  pressed && !publishing && styles.publishBtnPressed,
+                ]}
                 disabled={publishing}
               >
                 {publishing ? (
@@ -512,6 +509,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 10,
   },
+  publishBtnDisabled: { opacity: 0.8 },
+  publishBtnPressed: { opacity: 0.9, transform: [{ scale: 0.97 }] },
   publishText: { color: "white", fontSize: 15, fontWeight: "900" },
   photoPreview: { width: "100%", height: "100%", borderRadius: 14 },
   footer: {

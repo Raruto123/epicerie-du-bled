@@ -31,6 +31,7 @@ import {
 } from "../../services/sellerProductsService";
 import { normalizeText } from "../../utils/normalizeText";
 import { PRODUCT_FALLBACK_IMAGE } from "../../constants/fallbackImages";
+import { CATEGORY_LABELS } from "../../constants/productCategories";
 
 export default function SellerProductsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -61,18 +62,7 @@ export default function SellerProductsScreen({ navigation }) {
   const [deleting, setDeleting] = useState({}); // ✅ {[productId]: true}
 
   // ✅ mêmes catégories que ton écran d'ajout (tu peux en ajouter d'autres)
-  const categories = useMemo(
-    () => [
-      "Tous",
-      "Épices",
-      "Tubercules",
-      "Surgelés",
-      "Céréales",
-      "Légumes",
-      "Poissons",
-    ],
-    [],
-  );
+  const categories = useMemo(() => ["Tous", ...CATEGORY_LABELS], [])
 
   //observe si le seller a des produits si oui il affiche sinon il affiche rien
   useEffect(() => {

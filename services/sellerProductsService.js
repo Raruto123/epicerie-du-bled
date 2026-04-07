@@ -95,6 +95,16 @@ function distanceKmBetween(a, b) {
   return Number((R * c).toFixed(2));
 }
 
+function shuffleArray(arr = []) {
+  const copy = [...arr];
+
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+
+  return copy;
+}
 /**
  * Fetch seller user docs for a list of sellerIds
  * Uses where(documentId(), "in", ids) with chunking (10 max per query)
@@ -204,7 +214,9 @@ export async function fetchProductsPage({
       : null;
     const hasMore = snap.docs.length === pageSize;
 
-    return { items, cursor: nextCursor, hasMore };
+    const shuffledItems = shuffleArray(items);
+
+    return { items: shuffledItems, cursor: nextCursor, hasMore };
   } catch (e) {
     console.log("❌ fetchProductsPage failed :", e?.message ?? e);
     throw e;
@@ -235,18 +247,17 @@ export async function fetchProductById({
     createdAt: d.createdAt ?? null,
   };
 
-let u = null;
-if (base.sellerId) {
-  const sellerSnap = await getDoc(doc(db, "users", base.sellerId));
-  if (sellerSnap.exists()) u = sellerSnap.data();
-}
+  let u = null;
+  if (base.sellerId) {
+    const sellerSnap = await getDoc(doc(db, "users", base.sellerId));
+    if (sellerSnap.exists()) u = sellerSnap.data();
+  }
   //   console.log("SELLER RAW USER DOC", base.sellerId, u);
   // console.log("SELLER DISTANCEKM", u?.seller?.description);
   const seller = u?.seller || null;
 
   const sellerName = seller?.storeName ?? null;
-  const sellerAddress =
-    seller?.addressText ?? null;
+  const sellerAddress = seller?.addressText ?? null;
   const sellerLogoURL = seller?.logoURL ?? null;
   const sellerGps = seller?.gps ?? null;
   const sellerDescription = seller?.description ?? null;
@@ -256,12 +267,12 @@ if (base.sellerId) {
       ? distanceKmBetween(userLocation, sellerGps)
       : null;
 
-let isFav = false;
-if (uid) {
-  const userSnap = await getDoc(doc(db, "users", uid));
-  const u = userSnap.exists() ? userSnap.data() : null;
-  isFav = !!u?.favorites?.[productId];
-}
+  let isFav = false;
+  if (uid) {
+    const userSnap = await getDoc(doc(db, "users", uid));
+    const u = userSnap.exists() ? userSnap.data() : null;
+    isFav = !!u?.favorites?.[productId];
+  }
 
   return {
     ...base,
@@ -281,6 +292,7 @@ export async function fetchSimilarProducts({
   excludeProductId = null,
   pageSize = 6,
   userLocation = null,
+  preferredSellerId = null,
 } = {}) {
   if (!cat) return [];
 
@@ -291,7 +303,7 @@ export async function fetchSimilarProducts({
     colRef,
     where("cat", "==", cat),
     orderBy("createdAt", "desc"),
-    limit(pageSize + 3),
+    limit(pageSize * 3),
   );
 
   const snap = await getDocs(q);
@@ -315,10 +327,17 @@ export async function fetchSimilarProducts({
     ? base.filter((p) => p.id !== excludeProductId)
     : base;
 
-  const sellerIds = filtered.map((p) => p.sellerId).filter(Boolean);
+  const prioritized = preferredSellerId
+    ? [
+        ...filtered.filter((p) => p.sellerId === preferredSellerId),
+        ...filtered.filter((p) => p.sellerId !== preferredSellerId),
+      ]
+    : filtered;
+
+  const sellerIds = prioritized.map((p) => p.sellerId).filter(Boolean);
   const sellersMap = await fetchSellersByIds(sellerIds);
 
-  const enriched = filtered.map((p) => {
+  const enriched = prioritized.map((p) => {
     const u = sellersMap.get(p.sellerId) || null;
     const seller = u?.seller || null;
 

@@ -5,10 +5,12 @@ import RootNavigator from "./navigation/rootNavigator";
 import { getHasSeenOnboarding } from "./services/onboardingService";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./lib/firebase";
+import { initI18n } from "./i18n";
 
 export default function App() {
   const [ready, setReady] = useState(false);
   const [initialRoute, setInitialRoute] = useState("Onboarding");
+  const [i18nReady, setI18nReady] = useState(false);
 
   useEffect(() => {
     let unsub = null;
@@ -30,7 +32,14 @@ export default function App() {
     return () => unsub?.();
   }, []);
 
-  if (!ready) {
+   useEffect(() => {
+    (async () => {
+      await initI18n();
+      setI18nReady(true);
+    })();
+  }, []);
+
+  if (!ready || !i18nReady) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
         <ActivityIndicator size="small" />

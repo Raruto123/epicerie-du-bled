@@ -82,16 +82,18 @@ export default function ProductDetailsScreen({ navigation, route }) {
       const lat = Number(gps.latitude);
       const lng = Number(gps.longitude);
 
-      url =
-        Platform.OS === "ios"
-          ? `https://maps.apple.com/?q=${lat},${lng}`
-          : `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+      // url =
+      //   Platform.OS === "ios"
+      //     ? `https://maps.apple.com/?q=${lat},${lng}`
+      //     : `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+      url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
     } else if (address?.trim()) {
       const q = encodeURIComponent(address.trim());
-      url =
-        Platform.OS === "ios"
-          ? `https://maps.apple.com/?q=${q}`
-          : `https://www.google.com/maps/search/?api=1&query=${q}`;
+      // url =
+      //   Platform.OS === "ios"
+      //     ? `https://maps.apple.com/?q=${q}`
+      //     : `https://www.google.com/maps/search/?api=1&query=${q}`;
+      url = `https://www.google.com/maps/search/?api=1&query=${q}`;
     } else {
       showToast(
         "L'épicier n'a spécifié aucune localisation. Impossible d'ouvrir la carte.",
@@ -198,6 +200,7 @@ export default function ProductDetailsScreen({ navigation, route }) {
         const list = await fetchSimilarProducts({
           cat: data.cat,
           excludeProductId: data.id,
+          preferredSellerId: data.seller.id,
           pageSize: 6,
           userLocation,
         });
@@ -461,7 +464,10 @@ export default function ProductDetailsScreen({ navigation, route }) {
                     address: data.seller.address,
                   })
                 }
-                style={styles.primaryBtn}
+                style={({ pressed }) => [
+                  styles.primaryBtn,
+                  pressed && styles.actionBtnPressed,
+                ]}
               >
                 <MaterialIcons
                   name="directions"
@@ -471,9 +477,10 @@ export default function ProductDetailsScreen({ navigation, route }) {
                 <Text style={styles.primaryBtnText}>Itinéraire</Text>
               </Pressable>
               <Pressable
-                style={[
+                style={({ pressed }) => [
                   styles.secondaryBtn,
                   compareActive && styles.secondaryBtnActive,
+                  pressed && styles.actionBtnPressed,
                 ]}
                 onPress={onPressCompare}
               >
@@ -533,10 +540,14 @@ export default function ProductDetailsScreen({ navigation, route }) {
                     }
                   >
                     <View style={styles.simImgWrap}>
-                        <Image
-                          source={p.photoURL ? { uri: p.photoURL } : SIMILAR_PRODUCT_FALLBACK_IMAGE}
-                          style={[styles.simImg, !inStock && { opacity: 0.8 }]}
-                        ></Image>
+                      <Image
+                        source={
+                          p.photoURL
+                            ? { uri: p.photoURL }
+                            : SIMILAR_PRODUCT_FALLBACK_IMAGE
+                        }
+                        style={[styles.simImg, !inStock && { opacity: 0.8 }]}
+                      ></Image>
                       {/* Badge stock */}
                       <View
                         style={{ position: "absolute", left: 10, bottom: 10 }}
@@ -870,4 +881,5 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: COLORS.surface,
   },
+  actionBtnPressed: { opacity: 0.9, transform: [{ scale: 0.97 }] },
 });

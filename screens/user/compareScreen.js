@@ -236,7 +236,10 @@ export default function CompareScreen({ navigation, route }) {
           {/* Buttons row */}
           <View style={styles.btnRow}>
             <Pressable
-              style={styles.primaryBtn}
+              style={({ pressed }) => [
+                styles.primaryBtn,
+                pressed && styles.routeBtnPressed,
+              ]}
               onPress={() =>
                 openMapsForCompare({
                   gps: first?.sellerGps,
@@ -254,7 +257,10 @@ export default function CompareScreen({ navigation, route }) {
               </Text>
             </Pressable>
             <Pressable
-              style={styles.secondaryBtn}
+              style={({ pressed }) => [
+                styles.secondaryBtn,
+                pressed && styles.routeBtnPressed,
+              ]}
               onPress={() =>
                 openMapsForCompare({
                   gps: second?.sellerGps,
@@ -495,4 +501,5 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,215,4,0.55)",
   },
   secondaryBtnText: { color: COLORS.primary, fontSize: 13, fontWeight: "900" },
+  routeBtnPressed: { opacity: 0.9, transform: [{ scale: 0.97 }] },
 });

@@ -42,11 +42,11 @@ export default function GroceryStoreHeader({
         </View>
         <View style={styles.identityWrap}>
           <View style={styles.logoOuter}>
-              <Image
-                source={logoSource ?? GROCERY_FALLBACK_IMAGE}
-                style={styles.logoImg}
-                fadeDuration={0}
-              ></Image>
+            <Image
+              source={logoSource ?? GROCERY_FALLBACK_IMAGE}
+              style={styles.logoImg}
+              fadeDuration={0}
+            ></Image>
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.storeName} numberOfLines={2}>
@@ -68,7 +68,9 @@ export default function GroceryStoreHeader({
           <View style={{ flex: 1 }}>
             <Text style={styles.locationKicker}>Localisation</Text>
             <Text style={styles.locationAddr} numberOfLines={2}>
-              {groceryAddress === null ? "Adresse non renseignée" : groceryAddress}
+              {groceryAddress === null
+                ? "Adresse non renseignée"
+                : groceryAddress}
             </Text>
             <Text style={styles.locationSub}>
               {groceryDistance == null
@@ -77,7 +79,14 @@ export default function GroceryStoreHeader({
             </Text>
           </View>
 
-          <Pressable style={styles.mapBtn} onPress={onPressMap} hitSlop={10}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.mapBtn,
+              pressed && styles.mapBtnPressed,
+            ]}
+            onPress={onPressMap}
+            hitSlop={10}
+          >
             <MaterialIcons name="map" size={18} color="#71717a"></MaterialIcons>
           </Pressable>
         </View>
@@ -219,6 +228,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
+  mapBtnPressed: { transform: [{ scale: 0.9 }], opacity: 0.9 },
   searchWrap: { paddingTop: 12 },
   searchBox: {
     height: 50,
