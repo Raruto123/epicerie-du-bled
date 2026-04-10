@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { PRODUCT_FALLBACK_IMAGE } from "../constants/fallbackImages";
+import { useTranslation } from "react-i18next";
 
 const BUBBLE_SIZE = 72;
 const PADDING = 12;
@@ -26,6 +27,8 @@ export default function CompareBubble({
   tabBarHeight = 80,
   topSafe = 0,
 }) {
+
+  const {t} = useTranslation();
   const { width: W, height: H } = Dimensions.get("window");
   // position initiale: bas-droite (au-dessus des tabs)
 
@@ -119,7 +122,7 @@ export default function CompareBubble({
             <Text
               style={[styles.trashText, overTrash && styles.trashTextActive]}
             >
-              Glisse ici pour supprimer
+              {t("compareBubble.dragToDelete")}
             </Text>
           </View>
         </View>

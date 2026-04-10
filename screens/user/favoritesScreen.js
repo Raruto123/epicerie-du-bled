@@ -26,6 +26,7 @@ import {
 import { FavoritesHeader } from "../../components/favoritesHeader";
 import FavButton from "../../components/favButton";
 import { normalizeText } from "../../utils/normalizeText";
+import { useTranslation } from "react-i18next";
 
 export default function FavoritesScreen({
   navigation,
@@ -34,6 +35,7 @@ export default function FavoritesScreen({
   locationStatus,
 }) {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -115,7 +117,7 @@ export default function FavoritesScreen({
               ]}
             >
               <Text style={styles.stockBadgeText}>
-                {inStock ? "En stock" : "Rupture"}
+                {inStock ? t("common.inStock") : t("common.outOfStock")}
               </Text>
             </View>
           </View>
@@ -133,7 +135,7 @@ export default function FavoritesScreen({
             ></MaterialIcons>
             <Text style={styles.metaText}>
               {item.distanceKm == null
-                ? "Distance inconnue"
+                ? t("favorites.unknownDistance")
                 : `${Number(item.distanceKm).toFixed(1)} km`}
             </Text>
           </View>
@@ -178,10 +180,10 @@ export default function FavoritesScreen({
                   size={28}
                   color={COLORS.muted}
                 ></MaterialIcons>
-                <Text style={styles.emptyTitle}>Aucun favori</Text>
-                <Text style={styles.emptySub}>
-                  Ajoute des produits en favoris pour les retrouver ici
+                <Text style={styles.emptyTitle}>
+                  {t("favorites.emptyTitle")}
                 </Text>
+                <Text style={styles.emptySub}>{t("favorites.emptySub")}</Text>
               </View>
             }
           ></FlatList>

@@ -2,6 +2,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { COLORS } from "../constants/colors";
 import { Modal } from "react-native";
+import { useTranslation } from "react-i18next";
 
 function RuleSection({ title, items }) {
   return (
@@ -26,6 +27,7 @@ function RuleSection({ title, items }) {
 }
 
 export default function SellerRulesModal({ visible, onClose }) {
+  const {t} = useTranslation();
   const sections = [
     // {
     //   title: "Logo",
@@ -44,36 +46,36 @@ export default function SellerRulesModal({ visible, onClose }) {
     //   ],
     // },
         {
-      title: "PARTICULIER",
-      items: [
-        "Si vous n'avez pas une épicerie phyisique mais vendez vos ingrédients en ligne ceci vous concerne.",
-        "Veuillez ne pas indiquer votre adresse ni votre position GPS car cela pourrait être utilisé afin de vous localiser.",
-        "Pour que les clients vous contactent vous êtes autorisé à inscrire votre moyen de contact favori en description : numéro de téléphone, réseaux sociaux....",
-      ],
-    },
-    {
-      title: "Adresse civique",
-      items: [
-        "Ajoutez une adresse précise pour aider les clients à identifier votre épicerie.",
-        "Vérifiez l’orthographe du numéro, de la rue et de la ville.",
-        "Vous pouvez supprimer l’adresse civique si vous ne souhaitez pas l’afficher.",
-      ],
-    },
-    {
-      title: "Position GPS",
-      items: [
-        "La position GPS permet d’ouvrir directement l’itinéraire dans l’application de cartes.",
-        "Placez le marqueur avec précision pour éviter d’induire les clients en erreur.",
-        "Vous pouvez supprimer la position GPS si elle est incorrecte ou obsolète.",
-      ],
-    },
-    {
-      title: "Visibilité client",
-      items: [
-        "Les modifications apportées à votre boutique peuvent être visibles immédiatement par les clients.",
-        "Assurez-vous que les informations affichées correspondent bien à votre point de vente.",
-      ],
-    },
+    title: t("sellerRules.sections.privateSeller.title"),
+    items: [
+      t("sellerRules.sections.privateSeller.items.0"),
+      t("sellerRules.sections.privateSeller.items.1"),
+      t("sellerRules.sections.privateSeller.items.2"),
+    ],
+  },
+  {
+    title: t("sellerRules.sections.address.title"),
+    items: [
+      t("sellerRules.sections.address.items.0"),
+      t("sellerRules.sections.address.items.1"),
+      t("sellerRules.sections.address.items.2"),
+    ],
+  },
+  {
+    title: t("sellerRules.sections.gps.title"),
+    items: [
+      t("sellerRules.sections.gps.items.0"),
+      t("sellerRules.sections.gps.items.1"),
+      t("sellerRules.sections.gps.items.2"),
+    ],
+  },
+  {
+    title: t("sellerRules.sections.visibility.title"),
+    items: [
+      t("sellerRules.sections.visibility.items.0"),
+      t("sellerRules.sections.visibility.items.1"),
+    ],
+  },
   ];
 
   return (
@@ -101,9 +103,9 @@ export default function SellerRulesModal({ visible, onClose }) {
                 ></MaterialIcons>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.title}>Règles et consignes</Text>
+                <Text style={styles.title}>{t("sellerRules.title")}</Text>
                 <Text style={styles.subtitle}>
-                  À lire avant de modifier votre épicerie
+                  {t("sellerRules.subtitle")}
                 </Text>
               </View>
             </View>
@@ -180,11 +182,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   title: {
-    marginTop: 3,
-    fontSize: 11,
-    fontWeight: "700",
-    color: COLORS.muted,
-    lineHeight: 16,
+    marginTop: 1,
+    fontSize: 15,
+    fontWeight: "900",
+    color: COLORS.text,
+    lineHeight: 20,
   },
   subtitle: {
     marginTop: 3,

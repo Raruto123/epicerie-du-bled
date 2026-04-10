@@ -2,19 +2,23 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Keyboard, StyleSheet, Text, TextInput, View } from "react-native";
 import { COLORS } from "../constants/colors";
 import { Pressable } from "react-native";
+import { useTranslation } from "react-i18next";
 
 export function GroceriesHeader({
-  title = "Liste des épiceries",
+  title,
   query,
   setQuery,
   hasActiveFilters,
   onOpenFilters,
 }) {
+  const {t} = useTranslation();
+
+  const headerTitle = title ?? t("groceries.title");
   return (
     <View style={styles.header}>
       {/* Title row */}
       <View style={styles.headerTop}>
-        <Text style={styles.headerTitle}>{title}</Text>
+        <Text style={styles.headerTitle}>{headerTitle}</Text>
       </View>
       {/* Search */}
       <View style={styles.searchWrap}>
@@ -27,7 +31,7 @@ export function GroceriesHeader({
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Rechercher une épicerie..."
+            placeholder={t("groceries.searchPlaceholder")}
             placeholderTextColor="#9ca3af"
             style={styles.searchInput}
             returnKeyType="search"

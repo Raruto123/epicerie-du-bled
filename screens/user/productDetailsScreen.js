@@ -39,6 +39,8 @@ import {
   PRODUCT_FALLBACK_IMAGE,
   SIMILAR_PRODUCT_FALLBACK_IMAGE,
 } from "../../constants/fallbackImages";
+import { useTranslation } from "react-i18next";
+import { CATEGORY_LABEL_TO_KEY } from "../../constants/productCategories";
 
 export default function ProductDetailsScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -63,6 +65,8 @@ export default function ProductDetailsScreen({ navigation, route }) {
     message: "",
     type: "info",
   });
+
+  const {t} = useTranslation();
 
   const showToast = (message, type = "info") => {
     setToast({ visible: true, message, type });
@@ -96,7 +100,7 @@ export default function ProductDetailsScreen({ navigation, route }) {
       url = `https://www.google.com/maps/search/?api=1&query=${q}`;
     } else {
       showToast(
-        "L'épicier n'a spécifié aucune localisation. Impossible d'ouvrir la carte.",
+        t("productDetails.noLocationToast"),
         "error",
       );
       return;
@@ -104,7 +108,7 @@ export default function ProductDetailsScreen({ navigation, route }) {
 
     Linking.openURL(url).catch((e) => {
       console.log("❌ openMapsForProduct failed:", e?.message ?? e);
-      showToast("Impossible d'ouvrir l'application.", "error");
+      showToast(t("productDetails.openAppError"), "error");
     });
   }
   const [compareProduct, setCompareProductState] = useState(null);
@@ -163,21 +167,22 @@ export default function ProductDetailsScreen({ navigation, route }) {
     };
   }, [productId, userLocation, authReady, uid]);
 
+
   // fallback si jamais on arrive sans rien
   const data = useMemo(() => {
     const p = product || {};
     const inStock = p?.inStock ?? true;
     return {
       id: p?.id ?? "p-0",
-      name: p?.name ?? "Produit",
-      cat: p?.cat ?? "Légumes",
+      name: p?.name ?? t("productDetails.defaultProduct"),
+      cat: p?.cat ?? t("categories.legumes"),
       price: Number(p?.price ?? 4.99),
       inStock: !!inStock,
       photoURL: p?.photoURL ?? null,
       desc: p?.desc ?? null,
       seller: {
         id: p?.sellerId ?? null,
-        name: p?.sellerName ?? "Épicerie",
+        name: p?.sellerName ?? t("productDetails.defaultStore"),
         distanceKm: p?.distanceKm ?? null,
         address: p?.sellerAddress ?? null,
         logoURL: p?.sellerLogoURL ?? null,
@@ -189,6 +194,11 @@ export default function ProductDetailsScreen({ navigation, route }) {
   }, [product]);
 
   const isFav = !!data.isFav;
+
+  const localizedCategory = useMemo(() => {
+    const categoryKey = CATEGORY_LABEL_TO_KEY[data.cat];
+    return  categoryKey ? t(`categories.${categoryKey}`) : data.cat;
+  }, [data.cat, t])
 
   //similar car
   useEffect(() => {
@@ -366,7 +376,7 @@ export default function ProductDetailsScreen({ navigation, route }) {
                       : { color: "#ef4444" },
                   ]}
                 >
-                  {data.inStock ? "En stock" : "Rupture"}
+                  {data.inStock ? t("common.inStock") : t("common.outOfStock")}
                 </Text>
               </View>
             </View>
@@ -382,7 +392,7 @@ export default function ProductDetailsScreen({ navigation, route }) {
             </Text>
             <View style={styles.catRow}>
               <View style={styles.catPill}>
-                <Text style={styles.catPillText}>{data.cat}</Text>
+                <Text style={styles.catPillText}>{localizedCategory}</Text>
               </View>
             </View>
           </View>
@@ -395,7 +405,7 @@ export default function ProductDetailsScreen({ navigation, route }) {
         <View style={styles.divider}></View>
         {/* Seller */}
         <View style={styles.section}>
-          <Text style={styles.sectionKicker}>Épicerie</Text>
+          <Text style={styles.sectionKicker}>{t("productDetails.storeSection")}</Text>
           <View style={styles.sellerCard}>
             <View style={styles.sellerTop}>
               <View style={styles.sellerLogo}>
@@ -438,8 +448,10 @@ export default function ProductDetailsScreen({ navigation, route }) {
                   ></MaterialIcons>
                   <Text style={styles.sellerDistText}>
                     {data.seller.distanceKm == null
-                      ? "Distance inconnue"
-                      : `À ${Number(data.seller.distanceKm).toFixed(1)} km de vous`}
+                      ? t("productDetails.unknownDistance")
+                      : t("productDetails.distanceFromYou", {
+                        distance : Number(data.seller.distanceKm).toFixed(1)
+                      })}
                   </Text>
                 </View>
               </View>
@@ -452,7 +464,7 @@ export default function ProductDetailsScreen({ navigation, route }) {
                 color={COLORS.muted}
               ></MaterialIcons>
               <Text style={styles.addrText}>
-                {data.seller.address ?? "Adresse non renseignée"}
+                {data.seller.address ?? t("productDetails.addressNotProvided")}
               </Text>
             </View>
 
@@ -474,7 +486,7 @@ export default function ProductDetailsScreen({ navigation, route }) {
                   size={20}
                   color="white"
                 ></MaterialIcons>
-                <Text style={styles.primaryBtnText}>Itinéraire</Text>
+                <Text style={styles.primaryBtnText}>{t("productDetails.itinerary")}</Text>
               </Pressable>
               <Pressable
                 style={({ pressed }) => [
@@ -495,7 +507,7 @@ export default function ProductDetailsScreen({ navigation, route }) {
                     compareActive && styles.secondaryBtnTextActive,
                   ]}
                 >
-                  Comparer
+                  {t("productDetails.compare")}
                 </Text>
                 {compareActive && <View style={styles.compareDot}></View>}
               </Pressable>
@@ -504,13 +516,13 @@ export default function ProductDetailsScreen({ navigation, route }) {
         </View>
         {/* DEscription */}
         <View style={[styles.section, { marginTop: 18 }]}>
-          <Text style={styles.sectionKicker}>Description</Text>
+          <Text style={styles.sectionKicker}>{t("productDetails.description")}</Text>
           <Text style={styles.desc}>{data.desc}</Text>
         </View>
         {/* Similar products */}
         <View style={{ marginTop: 22 }}>
           <View style={styles.simHeader}>
-            <Text style={styles.sectionKicker}>Produits similaires</Text>
+            <Text style={styles.sectionKicker}>{t("productDetails.similarProducts")}</Text>
             {/* <Pressable onPress={() => {}} hitSlop={10}>
               <Text style={styles.seeAll}>Voir tout</Text>
             </Pressable> */}
@@ -569,7 +581,7 @@ export default function ProductDetailsScreen({ navigation, route }) {
                               fontWeight: "900",
                             }}
                           >
-                            {inStock ? "En stock" : "Rupture"}
+                            {inStock ? t("common.inStock") : t("common.outOfStock")}
                           </Text>
                         </View>
                       </View>

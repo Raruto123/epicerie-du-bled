@@ -2,18 +2,23 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { COLORS } from "../constants/colors";
 import { Keyboard } from "react-native";
+import { useTranslation } from "react-i18next";
 
 export function FavoritesHeader({
-  title = "Mes Favoris",
+  title,
   query,
   setQuery,
   count = 0,
 }) {
+
+  const {t} = useTranslation();
+
+  const headerTitle = title ?? t("favorites.title");
   return (
     <View>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>{title}</Text>
+        <Text style={styles.headerTitle}>{headerTitle}</Text>
       </View>
       {/* Search */}
       <View style={styles.searchWrap}>
@@ -26,7 +31,7 @@ export function FavoritesHeader({
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Rechercher dans mes favoris..."
+            placeholder={t("favorites.searchPlaceholder")}
             placeholderTextColor="#9ca3af"
             style={styles.searchInput}
             returnKeyType="search"
@@ -46,7 +51,7 @@ export function FavoritesHeader({
       </View>
       {/* Kicker */}
       <View style={styles.sectionRow}>
-        <Text style={styles.sectionKicker}>Favoris ({count})</Text>
+        <Text style={styles.sectionKicker}>{t("favorites.count", {count})}</Text>
       </View>
     </View>
   );

@@ -6,6 +6,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import i18next from "i18next";
 import { initReactI18next } from "react-i18next";
 
+console.log("EN Categories =", en.categories);
+
+
 export const LANGUAGE_STORAGE_KEY = "app_language";
 
 export function getDeviceLanguage() {

@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { COLORS } from "../constants/colors";
+import { useTranslation } from "react-i18next";
 
 export default function LocationGateModal({
   visible,
@@ -25,6 +26,8 @@ export default function LocationGateModal({
   currentStatus = "unknown", // unknown | granted | denied
   currentLabel = "",
 }) {
+  const { t } = useTranslation();
+
   const insets = useSafeAreaInsets();
 
   // ask | granted | denied
@@ -147,21 +150,20 @@ export default function LocationGateModal({
   };
 
   const title = useMemo(() => {
-    if (step === "granted") return "Localisation activée";
-    if (step === "denied") return "Localisation refusée";
-    return "Découvrez les épiceries à proximité";
-  }, [step]);
+    if (step === "granted") return t("locationGate.enabledTitle");
+    if (step === "denied") return t("locationGate.deniedTitle");
+    return t("locationGate.askTitle");
+  }, [step, t]);
 
   const body = useMemo(() => {
     if (step === "granted") {
       return currentLabel
-        ? `Actuel : ${currentLabel}`
-        : "Localisation déjà activée. Vous pouvez actualiser votre position.";
+        ? t("locationGate.currentLocation", { location: currentLabel })
+        : t("locationGate.enabledBody");
     }
-    if (step === "denied")
-      return "La localisation est désactivée. Ouvrez les réglages pour l’autoriser (Localisation > Autoriser).";
-    return "Pour calculer les distances et afficher les épiceries proches, nous avons besoin de votre position.";
-  }, [step, currentLabel]);
+    if (step === "denied") return t("locationGate.deniedBody");
+    return t("locationGate.askBody");
+  }, [step, currentLabel, t]);
 
   return (
     <Modal
@@ -226,7 +228,7 @@ export default function LocationGateModal({
                     <View style={styles.primaryBtnRow}>
                       <MaterialIcons name="near-me" size={20} color="white" />
                       <Text style={styles.primaryBtnText}>
-                        Autoriser la localisation
+                        {t("locationGate.allow")}
                       </Text>
                     </View>
                   )}
@@ -240,12 +242,12 @@ export default function LocationGateModal({
                   ]}
                 >
                   <Text style={styles.secondaryBtnText}>
-                    Continuer sans localisation
+                    {t("locationGate.continueWithout")}
                   </Text>
                 </Pressable>
 
                 <Text style={styles.reassure}>
-                  Vous pourrez modifier ce choix plus tard.
+                  {t("locationGate.changeLater")}
                 </Text>
               </View>
             )}
@@ -272,7 +274,7 @@ export default function LocationGateModal({
                         color={COLORS.text}
                       />
                       <Text style={styles.secondaryBtnFilledText}>
-                        Actualiser ma position
+                        {t("locationGate.refresh")}
                       </Text>
                     </View>
                   )}
@@ -286,7 +288,9 @@ export default function LocationGateModal({
                   ]}
                 >
                   <View style={styles.primaryBtnRow}>
-                    <Text style={styles.primaryBtnText}>Continuer</Text>
+                    <Text style={styles.primaryBtnText}>
+                      {t("locationGate.continue")}
+                    </Text>
                     <MaterialIcons
                       name="arrow-forward"
                       size={20}
@@ -314,7 +318,7 @@ export default function LocationGateModal({
                       color={COLORS.text}
                     />
                     <Text style={styles.secondaryBtnFilledText}>
-                      Réessayer d’autoriser
+                      {t("locationGate.retryAllow")}
                     </Text>
                   </View>
                 </Pressable>
@@ -328,7 +332,7 @@ export default function LocationGateModal({
                 >
                   <View style={styles.primaryBtnRow}>
                     <Text style={styles.primaryBtnText}>
-                      Continuer sans localisation
+                      {t("locationGate.continueWithout")}
                     </Text>
                     <MaterialIcons
                       name="arrow-forward"

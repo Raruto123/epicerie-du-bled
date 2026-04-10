@@ -77,7 +77,7 @@ export const PRODUCT_CATEGORIES = [
     emoji: "🍪",
   },
   {
-    key: "produits laitiers",
+    key: "produits_laitiers",
     label: "Produits laitiers",
     icon: "local-cafe",
     emoji: "🥛",
@@ -97,12 +97,18 @@ export const PRODUCT_CATEGORIES = [
 ];
 
 export const HOME_CATEGORIES = [
-  { key: "Tout", emoji: null },
+  { key: "all", label: "Tout", emoji: null },
   ...PRODUCT_CATEGORIES.map((cat) => ({
-    key: cat.label,
+    key: cat.key,
+    label: cat.label,
     emoji: cat.emoji,
   })),
 ];
 
 export const CATEGORY_ORDER = PRODUCT_CATEGORIES.map((cat) => cat.label);
 export const CATEGORY_LABELS = PRODUCT_CATEGORIES.map((cat) => cat.label);
+
+export const CATEGORY_LABEL_TO_KEY = PRODUCT_CATEGORIES.reduce((acc, cat) => {
+  acc[cat.label] = cat.key;
+  return acc;
+}, {});

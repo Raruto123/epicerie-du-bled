@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { COLORS } from "../constants/colors";
+import { useTranslation } from "react-i18next";
 
 export function GroceriesFiltersModal({
   visible,
@@ -18,6 +19,7 @@ export function GroceriesFiltersModal({
   hasActiveFilters,
   onReset,
 }) {
+  const {t} = useTranslation();
   return (
     <Modal
       visible={visible}
@@ -41,10 +43,10 @@ export function GroceriesFiltersModal({
                   gap: 10,
                 }}
               >
-                <Text style={styles.sheetTitle}>Trier par</Text>
+                <Text style={styles.sheetTitle}>{t("groceries.filters.active")}</Text>
                 {hasActiveFilters && (
                   <View style={styles.activeBadge}>
-                    <Text style={styles.activeBadgeText}>Filtres actifs</Text>
+                    <Text style={styles.activeBadgeText}>{t("groceries.filters.title")}</Text>
                   </View>
                 )}
               </View>
@@ -81,7 +83,7 @@ export function GroceriesFiltersModal({
             </View>
           </View>
           <Text style={[styles.sheetSectionKicker, { marginTop: 6 }]}>
-            Distance
+            {t("groceries.filters.distance")}
           </Text>
           <View style={styles.nearGrid}>
             <Pressable
@@ -104,7 +106,7 @@ export function GroceriesFiltersModal({
                     : styles.nearTextIdle,
                 ]}
               >
-                Plus proche
+                {t("groceries.filters.nearest")}
               </Text>
               {nearBy === "near" && (
                 <MaterialIcons
@@ -134,7 +136,7 @@ export function GroceriesFiltersModal({
                     : styles.nearTextIdle,
                 ]}
               >
-                Plus loin
+                {t("groceries.filters.farthest")}
               </Text>
               {nearBy === "far" && (
                 <MaterialIcons
@@ -155,7 +157,7 @@ export function GroceriesFiltersModal({
               onClose?.();
             }}
           >
-            <Text style={styles.applyBtnText}>Appliquer les filtres</Text>
+            <Text style={styles.applyBtnText}>{t('groceries.filters.apply')}</Text>
           </Pressable>
           <View style={{ height: Platform.OS === "ios" ? 6 : 0 }}></View>
         </Pressable>

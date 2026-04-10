@@ -30,7 +30,7 @@ import {
   updateSellerProfile,
 } from "../../services/sellerOverviewService";
 import { getUserProfile } from "../../services/profileService";
-import { formatDateFr } from "../../utils/dateFormat";
+import { formatDateByLocale } from "../../utils/dateFormat";
 import { useFocusEffect, useRoute } from "@react-navigation/native";
 import MapView, { Marker } from "react-native-maps";
 import {
@@ -38,6 +38,7 @@ import {
   getPickedSellerLocation,
 } from "../../services/sellerLocationPickerService";
 import SellerRulesModal from "../../components/sellerRulesModal";
+import { useTranslation } from "react-i18next";
 
 export default function SellerOverviewScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -52,6 +53,8 @@ export default function SellerOverviewScreen({ navigation }) {
   const [logoUri, setLogoUri] = useState("");
   const [savingLogo, setSavingLogo] = useState(false);
   const [rulesVisible, setRulesVisible] = useState(false);
+
+  const { t } = useTranslation();
 
   const lastUpdated = profile?.seller?.updatedAt ?? null;
   const route = useRoute();
@@ -301,11 +304,11 @@ export default function SellerOverviewScreen({ navigation }) {
     if (!uid || !profile?.seller?.logoURL || savingLogo) return;
 
     Alert.alert(
-      "Supprimer le logo ?",
-      "Cette action supprimera le logo actuel de votre boutique.",
+     t("sellerOverview.removeLogoTitle"),
+      t("sellerOvierview.removeLogoMessage"),
       [
-        { text: "Annuler", style: "cancel" },
-        { text: "Supprimer", style: "destructive", onPress: handleRemovePhoto },
+        { text: t("common.cancel"), style: "cancel" },
+        { text: t("common.delete"), style: "destructive", onPress: handleRemovePhoto },
       ],
       { cancelable: true },
     );
@@ -350,12 +353,12 @@ export default function SellerOverviewScreen({ navigation }) {
       return;
 
     Alert.alert(
-      "Supprimer l'adresse ?",
-      "Cette action supprimera l'adresse civique actuelle de votre épicerie.",
+      t("sellerOverview.removeAddressTitle"),
+      t("sellerOverview.removeAddressMessage"),
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Supprimer",
+          text: t("common.delete"),
           style: "destructive",
           onPress: handleRemoveAddress,
         },
@@ -394,11 +397,11 @@ export default function SellerOverviewScreen({ navigation }) {
     if (!uid || !profile?.seller?.gps || savingField === "gps") return;
 
     Alert.alert(
-      "Supprimer la position GPS ?",
-      "Cette action supprimera la position GPS actuelle de votre épicerie",
+      t("sellerOverview.removeGpsTitle"),
+      t("sellerOverview.removeGpsMessage"),
       [
-        { text: "Annuler", style: "cancel" },
-        { text: "Supprimer", style: "destructive", onPress: handleRemoveGps },
+        { text: t("common.cancel"), style: "cancel" },
+        { text: t("common.delete"), style: "destructive", onPress: handleRemoveGps },
       ],
       { cancelable: true },
     );
@@ -429,7 +432,7 @@ export default function SellerOverviewScreen({ navigation }) {
             <View style={styles.loadingRow}>
               <ActivityIndicator size="small"></ActivityIndicator>
               <Text style={styles.loadingText}>
-                Chargement du profil vendeur...
+                {t("sellerOverview.loading")}
               </Text>
             </View>
           )}
@@ -442,11 +445,11 @@ export default function SellerOverviewScreen({ navigation }) {
                   size={18}
                   color={COLORS.text}
                 ></MaterialIcons>
-                <Text style={styles.topBtnText}>Annuler</Text>
+                <Text style={styles.topBtnText}>{t("common.cancel")}</Text>
               </View>
             </Pressable>
 
-            <Text style={styles.topTitle}>Modifier le Profil</Text>
+            <Text style={styles.topTitle}>{t("sellerOverview.editProfile")}</Text>
             <View style={{ width: 110 }}></View>
           </View>
 
@@ -489,7 +492,10 @@ export default function SellerOverviewScreen({ navigation }) {
             </View>
             {!!logoUri && (
               <Pressable
-                style={({pressed}) => [styles.removeLogoBtn, pressed && styles.buttonPressed]}
+                style={({ pressed }) => [
+                  styles.removeLogoBtn,
+                  pressed && styles.buttonPressed,
+                ]}
                 onPress={confirmRemoveLogo}
                 hitSlop={10}
                 disabled={savingLogo}
@@ -499,80 +505,82 @@ export default function SellerOverviewScreen({ navigation }) {
                   size={16}
                   color="#ef4444"
                 ></MaterialIcons>
-                <Text style={styles.removeLogoText}>Supprimer le logo</Text>
+                <Text style={styles.removeLogoText}>{t("sellerOverview.removeLogo")}</Text>
               </Pressable>
             )}
           </View>
 
           <View style={styles.centerHeader}>
             <Text style={styles.storeTitle}>
-              {storeName || "Votre boutique"}
+              {storeName || t("sellerOverview.yourStore")}
             </Text>
           </View>
 
           {/* Identité */}
-          <Text style={styles.h3}>Identité du commerce</Text>
+          <Text style={styles.h3}>{t("sellerOverview.businessIdentity")}</Text>
 
           <View style={styles.card}>
-            <Text style={styles.label}>Nom commercial</Text>
+            <Text style={styles.label}>{t("sellerOverview.businessName")}</Text>
             <TextInput
               value={storeName}
               onChangeText={setStoreName}
               style={styles.input}
-              placeholder="Entrez le nom de votre commerce"
+              placeholder={t("sellerOverview.businessNamePlaceholder")}
               returnKeyType="done"
               onSubmitEditing={() => saveField("storeName")}
             ></TextInput>
             <Pressable
               onPress={() => saveField("storeName")}
               disabled={savingField === "storeName"}
-              style={({pressed}) => [
+              style={({ pressed }) => [
                 styles.smallSaveBtn,
                 savingField === "storeName" && { opacity: 0.7 },
-                pressed && savingField !== "storeName" && styles.buttonPressed
+                pressed && savingField !== "storeName" && styles.buttonPressed,
               ]}
             >
               {savingField === "storeName" ? (
                 <ActivityIndicator color="white"></ActivityIndicator>
               ) : (
-                <Text style={styles.smallSaveText}>Enregistrer</Text>
+                <Text style={styles.smallSaveText}>{t("common.save")}</Text>
               )}
             </Pressable>
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.label}>Description de la boutique</Text>
+            <Text style={styles.label}>{t("sellerOverview.storeDescription")}</Text>
             <TextInput
               value={description}
               onChangeText={setDescription}
               style={[styles.input, styles.textarea]}
               onSubmitEditing={() => saveField("description")}
-              placeholder="Parlez-nous de vos spécialités africaines"
+              placeholder={t("sellerOverview.storeDescriptionPlaceholder")}
               multiline
               textAlignVertical="top"
             ></TextInput>
             <Pressable
               onPress={() => saveField("description")}
               disabled={savingField === "description"}
-              style={({pressed}) => [
+              style={({ pressed }) => [
                 styles.smallSaveBtn,
                 savingField === "description" && { opacity: 0.7 },
-                pressed && savingField !== "description" && styles.buttonPressed
+                pressed &&
+                  savingField !== "description" &&
+                  styles.buttonPressed,
               ]}
             >
               {savingField === "description" ? (
                 <ActivityIndicator color="white" />
               ) : (
-                <Text style={styles.smallSaveText}>Enregistrer</Text>
+                <Text style={styles.smallSaveText}>{t("common.save")}</Text>
               )}
             </Pressable>
           </View>
           {/* Localisation */}
-          <Text style={styles.h3}>Localisation</Text>
+          <Text style={styles.h3}>{t("sellerOverview.location")}</Text>
 
           <View style={styles.cardNoPad}>
             <View style={styles.addressRow}>
-              <Text style={styles.label}>Adresse civique</Text>
+              <Text style={styles.label}>{t("sellerOverview.civicAddress")}</Text>
               <View style={styles.addressInputRow}>
                 <MaterialIcons
                   name="location-on"
@@ -584,28 +592,33 @@ export default function SellerOverviewScreen({ navigation }) {
                   onChangeText={setAddressText}
                   style={styles.addressInput}
                   onSubmitEditing={() => saveField("addressText")}
-                  placeholder="Numéro, Rue, Ville. Ex : 4605 Avenue Walkley"
+                  placeholder={t("sellerOverview.civicAddressPlaceholder")}
                 ></TextInput>
               </View>
               <Pressable
                 onPress={() => saveField("addressText")}
                 disabled={savingField === "addressText"}
-                style={({pressed}) => [
+                style={({ pressed }) => [
                   styles.smallSaveBtn,
                   savingField === "addressText" && { opacity: 0.7 },
-                  pressed && savingField !== "addressText" && styles.buttonPressed
+                  pressed &&
+                    savingField !== "addressText" &&
+                    styles.buttonPressed,
                 ]}
               >
                 {savingField === "addressText" ? (
                   <ActivityIndicator color="white" />
                 ) : (
-                  <Text style={styles.smallSaveText}>Enregistrer</Text>
+                  <Text style={styles.smallSaveText}>{t("common.save")}</Text>
                 )}
               </Pressable>
 
               {!!profile?.seller?.addressText && (
                 <Pressable
-                  style={({pressed}) => [styles.removeAddressBtn, pressed && styles.buttonPressed]}
+                  style={({ pressed }) => [
+                    styles.removeAddressBtn,
+                    pressed && styles.buttonPressed,
+                  ]}
                   onPress={confirmRemoveAddress}
                   hitSlop={10}
                   disabled={savingField === "addressText"}
@@ -616,7 +629,7 @@ export default function SellerOverviewScreen({ navigation }) {
                     color="#ef4444"
                   ></MaterialIcons>
                   <Text style={styles.removeAddressText}>
-                    Supprimer l'adresse
+                    {t("sellerOverview.removeAddress")}
                   </Text>
                 </Pressable>
               )}
@@ -630,9 +643,9 @@ export default function SellerOverviewScreen({ navigation }) {
                   color={COLORS.primary}
                 ></MaterialIcons>
                 <View>
-                  <Text style={styles.gpsTitle}>Mettre à jour via GPS</Text>
+                  <Text style={styles.gpsTitle}>{t("sellerOverview.updateWithGps")}</Text>
                   <Text style={styles.gpsSub}>
-                    Utiliser votre position actuelle
+                    {t("sellerOverview.useCurrentPosition")}
                   </Text>
                 </View>
               </View>
@@ -646,7 +659,10 @@ export default function SellerOverviewScreen({ navigation }) {
             {!!profile?.seller?.gps && (
               <View style={styles.gpsRemoveWrap}>
                 <Pressable
-                  style={({pressed}) => [styles.removeGpsBtn, pressed && styles.buttonPressed]}
+                  style={({ pressed }) => [
+                    styles.removeGpsBtn,
+                    pressed && styles.buttonPressed,
+                  ]}
                   onPress={confirmRemoveGps}
                   hitSlop={10}
                   disabled={savingField === "gps"}
@@ -658,8 +674,8 @@ export default function SellerOverviewScreen({ navigation }) {
                   ></MaterialIcons>
                   <Text style={styles.removeGpsText}>
                     {savingField === "gps"
-                      ? "Suppression..."
-                      : "Supprimer la position GPS"}
+                      ? t("selerOverview.removing")
+                      : t("sellerOverview.removeGps")}
                   </Text>
                 </Pressable>
               </View>
@@ -684,7 +700,7 @@ export default function SellerOverviewScreen({ navigation }) {
                   color={COLORS.text}
                 ></MaterialIcons>
                 <Text style={styles.mapEmptyText}>
-                  Aucune position GPS enregistrée
+                  {t("sellerOverview.noGpsSaved")}
                 </Text>
               </View>
             )}
@@ -692,7 +708,10 @@ export default function SellerOverviewScreen({ navigation }) {
 
           {/* Info */}
           <Pressable
-            style={({pressed}) => [styles.rulesCard, pressed && styles.buttonPressed]}
+            style={({ pressed }) => [
+              styles.rulesCard,
+              pressed && styles.buttonPressed,
+            ]}
             onPress={() => setRulesVisible(true)}
           >
             <View style={styles.rulesCardLeft}>
@@ -704,10 +723,9 @@ export default function SellerOverviewScreen({ navigation }) {
                 ></MaterialIcons>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.rulesTitle}>Règles et consignes</Text>
+                <Text style={styles.rulesTitle}>{t("sellerOverview.rulesTitle")}</Text>
                 <Text style={styles.rulesSub}>
-                  Lire les bonnes pratiques pour maximiser votre visibilité
-                  auprès des clients
+                 {t("sellerOverview.rulesSub")}
                 </Text>
               </View>
             </View>
@@ -715,8 +733,10 @@ export default function SellerOverviewScreen({ navigation }) {
 
           <Text style={styles.lastUpdate}>
             {lastUpdated
-              ? `Dernière mise à jour : ${formatDateFr(lastUpdated)}`
-              : "Dernière mise à jour : -"}
+              ? t("sellerOverview.lastUpdatedValue", {
+                  date: formatDateByLocale(lastUpdated, t("common.locale")),
+                })
+              : t("sellerOverview.lastUpdatedEmpty")}
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>

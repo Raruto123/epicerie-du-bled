@@ -11,6 +11,8 @@ import { Pressable } from "react-native";
 import { useCallback, useState } from "react";
 import NoLocationToast from "../../components/noLocationToast";
 import { PRODUCT_FALLBACK_IMAGE } from "../../constants/fallbackImages";
+import { useTranslation } from "react-i18next";
+import { CATEGORY_LABEL_TO_KEY } from "../../constants/productCategories";
 
 /** ---------- UI subcomponents ---------- */
 function ImageCard({ uri }) {
@@ -24,7 +26,7 @@ function ImageCard({ uri }) {
   );
 }
 
-function CompareRow({ label, left, right, variant }) {
+function CompareRow({ label, left, right, variant, t }) {
   const isHighlight = variant === "highlight";
 
   return (
@@ -49,7 +51,7 @@ function CompareRow({ label, left, right, variant }) {
   );
 }
 
-function StockPill({ inStock }) {
+function StockPill({ inStock, t }) {
   const ok = !!inStock;
   return (
     <View style={styles.centerRow}>
@@ -57,13 +59,13 @@ function StockPill({ inStock }) {
       <Text
         style={[styles.stockText, ok ? styles.stockGreen : styles.stockRed]}
       >
-        {ok ? "En stock" : "Rupture"}
+        {ok ? t("common.inStock") : t("common.outOfStock")}
       </Text>
     </View>
   );
 }
 
-function DistancePill({ km }) {
+function DistancePill({ km, t }) {
   const hasDistance = km != null && !Number.isNaN(Number(km));
   return (
     <View style={styles.centerRow}>
@@ -73,32 +75,44 @@ function DistancePill({ km }) {
         color={COLORS.muted}
       ></MaterialIcons>
       <Text style={styles.valueText}>
-        {hasDistance ? `${Number(km).toFixed(1)} km` : "Distance inconnue"}
+        {hasDistance
+          ? t("compare.distanceValue", { distance: Number(km).toFixed(1) })
+          : t("compare.unknownDistance")}
       </Text>
     </View>
   );
 }
 
-function SellerBlock({ name, address }) {
+function SellerBlock({ name, address, t }) {
   return (
     <View style={{ alignItems: "center" }}>
       <Text style={styles.sellerName} numberOfLines={1}>
-        {name || "Épicerie"}
+        {name || t("compare.defaultStore")}
       </Text>
       <Text style={styles.sellerSub} numberOfLines={1}>
-        {address || "Adresse non renseignée"}
+        {address || t("compare.addressNotProvided")}
       </Text>
     </View>
   );
 }
 export default function CompareScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   const first = route?.params?.first ?? null;
   const second = route?.params?.second ?? null;
 
+  const safeFirst = first ?? {};
+  const safeSecond = second ?? {}
+
   console.log("first = ", first);
   console.log("second = ", second);
+
+  const getLocalizedCategory = (label) => {
+    if (!label) return t("categories.autres");
+    const key = CATEGORY_LABEL_TO_KEY[label];
+    return key ? t(`categories.${key}`) : label
+  }
 
   const [toast, setToast] = useState({
     visible: false,
@@ -124,20 +138,22 @@ export default function CompareScreen({ navigation, route }) {
       const lat = Number(gps.latitude);
       const lng = Number(gps.longitude);
 
-      url =
-        Platform.OS === "ios"
-          ? `https://maps.apple.com/?q=${lat},${lng}`
-          : `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+      // url =
+      //   Platform.OS === "ios"
+      //     ? `https://maps.apple.com/?q=${lat},${lng}`
+      //     : `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+      url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
     } else if (address?.trim()) {
       const q = encodeURIComponent(address.trim());
 
-      url =
-        Platform.OS === "ios"
-          ? `https://maps.apple.com/?q=${q}`
-          : `https://www.google.com/maps/search/?api=1&query=${q}`;
+      // url =
+      //   Platform.OS === "ios"
+      //     ? `https://maps.apple.com/?q=${q}`
+      //     : `https://www.google.com/maps/search/?api=1&query=${q}`;
+      url = `https://www.google.com/maps/search/?api=1&query=${q}`;
     } else {
       showToast(
-        "L'épicier n'a spécifié aucune localisation. Impossible d'ouvrir la carte.",
+        t("compare.noLocationToast"),
         "error",
       );
       return;
@@ -145,10 +161,19 @@ export default function CompareScreen({ navigation, route }) {
 
     Linking.openURL(url).catch((e) => {
       console.log("❌ openMapsForCompare failed:", e?.message ?? e);
-      showToast("Impossible d'ouvrir l'application de cartes.", "error");
+      showToast(t("compare.openMapsError"), "error");
     });
   }
 
+  if (!first || !second) {
+  return (
+    <SafeAreaView style={styles.safe} edges={["top", "right", "left"]}>
+      <View style={[styles.center, { paddingHorizontal: 24 }]}>
+        <Text style={styles.valueText}>{t("compare.missingProducts")}</Text>
+      </View>
+    </SafeAreaView>
+  );
+}
   return (
     <SafeAreaView style={styles.safe} edges={["top", "right", "left"]}>
       {/* Top Bar */}
@@ -165,7 +190,7 @@ export default function CompareScreen({ navigation, route }) {
           ></MaterialIcons>
         </Pressable>
         <Text style={styles.topTitle} numberOfLines={1}>
-          Comparaison de Produits
+          {t("compare.title")}
         </Text>
         {/* Spacer right to center title */}
         <View style={{ width: 40 }}></View>
@@ -176,61 +201,61 @@ export default function CompareScreen({ navigation, route }) {
       >
         {/* Image row */}
         <View style={styles.imagesGrid}>
-          <ImageCard uri={first.photoURL}></ImageCard>
-          <ImageCard uri={second.photoURL}></ImageCard>
+          <ImageCard uri={safeFirst.photoURL}></ImageCard>
+          <ImageCard uri={safeSecond.photoURL}></ImageCard>
         </View>
         {/* Secion header */}
         <View style={styles.sectionStrip}>
-          <Text style={styles.sectionStripTitle}>Analyse Comparative</Text>
+          <Text style={styles.sectionStripTitle}>{t("compare.analysis")}</Text>
         </View>
         {/* Rows */}
         <View style={styles.rowsWrap}>
           <CompareRow
-            label="NOM"
-            left={<Text style={styles.valueText}>{first.name}</Text>}
-            right={<Text style={styles.valueText}>{second.name}</Text>}
+            label={t("compare.labels.name")}
+            left={<Text style={styles.valueText}>{safeFirst.name}</Text>}
+            right={<Text style={styles.valueText}>{safeSecond.name}</Text>}
           ></CompareRow>
           <CompareRow
-            label="PRIX"
+            label={t("compare.labels.price")}
             variant="highlight"
             left={
               <View style={styles.priceCell}>
                 <Text style={[styles.priceText, { color: COLORS.primary }]}>
-                  {Number(first?.price ?? 0).toFixed(2)} $
+                  {t("compare.priceValue", { price: Number(safeFirst?.price ?? 0).toFixed(2) })}
                 </Text>
               </View>
             }
             right={
               <View style={styles.priceCell}>
                 <Text style={[styles.priceText, { color: COLORS.primary }]}>
-                  {Number(second?.price ?? 0).toFixed(2)} $
+                  {t("compare.priceValue", { price: Number(safeSecond?.price ?? 0).toFixed(2) })}
                 </Text>
               </View>
             }
           ></CompareRow>
           <CompareRow
-            label="STOCK"
-            left={<StockPill inStock={first.inStock}></StockPill>}
-            right={<StockPill inStock={second.inStock}></StockPill>}
+            label={t("compare.labels.stock")}
+            left={<StockPill inStock={safeFirst.inStock} t={t}></StockPill>}
+            right={<StockPill inStock={safeSecond.inStock} t={t}></StockPill>}
           ></CompareRow>
           <CompareRow
-            label="DISTANCE"
-            left={<DistancePill km={first.distanceKm}></DistancePill>}
-            right={<DistancePill km={second.distanceKm}></DistancePill>}
+            label={t("compare.labels.distance")}
+            left={<DistancePill km={safeFirst.distanceKm} t={t}></DistancePill>}
+            right={<DistancePill km={safeSecond.distanceKm} t={t}></DistancePill>}
           ></CompareRow>
           <CompareRow
-            label="ÉPICERIE"
+            label={t("compare.labels.store")}
             left={
               <SellerBlock
-                name={first.sellerName}
-                address={first.sellerAddress}
-              ></SellerBlock>
+                name={safeFirst.sellerName}
+                address={safeFirst.sellerAddress}
+              t={t}></SellerBlock>
             }
             right={
               <SellerBlock
-                name={second.sellerName}
-                address={second.sellerAddress}
-              ></SellerBlock>
+                name={safeSecond.sellerName}
+                address={safeSecond.sellerAddress}
+              t={t}></SellerBlock>
             }
           ></CompareRow>
           {/* Buttons row */}
@@ -242,8 +267,8 @@ export default function CompareScreen({ navigation, route }) {
               ]}
               onPress={() =>
                 openMapsForCompare({
-                  gps: first?.sellerGps,
-                  address: first?.sellerAddress,
+                  gps: safeFirst?.sellerGps,
+                  address: safeFirst?.sellerAddress,
                 })
               }
             >
@@ -253,7 +278,7 @@ export default function CompareScreen({ navigation, route }) {
                 color="white"
               ></MaterialIcons>
               <Text style={styles.primaryBtnText} numberOfLines={1}>
-                Itinéraire
+                {t("compare.itinerary")}
               </Text>
             </Pressable>
             <Pressable
@@ -263,8 +288,8 @@ export default function CompareScreen({ navigation, route }) {
               ]}
               onPress={() =>
                 openMapsForCompare({
-                  gps: second?.sellerGps,
-                  address: second?.sellerAddress,
+                  gps: safeSecond?.sellerGps,
+                  address: safeSecond?.sellerAddress,
                 })
               }
             >
@@ -274,7 +299,7 @@ export default function CompareScreen({ navigation, route }) {
                 color={COLORS.primary}
               ></MaterialIcons>
               <Text style={styles.secondaryBtnText} numberOfLines={1}>
-                Itinéraire
+                {t("compare.itinerary")}
               </Text>
             </Pressable>
           </View>
@@ -292,6 +317,11 @@ export default function CompareScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
+  center: {
+  flex: 1,
+  alignItems: "center",
+  justifyContent: "center",
+},
   safe: { flex: 1, backgroundColor: COLORS.bg },
 
   topBar: {

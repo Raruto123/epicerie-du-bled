@@ -36,7 +36,11 @@ import GroceryStoreHeader from "../../components/groceryStoreHeader";
 import NoLocationToast from "../../components/noLocationToast";
 import { normalizeText } from "../../utils/normalizeText";
 import { PRODUCT_FALLBACK_IMAGE } from "../../constants/fallbackImages";
-import { CATEGORY_ORDER } from "../../constants/productCategories";
+import {
+  CATEGORY_LABEL_TO_KEY,
+  CATEGORY_ORDER,
+} from "../../constants/productCategories";
+import { useTranslation } from "react-i18next";
 
 // ✅ Catégories style "sections"
 
@@ -48,15 +52,16 @@ function formatPrice(x) {
 export default function GroceryStoreScreen({ navigation, route }) {
   console.log(route.params);
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const grocery = route?.params?.grocery ?? null;
   const userLocation = route?.params?.userLocation ?? null;
 
   const groceryId = grocery?.id ?? "g-0";
-  const groceryName = grocery?.name ?? "Épicerie";
+  const groceryName = grocery?.name ?? t("groceryStore.defaultStore");
   const groceryAddress = grocery?.address ?? null;
   const groceryDistance =
     grocery?.distanceKm == null ? null : Number(grocery.distanceKm);
-  const groceryDesc = grocery?.description ?? "Aucune description kgjgjg";
+  const groceryDesc = grocery?.description ?? t("groceryStore.noDescription");
 
   const logoSource = useMemo(() => {
     return grocery?.photoURL ? { uri: grocery.photoURL } : null;
@@ -108,15 +113,12 @@ export default function GroceryStoreScreen({ navigation, route }) {
       //     : `https://www.google.com/maps/search/?api=1&query=${q}`;
       url = `https://www.google.com/maps/search/?api=1&query=${q}`;
     } else {
-      showToast(
-        "L'épicier n'a spécifié aucune localisation. Impossible d'ouvrir la carte.",
-        "error",
-      );
+      showToast(t("groceryStore.noLocationToast"), "error");
       return;
     }
     Linking.openURL(url).catch((e) => {
       console.log("❌ openMapsForGrocery failed:", e?.message ?? e);
-      showToast("Impossible d'ouvrir l'application de cartes.", "error")
+      showToast(t("groceryStore.openMapsError"), "error");
     });
   }
   useEffect(() => {
@@ -257,9 +259,7 @@ export default function GroceryStoreScreen({ navigation, route }) {
       const name = normalizeText(p?.name);
       const cat = normalizeText(p?.cat);
       const price = String(p?.price ?? "");
-      return (
-        name.includes(q) || cat.includes(q) || price.includes(q)
-      );
+      return name.includes(q) || cat.includes(q) || price.includes(q);
     });
   }, [items, query]);
 
@@ -267,18 +267,27 @@ export default function GroceryStoreScreen({ navigation, route }) {
   const sections = useMemo(() => {
     const map = new Map();
     for (const product of filtered) {
-      const k = product.cat || "Autres";
-      if (!map.has(k)) map.set(k, []);
-      map.get(k).push(product);
+      const label = product.cat || "Autres";
+      if (!map.has(label)) map.set(label, []);
+      map.get(label).push(product);
     }
 
-    const orderedKeys = [
-      ...CATEGORY_ORDER.filter((k) => map.has(k)),
-      ...Array.from(map.keys()).filter((k) => !CATEGORY_ORDER.includes(k)),
+    const orderedLabels = [
+      ...CATEGORY_ORDER.filter((label) => map.has(label)),
+      ...Array.from(map.keys()).filter(
+        (label) => !CATEGORY_ORDER.includes(label),
+      ),
     ];
 
-    return orderedKeys.map((k) => ({ key: k, items: map.get(k) || [] }));
-  }, [filtered]);
+    return orderedLabels.map((label) => {
+      const categoryKey = CATEGORY_LABEL_TO_KEY[label];
+      return {
+        key: label,
+        items: map.get(label) || [],
+        title: categoryKey ? t(`categories.${categoryKey}`) : label,
+      };
+    });
+  }, [filtered, t]);
 
   const renderSection = ({ item: section }) => {
     const data = section.items || [];
@@ -288,9 +297,9 @@ export default function GroceryStoreScreen({ navigation, route }) {
       <View style={{ paddingHorizontal: 16, marginTop: 18 }}>
         {/* Section header */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{section.key}</Text>
+          <Text style={styles.sectionTitle}>{section.title}</Text>
           <View style={styles.countPill}>
-            <Text style={styles.countPillText}>{data.length} articles</Text>
+            <Text style={styles.countPillText}>{t("groceryStore.articlesCount", {count : data.length})}</Text>
           </View>
         </View>
 
@@ -310,10 +319,14 @@ export default function GroceryStoreScreen({ navigation, route }) {
                 onPress={() => openProduct(item)}
               >
                 <View style={[styles.hImgWrap, !inStock && styles.pImgWrapOut]}>
-                    <Image
-                      source={item.photoURL ? { uri: item.photoURL } : PRODUCT_FALLBACK_IMAGE}
-                      style={[styles.pImg, !inStock && styles.pImgOut]}
-                    />
+                  <Image
+                    source={
+                      item.photoURL
+                        ? { uri: item.photoURL }
+                        : PRODUCT_FALLBACK_IMAGE
+                    }
+                    style={[styles.pImg, !inStock && styles.pImgOut]}
+                  />
 
                   {/* Badge stock */}
                   <View style={styles.badgeWrap}>
@@ -324,7 +337,7 @@ export default function GroceryStoreScreen({ navigation, route }) {
                       ]}
                     >
                       <Text style={styles.badgeText}>
-                        {inStock ? "En stock" : "Rupture"}
+                        {inStock ? t("common.inStock") : t("common.outOfStock")}
                       </Text>
                     </View>
                   </View>
@@ -398,8 +411,8 @@ export default function GroceryStoreScreen({ navigation, route }) {
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
               <MaterialIcons name="inventory-2" size={28} color="#9ca3af" />
-              <Text style={styles.emptyTitle}>Aucun produit</Text>
-              <Text style={styles.emptySub}>Essaie une autre recherche</Text>
+              <Text style={styles.emptyTitle}>{t("groceryStore.emptyTitle")}</Text>
+              <Text style={styles.emptySub}>{t("groceryStore.emptySub")}</Text>
             </View>
           }
         />

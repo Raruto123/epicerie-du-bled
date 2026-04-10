@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { COLORS } from "../constants/colors";
 import { GROCERY_FALLBACK_IMAGE } from "../constants/fallbackImages";
+import { useTranslation } from "react-i18next";
 
 export default function GroceryStoreHeader({
   navigation,
@@ -24,6 +25,9 @@ export default function GroceryStoreHeader({
   setQuery,
   onPressMap,
 }) {
+
+  const {t} = useTranslation();
+
   return (
     <View>
       <View style={styles.headerShell}>
@@ -66,16 +70,18 @@ export default function GroceryStoreHeader({
             ></MaterialIcons>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.locationKicker}>Localisation</Text>
+            <Text style={styles.locationKicker}>{t("groceryStoreHeader.location")}</Text>
             <Text style={styles.locationAddr} numberOfLines={2}>
               {groceryAddress === null
-                ? "Adresse non renseignée"
+                ? t("groceryStoreHeader.addressNotProvided")
                 : groceryAddress}
             </Text>
             <Text style={styles.locationSub}>
               {groceryDistance == null
-                ? "Distance inconnue"
-                : `À ${groceryDistance.toFixed(1)} km de votre position`}
+                ? t("groceryStoreHeader.unknownDistance")
+                : t("groceryStoreHeader.distanceFromPosition", {
+                  distance : groceryDistance.toFixed(1)
+                })}
             </Text>
           </View>
 
@@ -101,7 +107,7 @@ export default function GroceryStoreHeader({
             <TextInput
               value={query}
               onChangeText={setQuery}
-              placeholder="Rechercher un produit de cette épicerie..."
+              placeholder={t('groceryStoreHeader.searchPlaceholder')}
               placeholderTextColor={COLORS.muted}
               style={styles.searchInput}
               returnKeyType="search"

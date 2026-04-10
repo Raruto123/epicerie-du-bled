@@ -5,28 +5,23 @@
  * Exemple: 12 octobre 2023
  */
 
-export function formatDateFr(value) {
-    if (!value) return '';
+export function formatDateByLocale(dateValue, locale = "fr-CA") {
+  if (!dateValue) return "-";
 
-    let date;
-  // Firestore Timestamp a une méthode toDate()
-    if (typeof value?.toDate === "function") {
-        date = value.toDate();
-    } else if (value instanceof Date) {
-        date = value;
-    } else if (typeof value === "number") {
-        date = new Date(value);
-    } else {
-            // fallback: tentative
-            date = new Date(value);
-    }
+  let date;
 
-    if (Number.isNaN(date.getTime())) return '';
+  if (dateValue?.toDate) {
+    date = dateValue.toDate();
+  } else {
+    date = new Date(dateValue);
+  }
 
-    return new Intl.DateTimeFormat("fr-CA", {
-        day:"2-digit",
-        month:"long",
-        year:"numeric"
-    }).format(date);
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(date);
 
 }

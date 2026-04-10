@@ -3,6 +3,7 @@ import { Keyboard, Pressable, Text, TextInput } from "react-native";
 import { StyleSheet, View } from "react-native";
 import { COLORS } from "../constants/colors";
 import { FlatList } from "react-native";
+import { useTranslation } from "react-i18next";
 
 export const HomeHeader = ({
   locationStatus,
@@ -17,6 +18,7 @@ export const HomeHeader = ({
   filteredCount,
   cats,
 }) => {
+  const { t } = useTranslation();
   return (
     <View>
       {/* Top Header */}
@@ -42,7 +44,7 @@ export const HomeHeader = ({
           >
             {locationStatus === "granted"
               ? locationLabel
-              : "Aucune localisation"}
+              : t("home.noLocation")}
           </Text>
         </Pressable>
         <MaterialIcons
@@ -62,7 +64,7 @@ export const HomeHeader = ({
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Attiéké, igname, épices..."
+            placeholder={t("home.searchPlaceholder")}
             placeholderTextColor="#9ca3af"
             style={styles.searchInput}
             returnKeyType="search"
@@ -124,7 +126,7 @@ export const HomeHeader = ({
                     active ? styles.catTextActive : styles.catTextIdle,
                   ]}
                 >
-                  {item.key}
+                  {item.label}
                 </Text>
               </Pressable>
             );
@@ -133,7 +135,9 @@ export const HomeHeader = ({
       </View>
       {/* Section Title */}
       <View style={styles.sectionRow}>
-        <Text style={styles.sectionKicker}>Produits ({filteredCount})</Text>
+        <Text style={styles.sectionKicker}>
+          {t("home.productsCount", { count: filteredCount })}
+        </Text>
       </View>
     </View>
   );

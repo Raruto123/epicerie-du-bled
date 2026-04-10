@@ -3,6 +3,7 @@ import { Platform, Pressable, Text } from "react-native";
 import { Modal, View } from "react-native";
 import { StyleSheet } from "react-native";
 import { COLORS } from "../constants/colors";
+import { useTranslation } from "react-i18next";
 
 export default function FiltersModal({
   visible,
@@ -15,6 +16,9 @@ export default function FiltersModal({
   hasActiveFilters,
   onReset,
 }) {
+
+  const {t} = useTranslation();
+
   return (
     <Modal
       visible={visible}
@@ -25,7 +29,7 @@ export default function FiltersModal({
       onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
-        <Pressable onPress={onClose}>
+        <Pressable style={{flex:1}} onPress={onClose}></Pressable>
           <View style={styles.sheet}>
             <View style={styles.sheetHandle}></View>
             {/* Header */}
@@ -38,10 +42,10 @@ export default function FiltersModal({
                     gap: 10,
                   }}
                 >
-                  <Text style={styles.sheetTitle}>Trier par</Text>
+                  <Text style={styles.sheetTitle}>{t("filters.title")}</Text>
                   {hasActiveFilters && (
                     <View style={styles.activeBadge}>
-                      <Text style={styles.activeBadgeText}>Filtres actifs</Text>
+                      <Text style={styles.activeBadgeText}>{t("filters.active")}</Text>
                     </View>
                   )}
                 </View>
@@ -80,7 +84,7 @@ export default function FiltersModal({
               </View>
             </View>
             {/* Prix */}
-            <Text style={styles.sheetSectionKicker}>Prix</Text>
+            <Text style={styles.sheetSectionKicker}>{t("filters.price")}</Text>
             <Pressable
               onPress={() => setSortBy("price_low")}
               style={[
@@ -104,7 +108,7 @@ export default function FiltersModal({
                       : styles.choiceTextIdle,
                   ]}
                 >
-                  Prix le plus bas
+                  {t("filters.priceLow")}
                 </Text>
               </View>
               {sortBy === "price_low" ? (
@@ -139,7 +143,7 @@ export default function FiltersModal({
                       : styles.choiceTextIdle,
                   ]}
                 >
-                  Prix le plus haut
+                  {t("filters.priceHigh")}
                 </Text>
               </View>
               {sortBy === "price_high" ? (
@@ -153,7 +157,7 @@ export default function FiltersModal({
 
             {/* Distance */}
             <Text style={[styles.sheetSectionKicker, { marginTop: 18 }]}>
-              Distance
+              {t("filters.distance")}
             </Text>
             <View style={styles.nearGrid}>
               <Pressable
@@ -178,7 +182,7 @@ export default function FiltersModal({
                       : styles.nearTextIdle,
                   ]}
                 >
-                  Plus proche
+                  {t("filters.nearest")}
                 </Text>
                 {nearBy === "near" && (
                   <MaterialIcons
@@ -211,7 +215,7 @@ export default function FiltersModal({
                       : styles.nearTextIdle,
                   ]}
                 >
-                  Plus loin
+                  {t("filters.farthest")}
                 </Text>
                 {nearBy === "far" && (
                   <MaterialIcons
@@ -233,12 +237,11 @@ export default function FiltersModal({
                 onClose?.();
               }}
             >
-              <Text style={styles.applyBtnText}>Appliquer les filtres</Text>
+              <Text style={styles.applyBtnText}>{t("filters.apply")}</Text>
             </Pressable>
 
             <View style={{ height: Platform.OS === "ios" ? 6 : 0 }}></View>
           </View>
-        </Pressable>
       </View>
     </Modal>
   );

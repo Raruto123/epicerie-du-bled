@@ -24,13 +24,19 @@ import { useFocusEffect } from "@react-navigation/native";
 import { GroceriesHeader } from "../../components/groceriesListHeader";
 import { GroceriesFiltersModal } from "../../components/groceriesListFiltersModal";
 import { normalizeText } from "../../utils/normalizeText";
-import { GROCERY_FALLBACK_IMAGE, GROCERY_LIST_FALLBACK_IMAGE } from "../../constants/fallbackImages";
+import {
+  GROCERY_FALLBACK_IMAGE,
+  GROCERY_LIST_FALLBACK_IMAGE,
+} from "../../constants/fallbackImages";
+import { useTranslation } from "react-i18next";
 
 export default function GroceriesListScreen({
   navigation,
   userLocation,
   locationStatus,
 }) {
+  const { t } = useTranslation();
+
   const insets = useSafeAreaInsets();
 
   const [loading, setLoading] = useState(true);
@@ -117,13 +123,14 @@ export default function GroceriesListScreen({
   const headerEl = useMemo(() => {
     return (
       <GroceriesHeader
+        title={t("groceries.title")}
         query={query}
         setQuery={setQuery}
         hasActiveFilters={hasActiveFilters}
         onOpenFilters={() => setShowFilters(true)}
       ></GroceriesHeader>
     );
-  });
+  }, [query, hasActiveFilters, t]);
 
   const renderItem = ({ item }) => (
     <Pressable style={styles.card} onPress={() => onOpenGrocery(item)}>
@@ -146,7 +153,7 @@ export default function GroceriesListScreen({
             color={COLORS.muted}
           ></MaterialIcons>
           <Text style={styles.addrText} numberOfLines={2}>
-            {item.address ?? "Adresse non renseignée"}
+            {item.address ?? t("groceries.addressNotProvided")}
           </Text>
         </View>
         <View style={styles.distRow}>
@@ -157,7 +164,7 @@ export default function GroceriesListScreen({
           ></MaterialIcons>
           <Text style={styles.distText}>
             {item.distanceKm == null
-              ? "Distance inconnue"
+              ? t("groceries.distanceUnknown")
               : `${Number(item.distanceKm).toFixed(1)} km`}
           </Text>
         </View>
@@ -200,9 +207,11 @@ export default function GroceriesListScreen({
                   size={28}
                   color={COLORS.muted}
                 ></MaterialIcons>
-                <Text style={styles.emptyTitle}>Aucune épicerie trouvée</Text>
+                <Text style={styles.emptyTitle}>
+                  {t("groceries.emptyTitle")}
+                </Text>
                 <Text style={styles.emptySub}>
-                  Essaie avec un autre mot-clé
+                  {t("groceries.emptySubtitle")}
                 </Text>
               </View>
             }

@@ -25,9 +25,8 @@ import { HomeHeader } from "../../components/homeHeader";
 import FiltersModal from "../../components/homeScreenFiltersModal";
 import { normalizeText } from "../../utils/normalizeText";
 import { PRODUCT_FALLBACK_IMAGE } from "../../constants/fallbackImages";
-import { HOME_CATEGORIES } from "../../constants/productCategories";
-
-
+import { CATEGORY_LABEL_TO_KEY, HOME_CATEGORIES } from "../../constants/productCategories";
+import { useTranslation } from "react-i18next";
 
 export default function HomeScreen({
   navigation,
@@ -40,7 +39,7 @@ export default function HomeScreen({
 }) {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
-  const [activeCat, setActiveCat] = useState("Tout");
+  const [activeCat, setActiveCat] = useState("all");
 
   const [items, setItems] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -60,6 +59,26 @@ export default function HomeScreen({
   const mainListRef = useRef(null);
   const lastScrollYRef = useRef(0);
 
+  const favIdsRef = useRef(favIds ?? new Set());
+
+
+
+  const { t } = useTranslation();
+
+const localizedHomeCategories = useMemo(() => {
+  return HOME_CATEGORIES.map((cat) => ({
+    ...cat,
+    label:
+      cat.key === "all"
+        ? t("home.categories.all")
+        : t(`categories.${cat.key}`),
+  }));
+}, [t]);
+
+useEffect(() => {
+  favIdsRef.current = favIds ?? new Set();
+}, [favIds])
+
   //Simulation now but Later with Firestore
   const fetchNextPage = useCallback(async () => {
     if (loadingMore || !hasMore) return;
@@ -69,13 +88,13 @@ export default function HomeScreen({
       const res = await fetchProductsPage({
         pageSize: 10,
         cursor,
-        cat: activeCat,
+        cat: activeCat === "all" ? "Tout" : CATEGORY_LABEL_TO_KEY[activeCat],
         userLocation: locationStatus === "granted" ? userLocation : null,
       });
 
       const mapped = res.items.map((p) => ({
         ...p,
-        isFav: favIds ? favIds?.has(p.id) : false,
+        isFav: favIdsRef.current ? favIdsRef.current.has(p.id) : false,
       }));
       setItems((prev) => {
         const map = new Map(prev.map((p) => [p.id, p]));
@@ -106,7 +125,7 @@ export default function HomeScreen({
     const base = items.filter((p) => {
       const normalizedName = normalizeText(p.name);
       const normalizedPrice = normalizeText(p.price);
-      const matchCat = activeCat === "Tout" ? true : true;
+      const matchCat = activeCat === "all" ? true : p.cat === CATEGORY_LABEL_TO_KEY[activeCat];
       const matchQuery =
         !q || normalizedName.includes(q) || normalizedPrice.includes(q);
       return matchCat && matchQuery;
@@ -198,13 +217,13 @@ export default function HomeScreen({
         const res = await fetchProductsPage({
           pageSize: 10,
           cursor: null,
-          cat: activeCat,
+          cat: activeCat === "all" ? "Tout" : CATEGORY_LABEL_TO_KEY[activeCat],
           userLocation: locationStatus === "granted" ? userLocation : null,
         });
 
         const mapped = res.items.map((p) => ({
           ...p,
-          isFav: favIds ? favIds.has(p.id) : false,
+          isFav: favIdsRef.current ? favIdsRef.current.has(p.id) : false,
         }));
         setItems(mapped);
         setCursor(res.cursor);
@@ -234,7 +253,7 @@ export default function HomeScreen({
         }, 0);
       }
     },
-    [activeCat, locationStatus, userLocation, favIds],
+    [activeCat, locationStatus, userLocation],
   );
 
   useEffect(() => {
@@ -256,10 +275,12 @@ export default function HomeScreen({
         ></FavButton>
         {/* Image */}
         <View style={styles.imgWrap}>
-            <Image
-              source={item.photoURL ? { uri: item.photoURL } : PRODUCT_FALLBACK_IMAGE}
-              style={[styles.img, !inStock && styles.imgOut]}
-            ></Image>
+          <Image
+            source={
+              item.photoURL ? { uri: item.photoURL } : PRODUCT_FALLBACK_IMAGE
+            }
+            style={[styles.img, !inStock && styles.imgOut]}
+          ></Image>
           <View style={styles.stockBadgeWrap}>
             <View
               style={[
@@ -268,7 +289,7 @@ export default function HomeScreen({
               ]}
             >
               <Text style={styles.stockBadgeText}>
-                {inStock ? "En stock" : "Rupture"}
+                {inStock ? t("common.inStock") : t("common.outOfStock")}
               </Text>
             </View>
           </View>
@@ -333,7 +354,7 @@ export default function HomeScreen({
               activeCat={activeCat}
               setActiveCat={setActiveCat}
               filteredCount={filtered.length}
-              cats={HOME_CATEGORIES}
+              cats={localizedHomeCategories}
             ></HomeHeader>
           }
           contentContainerStyle={{ paddingBottom: 18 + insets.bottom }}
@@ -356,7 +377,7 @@ export default function HomeScreen({
               </View>
             ) : !hasMore ? (
               <View style={styles.footerEnd}>
-                <Text style={styles.footerEndText}>Fin des produits</Text>
+                <Text style={styles.footerEndText}>{t("home.endOfProducts")}</Text>
               </View>
             ) : (
               <View style={{ height: 10 }}></View>
