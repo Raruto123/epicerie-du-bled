@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS } from "../../constants/colors";
 import { MaterialIcons } from "@expo/vector-icons";
 import MapView, { Marker } from "react-native-maps";
+import { useTranslation } from "react-i18next";
 
 export default function SellerLocationPickerScreen({ navigation, route }) {
   const mapRef = useRef(null);
@@ -30,6 +31,8 @@ export default function SellerLocationPickerScreen({ navigation, route }) {
   );
 
   const [accuracy, setAccuracy] = useState(null);
+
+  const {t} = useTranslation();
 
   const region = useMemo(
     () => ({
@@ -141,14 +144,14 @@ export default function SellerLocationPickerScreen({ navigation, route }) {
               size={18}
               color={COLORS.text}
             ></MaterialIcons>
-            <Text style={styles.topBtnText}>Retour</Text>
+            <Text style={styles.topBtnText}>{t("sellerLocationPicker.back")}</Text>
           </View>
         </Pressable>
 
-        <Text style={styles.title}>Position de l'épicerie</Text>
+        <Text style={styles.title}>{t("sellerLocationPicker.title")}</Text>
 
         <Pressable onPress={confirm} style={styles.validateBtn}>
-          <Text style={styles.validateText}>Valider</Text>
+          <Text style={styles.validateText}>{t("sellerLocationPicker.validate")}</Text>
         </Pressable>
       </View>
       {/* Map */}
@@ -187,13 +190,13 @@ export default function SellerLocationPickerScreen({ navigation, route }) {
                   size={18}
                   color="white"
                 ></MaterialIcons>
-                <Text style={styles.gpsBtnText}>Utiliser ma position</Text>
+                <Text style={styles.gpsBtnText}>{t("sellerLocationPicker.useMyPosition")}</Text>
               </>
             )}
           </Pressable>
 
           <Text style={styles.hint}>
-            Touchez la carte pour placer le marqueur, ou déplacez-le
+            {t("sellerLocationPicker.hint")}
           </Text>
         </View>
       </View>

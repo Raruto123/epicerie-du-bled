@@ -289,6 +289,212 @@ export default {
     },
   },
 
+  // --------
+  // SELLER PRODUCTS SCREEN
+  // --------
+  sellerProducts: {
+    title: "Mes produits",
+    searchPlaceholder: "Rechercher un produit...",
+    currentInventory: "Inventaire actuel ({{count}})",
+    noProductFound: "Aucun produit trouvé",
+
+    inStock: "En stock",
+    outOfStock: "Rupture de stock",
+    outOfStockLong: "En rupture de stock",
+
+    deleteTitle: "Supprimer ce produit ?",
+    deleteMessage: "Cette action est définitive.",
+    cancel: "Annuler",
+    delete: "Supprimer",
+
+    filterBy: "Filtrer par",
+    priceTab: "Prix",
+    stockTab: "Stock",
+
+    between: "Entre",
+    priceRange: "Fourchette de prix (CAD $)",
+    min: "Min",
+    max: "Max",
+    priceMin: "Prix supérieur ou égal à (CAD $)",
+    priceMax: "Prix inférieur ou égal à (CAD $)",
+    enterAmount: "Entrez un montant",
+
+    allItems: "Tous les articles",
+    reset: "Réinitialiser",
+    apply: "Appliquer",
+
+    categories: {
+      all: "Tous",
+    },
+  },
+
+  // --------
+  // SELLER LOCATION PIKCER SCREEN
+  // --------
+  sellerLocationPicker: {
+    back: "Retour",
+    title: "Position de l'épicerie",
+    validate: "Valider",
+    useMyPosition: "Utiliser ma position",
+    hint: "Touchez la carte pour placer le marqueur, ou déplacez-le",
+  },
+
+  // --------
+  // SELLER EDIT PRODUCT SCREEN
+  // --------
+  sellerEditProduct: {
+    title: "Modifier le produit",
+    productPhoto: "Photo du produit",
+    highResolutionRecommended: "Haute résolution recommandée",
+    productDetails: "Détails de l'ingrédient",
+    productName: "Nom du produit",
+    productNamePlaceholder: "Ex : Igname, Piment, Attiéké...",
+    category: "Catégorie",
+    priceCad: "Prix (CAD $)",
+    stockStatus: "État du stock",
+    descriptionOptional: "Description (Optionnel)",
+    descriptionPlaceholder:
+      "Origine du produit, informations, conseils de conservation..",
+    save: "Enregistrer",
+  },
+  // --------
+  // SELLER ADD PRODUCT SCREEN
+  // --------
+  sellerAddProduct: {
+    title: "Ajouter un produit",
+    productPhoto: "Photo du produit",
+    highResolutionRecommended: "Haute résolution recommandée",
+    productDetails: "Détails de l'ingrédient",
+    productName: "Nom du produit",
+    productNamePlaceholder: "Ex: Igname, Piment oiseau, Attiéké...",
+    category: "Catégorie",
+    priceCad: "Prix (CAD $)",
+    stockStatus: "État du stock",
+    descriptionOptional: "Description (Optionnel)",
+    descriptionPlaceholder: "Origine du produit, conseils de conservation...",
+    publishProduct: "Publier le produit",
+    errors: {
+      nameRequired: "Le nom du produit est obligatoire.",
+      priceRequired: "Le prix est obligatoire.",
+      priceInvalid: "Entrez un prix valide supérieur à 0.",
+    },
+  },
+
+  // --------
+  // ONBOARDING SCREEN
+  // --------
+  onboarding: {
+    skip: "Passer",
+    next: "Suivant",
+    start: "Commencer",
+
+    slides: {
+      1: {
+        title: "Trouver des ingrédients africains...",
+        text: "...sans faire 3 magasins, sans être sûr du stock, et sans perdre de temps.",
+      },
+      2: {
+        title: "Tout au même endroit",
+        text: "Découvre les épiceries africaines autour de toi, les produits disponibles, les prix et la distance.",
+      },
+      3: {
+        title: "Acheter ou vendre",
+        text: "Acheteurs : trouvez vos produits facilement.\nVendeurs : gagnez en visibilité et gérez vos produits.",
+      },
+    },
+
+    demo: {
+      marketName: "Marché Tropical",
+      distance: "À 2.4 km de vous",
+      inStockNow: "Actuellement en stock",
+      redPeppers: "Piments Rouges",
+    },
+  },
+
+  // --------
+  // AUTH SCREEN
+  // --------
+  auth: {
+    welcome: "Bienvenue !",
+    createAccount: "Créer un compte",
+    loginSubtitle:
+      "Connectez-vous pour découvrir les épiceries africaines près de chez vous.",
+    signupSubtitle:
+      "Créez votre compte pour acheter ou vendre des produits africains",
+
+    login: "Se connecter",
+    signup: "S'inscrire",
+
+    name: "Nom",
+    yourName: "Votre nom",
+    email: "Email",
+    password: "Mot de passe",
+
+    accountType: "Type de compte",
+    buyer: "Acheteur",
+    seller: "Vendeur",
+
+    buyerAccount: "Compte Acheteur",
+    sellerAccount: "Compte Vendeur",
+
+    buyerAccountDescription:
+      "Pour les amateurs d'épiceries ! \nDécouvrez les épiceries africaines les plus proches, comparez les prix et achetez vos produits favoris plus facilement.",
+    sellerAccountDescription:
+      "Pour les propriétaires d'épiceries ou individus vendant des produits africains ! \nPubliez vos produits, gérez votre stock et augmentez votre visibilité.",
+
+    createTheAccount: "Créer le compte",
+    accountCreated: "Compte créé ! Connectez-vous.",
+    genericError: "Une erreur est survenue",
+  },
+  // AUTH ERRORS MESSAGE
+  authErrors: {
+  nameRequired: "Veuillez entrer votre nom.",
+  nameMinLength: "Le nom doit contenir au moins 4 caractères.",
+
+  emailRequired: "Veuillez entrer votre e-mail.",
+  invalidEmail: "Veuillez entrer une adresse e-mail valide.",
+
+  passwordRequired: "Veuillez entrer un mot de passe.",
+  passwordMinLength: "Le mot de passe doit contenir au moins 6 caractères.",
+
+  networkRequestFailed:
+    "Problème de connexion. Vérifiez Internet puis réessayez.",
+  tooManyRequests: "Trop de tentatives. Réessayez dans quelques minutes.",
+  emailAlreadyInUse:
+    "Cet e-mail est déjà utilisé. Essayez de vous connecter.",
+  weakPassword:
+    "Le mot de passe est trop faible. Minimum 6 caractères.",
+  invalidCredentialsLogin: "E-mail ou mot de passe incorrect.",
+  invalidCredentials: "Identifiants incorrects.",
+  generic: "Une erreur est survenue. Veuillez réessayer.",
+},
+
+ // --------
+  // USER APP JS
+  // --------
+  userApp: {
+  loadingLocation: "Chargement...",
+  noLocation: "Aucune localisation",
+  location: "Localisation...",
+  detectedPosition: "Position détectée",
+  locationSaved: "Localisation enregistrée",
+},
+
+tabs: {
+  home: "ACCUEIL",
+  groceries: "ÉPICERIES",
+  favorites: "FAVORIS",
+  profile: "PROFIL",
+},
+
+ // --------
+  // SELLER BOARD JS
+  // --------
+  sellerBoard: {
+  overviewTab: "APERÇU",
+  productsTab: "PRODUITS",
+},
+
   languages: {
     fr: "Français",
     en: "English",

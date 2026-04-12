@@ -8,11 +8,13 @@ import SellerOverviewScreen from "./sellerOverviewScreen";
 import SellerProductsScreen from "./sellerProductsScreen";
 import SellerAddProductScreen from "./sellerAddProductScreen";
 import SellerEditProductScreen from "./sellerEditProductScreen";
+import { useTranslation } from "react-i18next";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 function SellerTabs() {
+  const { t } = useTranslation();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -21,13 +23,17 @@ function SellerTabs() {
         tabBarInactiveTintColor: "#9ca3af",
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabLabel,
+        tabBarLabel:
+          route.name === "APERÇU"
+            ? t("sellerBoard.overviewTab")
+            : t("sellerBoard.productsTab"),
         tabBarIcon: ({ color, size }) => {
           const name =
             route.name === "APERÇU"
               ? "dashboard"
               : route.name === "PRODUITS"
-              ? "inventory-2"
-              : "dashboard";
+                ? "inventory-2"
+                : "dashboard";
           return (
             <MaterialIcons
               name={name}

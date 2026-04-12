@@ -30,9 +30,11 @@ import {
 } from "../../services/userLocationService";
 import { subscribeUserFavorites } from "../../services/userService";
 import { onAuthStateChanged } from "firebase/auth";
+import { useTranslation } from "react-i18next";
 
 const Tab = createBottomTabNavigator();
 export default function UserApp() {
+  const { t } = useTranslation();
   const [showLocationGate, setShowLocationGate] = useState(false);
   const [ready, setReady] = useState(false);
 
@@ -43,7 +45,7 @@ export default function UserApp() {
   const [favorites, setFavorites] = useState([]);
   const [favIds, setFavIds] = useState(new Set());
 
-  const [uid, setUid] = useState(null)
+  const [uid, setUid] = useState(null);
 
   const [homeRefreshKey, setHomeRefreshKey] = useState(0);
 
@@ -52,7 +54,7 @@ export default function UserApp() {
       const done = await AsyncStorage.getItem(LOCATION_GATE_KEY.HAS_SEEN_GATE);
       // default UI pendant chargement
       setLocationStatus("unknown");
-      setLocationLabel("Chargement...");
+      setLocationLabel(t("userApp.loadingLocation"));
 
       const uid = auth.currentUser?.uid;
       // ✅ si déjà vu, on essaie de récupérer la dernière adresse enregistrée
@@ -76,12 +78,12 @@ export default function UserApp() {
           } else {
             // pas d'adresse enregistrée => on ne sait pas
             setLocationStatus("denied");
-            setLocationLabel("Aucune localisation");
+            setLocationLabel(t("userApp.noLocation"));
           }
         } catch (e) {
           console.log("⚠️ getUserLastLocation failed:", e?.message ?? e);
           setLocationStatus("denied");
-          setLocationLabel("Aucune localisation");
+          setLocationLabel(t("userApp.noLocation"));
         }
         setShowLocationGate(false);
         setReady(true);
@@ -91,43 +93,42 @@ export default function UserApp() {
       if (!done) {
         setShowLocationGate(true);
         setLocationStatus("unknown");
-        setLocationLabel("Localisation...");
+        setLocationLabel(t("userApp.location"));
         setReady(true);
         return;
       }
       // ✅ déjà vu MAIS pas de uid (pas connecté)
       setLocationStatus("denied");
-      setLocationLabel("Aucune localisation");
+      setLocationLabel(t("userApp.noLocation"));
       setShowLocationGate(false);
       setReady(true);
     })();
+  }, [t]);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setUid(user?.uid ?? null);
+    });
+    return unsub;
   }, []);
 
+  useEffect(() => {
+    if (!uid) {
+      setFavorites([]);
+      setFavIds(new Set());
+      return;
+    }
 
-useEffect(() => {
-  const unsub = onAuthStateChanged(auth, (user) => {
-    setUid(user?.uid ?? null);
-  });
-  return unsub;
-}, []);
+    const unsub = subscribeUserFavorites({
+      uid,
+      cb: ({ favoritesArray, favIdsSet }) => {
+        setFavorites(favoritesArray);
+        setFavIds(favIdsSet);
+      },
+    });
 
-useEffect(() => {
-  if (!uid) {
-    setFavorites([]);
-    setFavIds(new Set());
-    return;
-  }
-
-  const unsub = subscribeUserFavorites({
-    uid,
-    cb: ({ favoritesArray, favIdsSet }) => {
-      setFavorites(favoritesArray);
-      setFavIds(favIdsSet);
-    },
-  });
-
-  return () => unsub?.();
-}, [uid]);
+    return () => unsub?.();
+  }, [uid]);
 
   const markGateDone = async () => {
     await AsyncStorage.setItem(LOCATION_GATE_KEY.HAS_SEEN_GATE, "true");
@@ -147,7 +148,7 @@ useEffect(() => {
             // si aucune location n'a été récupérée => on considère "refus / pas dispo"
             if (!location) {
               setLocationStatus("denied");
-              setLocationLabel("Aucune localisation");
+              setLocationLabel(t("userApp.noLocation"));
             }
           }}
           onLocation={async (loc) => {
@@ -160,13 +161,13 @@ useEffect(() => {
               console.log("⚠️ No auth user, location not saved to Firestore.");
               // mais on peut quand même afficher localement :
               setLocationStatus("granted");
-              setLocationLabel("Position détectée");
+              setLocationLabel(t("userApp.detectedPosition"));
               return;
             }
             try {
               const result = await saveUserLocation({ uid, location: loc });
               const formatted =
-                result?.address?.formatted || "Localisation enregistrée";
+                result?.address?.formatted || t("userApp.locationSaved");
 
               setLocationStatus("granted");
               setLocationLabel(formatted);
@@ -175,7 +176,7 @@ useEffect(() => {
               console.log("❌saveUserLocation failed :", e.message ?? e);
               //fallback
               setLocationStatus("denied");
-              setLocationLabel("Aucune localisation");
+              setLocationLabel(t("userApp.noLocation"));
             }
           }}
         ></LocationGateModal>
@@ -187,6 +188,14 @@ useEffect(() => {
           tabBarInactiveTintColor: COLORS.muted,
           tabBarStyle: styles.tabBar,
           tabBarLabelStyle: styles.tabLabel,
+          tabBarLabel:
+            route.name === "ACCUEIL"
+              ? t("tabs.home")
+              : route.name === "EPICERIES"
+                ? t("tabs.groceries")
+                : route.name === "FAVORIS"
+                  ? t("tabs.favorites")
+                  : t("tabs.profile"),
           tabBarIcon: ({ color, size }) => {
             const name = (() => {
               if (route.name === "ACCUEIL") return "home";

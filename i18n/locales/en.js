@@ -287,6 +287,209 @@ export default {
     },
   },
 
+  // --------
+  // SELLER PRODUCTS SCREEN
+  // --------
+  sellerProducts: {
+    title: "My products",
+    searchPlaceholder: "Search for a product...",
+    currentInventory: "Current inventory ({{count}})",
+    noProductFound: "No product found",
+
+    inStock: "In stock",
+    outOfStock: "Out of stock",
+    outOfStockLong: "Out of stock",
+
+    deleteTitle: "Delete this product?",
+    deleteMessage: "This action is permanent.",
+    cancel: "Cancel",
+    delete: "Delete",
+
+    filterBy: "Filter by",
+    priceTab: "Price",
+    stockTab: "Stock",
+
+    between: "Between",
+    priceRange: "Price range (CAD $)",
+    min: "Min",
+    max: "Max",
+    priceMin: "Price greater than or equal to (CAD $)",
+    priceMax: "Price less than or equal to (CAD $)",
+    enterAmount: "Enter an amount",
+
+    allItems: "All items",
+    reset: "Reset",
+    apply: "Apply",
+
+    categories: {
+      all: "All",
+    },
+  },
+
+  // --------
+  // SELLER LOCATION PIKCER SCREEN
+  // --------
+  sellerLocationPicker: {
+    back: "Back",
+    title: "Store location",
+    validate: "Confirm",
+    useMyPosition: "Use my location",
+    hint: "Tap the map to place the marker, or drag it",
+  },
+
+  // --------
+  // SELLER EDIT PRODUCT SCREEN
+  // --------
+  sellerEditProduct: {
+    title: "Edit product",
+    productPhoto: "Product photo",
+    highResolutionRecommended: "High resolution recommended",
+    productDetails: "Product details",
+    productName: "Product name",
+    productNamePlaceholder: "Ex: Yam, Pepper, Attiéké...",
+    category: "Category",
+    priceCad: "Price (CAD $)",
+    stockStatus: "Stock status",
+    descriptionOptional: "Description (Optional)",
+    descriptionPlaceholder: "Product origin, information, storage tips...",
+    save: "Save",
+  },
+
+  // --------
+  // SELLER ADD PRODUCT SCREEN
+  // --------
+  sellerAddProduct: {
+    title: "Add product",
+    productPhoto: "Product photo",
+    highResolutionRecommended: "High resolution recommended",
+    productDetails: "Product details",
+    productName: "Product name",
+    productNamePlaceholder: "Ex: Yam, Bird pepper, Attiéké...",
+    category: "Category",
+    priceCad: "Price (CAD $)",
+    stockStatus: "Stock status",
+    descriptionOptional: "Description (Optional)",
+    descriptionPlaceholder: "Product origin, storage tips...",
+    publishProduct: "Publish product",
+    errors: {
+      nameRequired: "Product name is required.",
+      priceRequired: "Price is required.",
+      priceInvalid: "Enter a valid price greater than 0.",
+    },
+  },
+
+  // --------
+  // ONBOARDING SCREEN
+  // --------
+  onboarding: {
+    skip: "Skip",
+    next: "Next",
+    start: "Get started",
+
+    slides: {
+      1: {
+        title: "Find African ingredients...",
+        text: "...without going to 3 stores, without being sure of stock, and without wasting time.",
+      },
+      2: {
+        title: "Everything in one place",
+        text: "Discover African grocery stores around you, available products, prices, and distance.",
+      },
+      3: {
+        title: "Buy or sell",
+        text: "Buyers: find your products easily.\nSellers: gain visibility and manage your products.",
+      },
+    },
+
+    demo: {
+      marketName: "Tropical Market",
+      distance: "2.4 km away from you",
+      inStockNow: "Currently in stock",
+      redPeppers: "Red peppers",
+    },
+  },
+
+  // --------
+  // AUTH SCREEN
+  // --------
+  auth: {
+    welcome: "Welcome!",
+    createAccount: "Create an account",
+    loginSubtitle: "Sign in to discover African grocery stores near you.",
+    signupSubtitle: "Create your account to buy or sell African products",
+
+    login: "Log in",
+    signup: "Sign up",
+
+    name: "Name",
+    yourName: "Your name",
+    email: "Email",
+    password: "Password",
+
+    accountType: "Account type",
+    buyer: "Buyer",
+    seller: "Seller",
+
+    buyerAccount: "Buyer Account",
+    sellerAccount: "Seller Account",
+
+    buyerAccountDescription:
+      "For grocery lovers! \nDiscover the nearest African grocery stores, compare prices, and buy your favorite products more easily.",
+    sellerAccountDescription:
+      "For grocery store owners or individuals selling African products! \nPublish your products, manage your stock, and increase your visibility.",
+
+    createTheAccount: "Create account",
+    accountCreated: "Account created! Sign in.",
+    genericError: "Something went wrong",
+  },
+    // AUTH ERRORS MESSAGE
+    authErrors: {
+  nameRequired: "Please enter your name.",
+  nameMinLength: "Name must contain at least 4 characters.",
+
+  emailRequired: "Please enter your email.",
+  invalidEmail: "Please enter a valid email address.",
+
+  passwordRequired: "Please enter a password.",
+  passwordMinLength: "Password must contain at least 6 characters.",
+
+  networkRequestFailed:
+    "Connection problem. Check your internet and try again.",
+  tooManyRequests: "Too many attempts. Please try again in a few minutes.",
+  emailAlreadyInUse:
+    "This email is already in use. Try signing in instead.",
+  weakPassword: "Password is too weak. Minimum 6 characters.",
+  invalidCredentialsLogin: "Incorrect email or password.",
+  invalidCredentials: "Incorrect credentials.",
+  generic: "Something went wrong. Please try again.",
+},
+
+ // --------
+  // USER APP JS
+  // --------
+userApp: {
+  loadingLocation: "Loading...",
+  noLocation: "No location",
+  location: "Location...",
+  detectedPosition: "Position detected",
+  locationSaved: "Location saved",
+},
+
+tabs: {
+  home: "HOME",
+  groceries: "GROCERIES",
+  favorites: "FAVORITES",
+  profile: "PROFILE",
+},
+
+ // --------
+  // SELLER BOARD JS
+  // --------
+  sellerBoard: {
+  overviewTab: "OVERVIEW",
+  productsTab: "PRODUCTS",
+},
+
   languages: {
     fr: "French",
     en: "English",

@@ -22,6 +22,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { COLORS } from "../../constants/colors";
+import { useTranslation } from "react-i18next";
 
 export default function AuthScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -45,17 +46,18 @@ export default function AuthScreen({ navigation }) {
   });
 
   const [success, setSuccess] = useState("");
+  const {t} = useTranslation();
 
   const title = useMemo(
-    () => (mode === "login" ? "Bienvenue !" : "Créer un compte"),
+    () => (mode === "login" ? t("auth.welcome") : t("auth.createAccount")),
     [mode],
   );
 
   const subtitle = useMemo(
     () =>
       mode === "login"
-        ? "Connectez-vous pour découvrir les épiceries africaines près de chez vous."
-        : "Créez votre compte pour acheter ou vendre des produits africains",
+        ? t("auth.loginSubtitle")
+        : t("auth.signupSubtitle"),
     [mode],
   );
 
@@ -111,7 +113,7 @@ export default function AuthScreen({ navigation }) {
       });
 
       //switch to login
-      setSuccess("Compte crée ! Connectez-vous.");
+      setSuccess(t("auth.accountCreated"));
       setPassword("");
       setName("");
 
@@ -127,7 +129,7 @@ export default function AuthScreen({ navigation }) {
       } else {
         setErrors((prev) => ({
           ...prev,
-          form: e?.message || "Une erreur est survenue",
+          form: e?.message || t("auth.genericError"),
         }));
       }
     } finally {
@@ -194,7 +196,7 @@ export default function AuthScreen({ navigation }) {
                     mode === "login" && styles.segmentTextActive,
                   ]}
                 >
-                  Se connecter
+                  {t("auth.login")}
                 </Text>
               </Pressable>
               <Pressable style={styles.segmentBtn} onPress={goSignup}>
@@ -204,7 +206,7 @@ export default function AuthScreen({ navigation }) {
                     mode === "signup" && styles.segmentTextActive,
                   ]}
                 >
-                  S'inscrire
+                  {t("auth.signup")}
                 </Text>
               </Pressable>
             </View>
@@ -213,7 +215,7 @@ export default function AuthScreen({ navigation }) {
             <View style={styles.form}>
               {mode === "signup" && (
                 <View>
-                  <Text style={styles.label}>Nom</Text>
+                  <Text style={styles.label}>{t("auth.name")}</Text>
                   <TextInput
                     value={name}
                     placeholderTextColor={COLORS.muted}
@@ -223,7 +225,7 @@ export default function AuthScreen({ navigation }) {
                       setErrors((p) => ({ ...p, name: "", form: "" }));
                     }}
                     style={[styles.input, errors.name && styles.inputError]}
-                    placeholder="Votre nom"
+                    placeholder={t("auth.yourName")}
                   ></TextInput>
                   {!!errors.name && (
                     <Text style={styles.fieldError}>{errors.name}</Text>
@@ -231,7 +233,7 @@ export default function AuthScreen({ navigation }) {
                 </View>
               )}
               <View>
-                <Text style={styles.label}>Email</Text>
+                <Text style={styles.label}>{t("auth.email")}</Text>
                 <TextInput
                   value={email}
                   placeholderTextColor={COLORS.muted}
@@ -249,7 +251,7 @@ export default function AuthScreen({ navigation }) {
                 )}
               </View>
               <View>
-                <Text style={styles.label}>Mot de passe</Text>
+                <Text style={styles.label}>{t("auth.password")}</Text>
                 <View style={styles.passwordWrap}>
                   <TextInput
                     ref={passwordRef}
@@ -265,7 +267,7 @@ export default function AuthScreen({ navigation }) {
                       setSuccess("");
                       setErrors((p) => ({ ...p, password: "", form: "" }));
                     }}
-                    placeholder="Mot de passe"
+                    placeholder={t("auth.password")}
                     secureTextEntry={secure}
                     onFocus={() => {
                       // Ensure the password field is visible above the Keyboard (Android & iOS)
@@ -312,7 +314,7 @@ export default function AuthScreen({ navigation }) {
               </View>
               {mode === "signup" && (
                 <View style={styles.roleSection}>
-                  <Text style={styles.roleTitle}>Type de compte</Text>
+                  <Text style={styles.roleTitle}>{t("auth.accountType")}</Text>
                   <View style={styles.roleRow}>
                     <Pressable
                       onPress={() => setIsSeller(false)}
@@ -327,7 +329,7 @@ export default function AuthScreen({ navigation }) {
                           isSeller === false && styles.roleTextActive,
                         ]}
                       >
-                        Acheteur
+                        {t("auth.buyer")}
                       </Text>
                     </Pressable>
 
@@ -344,7 +346,7 @@ export default function AuthScreen({ navigation }) {
                           isSeller === true && styles.roleTextActive,
                         ]}
                       >
-                        Vendeur
+                        {t("auth.seller")}
                       </Text>
                     </Pressable>
                   </View>
@@ -352,12 +354,12 @@ export default function AuthScreen({ navigation }) {
                   {/* encadré explicatif */}
                   <View style={styles.roleInfoBox}>
                     <Text style={styles.roleInfoTitle}>
-                      {isSeller ? "Compte Vendeur" : "Compte Acheteur"}
+                      {isSeller ? t("auth.sellerAccount") : t("auth.buyerAccount")}
                     </Text>
                     <Text style={styles.roleInfoText}>
                       {isSeller
-                        ? "Pour les propriétaires d'épiceries ou individus vendant des produits africains ! \nPubliez vos produits, gérez votre stock et augmentez votre visibilité."
-                        : "Pour les amateurs d'épiceries ! \nDécouvrez les épiceries africaines les plus proches, comparez les prix et achetez vos produits favoris plus facilement."}
+                        ? t("auth.sellerAccountDescription")
+                        : t("auth.buyerAccountDescription")}
                     </Text>
                   </View>
                 </View>
@@ -375,7 +377,7 @@ export default function AuthScreen({ navigation }) {
                   <ActivityIndicator color="white"></ActivityIndicator>
                 ) : (
                   <Text style={styles.primaryText}>
-                    {mode === "login" ? "Se connecter" : "Créer le compte"}
+                    {mode === "login" ? t("auth.login") : t("auth.createTheAccount")}
                   </Text>
                 )}
               </Pressable>

@@ -305,7 +305,7 @@ export default function SellerOverviewScreen({ navigation }) {
 
     Alert.alert(
      t("sellerOverview.removeLogoTitle"),
-      t("sellerOvierview.removeLogoMessage"),
+      t("sellerOverview.removeLogoMessage"),
       [
         { text: t("common.cancel"), style: "cancel" },
         { text: t("common.delete"), style: "destructive", onPress: handleRemovePhoto },

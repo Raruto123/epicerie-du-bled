@@ -25,18 +25,23 @@ import { COLORS } from "../../constants/colors";
 import { KeyboardAvoidingView } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { ScrollView } from "react-native";
-import { PRODUCT_CATEGORIES } from "../../constants/productCategories.js";
+import {
+  CATEGORY_LABEL_TO_KEY,
+  PRODUCT_CATEGORIES,
+} from "../../constants/productCategories.js";
+import { useTranslation } from "react-i18next";
 
 export default function SellerEditProductScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const scrollRef = useRef(null);
+  const { t } = useTranslation();
 
   const product = route?.params?.product ?? null;
 
   //sécurité si on arrive sans product
   const productId = product?.id ?? null;
 
-  const categories = useMemo(() => PRODUCT_CATEGORIES, [])
+  const categories = useMemo(() => PRODUCT_CATEGORIES, []);
 
   const scrollToField = (y) => {
     setTimeout(() => {
@@ -46,7 +51,9 @@ export default function SellerEditProductScreen({ navigation, route }) {
 
   // ✅ pré-remplissage avec les données du produit
   const [name, setName] = useState((product?.name ?? "").toString());
-  const [cat, setCat] = useState((product?.cat ?? "Tubercules").toString());
+  const [cat, setCat] = useState(
+    CATEGORY_LABEL_TO_KEY[product.cat] ?? product.cat ?? "tubercules",
+  );
   const [price, setPrice] = useState(
     product?.price != null ? String(product.price) : "",
   );
@@ -89,7 +96,9 @@ export default function SellerEditProductScreen({ navigation, route }) {
     if (!sellerId || !productId) return;
 
     const productName = name.trim();
-    const productCat = (cat ?? "").toString();
+    const productCat =
+      categories.find((item) => item.key === cat).label ??
+      (cat ?? "").toString();
     const productDesc = desc.trim();
     const rawPrice = (price ?? "").toString().trim().replace(",", ".");
     const productPrice = Number(rawPrice);
@@ -162,7 +171,7 @@ export default function SellerEditProductScreen({ navigation, route }) {
                 color={COLORS.text}
               ></MaterialIcons>
             </Pressable>
-            <Text style={styles.title}>Modifier le produit</Text>
+            <Text style={styles.title}>{t("sellerEditProduct.title")}</Text>
             <View style={styles.backBtnGhost}></View>
           </View>
           <ScrollView
@@ -192,29 +201,29 @@ export default function SellerEditProductScreen({ navigation, route }) {
                       color={COLORS.primary}
                     ></MaterialIcons>
                   </View>
-                  <Text style={styles.photoTitle}>Photo du produit</Text>
+                  <Text style={styles.photoTitle}>{t("sellerEditProduct.productPhoto")}</Text>
                   <Text style={styles.photoSub}>
-                    Haute résolution recommandée
+                    {t("sellerEditProduct.highResolutionRecommended")}
                   </Text>
                 </>
               )}
             </Pressable>
 
             {/* Details */}
-            <Text style={styles.h3}>Détails de l'ingrédient</Text>
+            <Text style={styles.h3}>{t("sellerEditProduct.productDetails")}</Text>
             <View style={styles.field}>
-              <Text style={styles.label}>Nom du produit</Text>
+              <Text style={styles.label}>{t("sellerEditProduct.productName")}</Text>
               <TextInput
                 value={name}
                 onFocus={() => scrollToField(120)}
                 onChangeText={setName}
                 style={styles.input}
-                placeholder="Ex : Igname, Piment, Attiéké..."
+                placeholder={t("sellerEditProduct.productNamePlaceholder")}
               ></TextInput>
             </View>
 
             {/* Category */}
-            <Text style={styles.h3}>Catégorie</Text>
+            <Text style={styles.h3}>{t("sellerEditProduct.category")}</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -242,7 +251,7 @@ export default function SellerEditProductScreen({ navigation, route }) {
                         active ? styles.catTextActive : styles.catTextIdle,
                       ]}
                     >
-                      {c.key}
+                      {t(`categories.${c.key}`)}
                     </Text>
                   </Pressable>
                 );
@@ -252,7 +261,7 @@ export default function SellerEditProductScreen({ navigation, route }) {
             {/* Price + stock */}
             <View style={styles.row2}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.label}>Prix (CAD $)</Text>
+                <Text style={styles.label}>{t("sellerEditProduct.priceCad")}</Text>
                 <View style={styles.priceWrap}>
                   <TextInput
                     value={price}
@@ -267,10 +276,10 @@ export default function SellerEditProductScreen({ navigation, route }) {
               </View>
 
               <View style={{ flex: 1 }}>
-                <Text style={styles.label}>État du stock</Text>
+                <Text style={styles.label}>{t("sellerEditProduct.stockStatus")}</Text>
                 <View style={styles.stockBox}>
                   <Text style={styles.stockLabel}>
-                    {inStock ? "En stock" : "Rupture"}
+                    {inStock ?t("common.inStock") : t("common.outOfStock")}
                   </Text>
                   <Switch
                     style={{ alignSelf: "center" }}
@@ -286,13 +295,13 @@ export default function SellerEditProductScreen({ navigation, route }) {
 
             {/* Description */}
             <View style={styles.field}>
-              <Text style={styles.label}>Description (Optionnel)</Text>
+              <Text style={styles.label}>{t("sellerEditProduct.descriptionOptional")}</Text>
               <TextInput
                 value={desc}
                 onFocus={() => scrollToField(420)}
                 onChangeText={setDesc}
                 style={[styles.input, styles.textarea]}
-                placeholder="Origine du produit, informations, conseils de conservation.."
+                placeholder={t("sellerEditProduct.descriptionPlaceholder")}
                 multiline
                 textAlignVertical="top"
               ></TextInput>
@@ -322,7 +331,7 @@ export default function SellerEditProductScreen({ navigation, route }) {
                       size={20}
                       color="white"
                     ></MaterialIcons>
-                    <Text style={styles.publishText}>Enregistrer</Text>
+                    <Text style={styles.publishText}>{t("sellerEditProduct.save")}</Text>
                   </>
                 )}
               </Pressable>

@@ -17,6 +17,7 @@ import {
 } from "react-native-safe-area-context";
 import { COLORS } from "../../constants/colors";
 import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 
 const { width, height } = Dimensions.get("window");
 //Simple logo placeholder : later you can swap this View with your real logo <Image/>
@@ -76,12 +77,13 @@ const createFloatAnim = (range = 6, duration = 2800) => {
 };
 
 export default function OnboardingScreen({ navigation }) {
+  const {t} = useTranslation();
   const slides = useMemo(
     () => [
       {
         id: "1",
-        title: "Trouver des ingrédients africains...",
-        text: "...sans faire 3 magasins, sans être sûr du stock, et sans perdre de temps.",
+        title: t("onboarding.slides.1.title"),
+        text: t("onboarding.slides.1.text"),
         image: require("../../assets/image1onboarding_2.jpg"),
         theme: {
           bg: COLORS.bg,
@@ -91,8 +93,8 @@ export default function OnboardingScreen({ navigation }) {
       },
       {
         id: "2",
-        title: "Tout au même endroit",
-        text: "Découvre les épiceries africaines autour de toi, les produits disponibles, les prix et la distance.",
+        title: t("onboarding.slides.2.title"),
+        text: t("onboarding.slides.2.text"),
         image: require("../../assets/image2onboarding_rela.jpg"),
         theme: {
           bg: COLORS.bg,
@@ -102,8 +104,8 @@ export default function OnboardingScreen({ navigation }) {
       },
       {
         id: "3",
-        title: "Acheter ou vendre",
-        text: "Acheteurs : trouvez vos produits facilement.\nVendeurs : gagnez en visibilité et gérez vos produits.",
+        title: t("onboarding.slides.3.title"),
+        text: t("onboarding.slides.3.text"),
         image: require("../../assets/image3epicerie.png"),
         theme: {
           bg: COLORS.bg,
@@ -318,7 +320,7 @@ export default function OnboardingScreen({ navigation }) {
                             fontSize: 12,
                           }}
                         >
-                          Marché Tropical
+                          {t("onboarding.demo.marketName")}
                         </Text>
                         <Text
                           style={{
@@ -332,7 +334,7 @@ export default function OnboardingScreen({ navigation }) {
                             size={12}
                             color={COLORS.primary}
                           ></MaterialIcons>
-                          À 2.4 km de vous
+                          {t("onboarding.demo.distance")}
                         </Text>
                       </View>
                     </View>
@@ -417,7 +419,7 @@ export default function OnboardingScreen({ navigation }) {
                       fontWeight: "700",
                     }}
                   >
-                    Actuellement en stock
+                    {t("onboarding.demo.inStockNow")}
                   </Text>
                   <Text
                     style={{
@@ -426,7 +428,7 @@ export default function OnboardingScreen({ navigation }) {
                       fontWeight: "900",
                     }}
                   >
-                    Piments Rouges
+                    {t("onboarding.demo.redPeppers")}
                   </Text>
                 </View>
               </View>
@@ -512,7 +514,7 @@ export default function OnboardingScreen({ navigation }) {
                   opacity: 0.75,
                 }}
               >
-                Passer
+                {t("onboarding.skip")}
               </Text>
               <Text
                 style={{
@@ -620,7 +622,7 @@ export default function OnboardingScreen({ navigation }) {
                 fontSize: 16,
               }}
             >
-              {isLast ? "Commencer" : "Suivant"}
+              {isLast ? t("onboarding.start") : t("onboarding.next")}
             </Text>
             <Text
               style={{

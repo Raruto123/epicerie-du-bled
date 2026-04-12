@@ -31,14 +31,20 @@ import {
 } from "../../services/sellerProductsService";
 import { normalizeText } from "../../utils/normalizeText";
 import { PRODUCT_FALLBACK_IMAGE } from "../../constants/fallbackImages";
-import { CATEGORY_LABELS } from "../../constants/productCategories";
+import {
+  CATEGORY_LABEL_TO_KEY,
+  CATEGORY_LABELS,
+  PRODUCT_CATEGORIES,
+} from "../../constants/productCategories";
+import { useTranslation } from "react-i18next";
 
 export default function SellerProductsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const uid = auth.currentUser?.uid;
+  const { t } = useTranslation();
 
   //categories
-  const [activeCat, setActiveCat] = useState("Tous");
+  const [activeCat, setActiveCat] = useState("all");
 
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
@@ -62,7 +68,13 @@ export default function SellerProductsScreen({ navigation }) {
   const [deleting, setDeleting] = useState({}); // ✅ {[productId]: true}
 
   // ✅ mêmes catégories que ton écran d'ajout (tu peux en ajouter d'autres)
-  const categories = useMemo(() => ["Tous", ...CATEGORY_LABELS], [])
+  const categories = useMemo(() => [
+    { key: "all", label: t("sellerProducts.categories.all") },
+    ...PRODUCT_CATEGORIES.map((cat) => ({
+      key: cat.key,
+      label: t(`categories.${cat.key}`),
+    })),
+  ]);
 
   //observe si le seller a des produits si oui il affiche sinon il affiche rien
   useEffect(() => {
@@ -100,7 +112,8 @@ export default function SellerProductsScreen({ navigation }) {
 
     return products.filter((p) => {
       //categories
-      const matchCat = activeCat === "Tous" || p.cat === activeCat;
+      const matchCat =
+        activeCat === "all" || CATEGORY_LABEL_TO_KEY[p.cat] === activeCat;
 
       //search
       const name = normalizeText(p?.name);
@@ -199,10 +212,10 @@ export default function SellerProductsScreen({ navigation }) {
     const productId = item?.id;
     if (!productId) return;
 
-    Alert.alert("Supprimer ce produit ?", "Cette action est définitive.", [
-      { text: "Annuler", style: "cancel" },
+    Alert.alert(t("sellerProducts.deleteTitle"), t("sellerProducts.deleteMessage"), [
+      { text: t("sellerProducts.cancel"), style: "cancel" },
       {
-        text: "Supprimer",
+        text: t("sellerProducts.delete"),
         style: "destructive",
         onPress: async () => {
           //avoid double click
@@ -242,7 +255,7 @@ export default function SellerProductsScreen({ navigation }) {
             size={28}
             color={COLORS.primary}
           ></MaterialIcons>
-          <Text style={styles.headerTitle}>Mes produits</Text>
+          <Text style={styles.headerTitle}>{t("sellerProducts.title")}</Text>
         </View>
 
         <View style={styles.headerActions}>
@@ -291,7 +304,7 @@ export default function SellerProductsScreen({ navigation }) {
             <TextInput
               value={query}
               onChangeText={setQuery}
-              placeholder="Rechercher un produit..."
+              placeholder={t("sellerProducts.searchPlaceholder")}
               placeholderTextColor="#9ca3af"
               style={styles.searchInput}
               returnKeyType="search"
@@ -317,13 +330,13 @@ export default function SellerProductsScreen({ navigation }) {
           horizontal
           showsHorizontalScrollIndicator={false}
           data={categories}
-          keyExtractor={(x) => x}
+          keyExtractor={(item) => item.key}
           contentContainerStyle={styles.catContent}
           renderItem={({ item }) => {
             const active = item === activeCat;
             return (
               <Pressable
-                onPress={() => setActiveCat(item)}
+                onPress={() => setActiveCat(item.key)}
                 style={[
                   styles.catPill,
                   active ? styles.catPillActive : styles.catPillIdle,
@@ -335,7 +348,7 @@ export default function SellerProductsScreen({ navigation }) {
                     active ? styles.catTextActive : styles.catTextIdle,
                   ]}
                 >
-                  {item}
+                  {item.label}
                 </Text>
               </Pressable>
             );
@@ -346,12 +359,14 @@ export default function SellerProductsScreen({ navigation }) {
       {/* List */}
       <View style={styles.listWrap}>
         <Text style={styles.listKicker}>
-          Inventaire actuel ({filtered.length})
+          {t("sellerProducts.currentInventory", { count: filtered.length })}
         </Text>
         {!loading && filtered.length === 0 ? (
           <View style={styles.loadingRow}>
             {/* <ActivityIndicator size="small"></ActivityIndicator> */}
-            <Text style={styles.loadingText}>Aucun produit trouvé</Text>
+            <Text style={styles.loadingText}>
+              {t("sellerProducts.noProductFound")}
+            </Text>
           </View>
         ) : (
           <FlatList
@@ -400,7 +415,11 @@ export default function SellerProductsScreen({ navigation }) {
                         ${Number(item.price ?? 0).toFixed(2)}
                       </Text>
                       <View style={styles.tag}>
-                        <Text style={styles.tagText}>{item.cat}</Text>
+                        <Text style={styles.tagText}>
+                          {CATEGORY_LABEL_TO_KEY[item.cat]
+                            ? t(`categories.${CATEGORY_LABEL_TO_KEY[item.cat]}`)
+                            : item.cat}
+                        </Text>
                       </View>
                     </View>
                   </View>
@@ -420,7 +439,9 @@ export default function SellerProductsScreen({ navigation }) {
                             : styles.stockTextGray,
                         ]}
                       >
-                        {item.inStock ? "En stock" : "Rupture de stock"}
+                        {item.inStock
+                          ? t("common.inStock")
+                          : t("common.outOfStock")}
                         {isUpdating ? "..." : ""}
                       </Text>
                     </View>
@@ -486,7 +507,7 @@ export default function SellerProductsScreen({ navigation }) {
             </View>
             {/* Title+close */}
             <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>Filtrer par</Text>
+              <Text style={styles.sheetTitle}>{t("sellerProducts.filterBy")}</Text>
               <Pressable
                 onPress={() => setFiltersOpen(false)}
                 style={styles.sheetCloseBtn}
@@ -518,7 +539,7 @@ export default function SellerProductsScreen({ navigation }) {
                       : styles.tabTextIdle,
                   ]}
                 >
-                  Prix
+                  {t("sellerProducts.priceTab")}
                 </Text>
               </Pressable>
               <Pressable
@@ -538,7 +559,7 @@ export default function SellerProductsScreen({ navigation }) {
                       : styles.tabTextIdle,
                   ]}
                 >
-                  Stock
+                  {t("sellerProducts.stockTab")}
                 </Text>
               </Pressable>
             </View>
@@ -569,7 +590,7 @@ export default function SellerProductsScreen({ navigation }) {
                           priceMode === "range" && styles.segmentTextOn,
                         ]}
                       >
-                        Entre
+                        {t("sellerProducts.between")}
                       </Text>
                     </Pressable>
                     <Pressable
@@ -618,14 +639,14 @@ export default function SellerProductsScreen({ navigation }) {
                   {priceMode === "range" && (
                     <View>
                       <Text style={styles.sheetLabel}>
-                        Fourchette de prix (CAD $)
+                        {t("sellerProducts.priceRange")}
                       </Text>
                       <View style={styles.rangeRow}>
                         <View style={styles.inputCard}>
                           <TextInput
                             value={priceMin}
                             onChangeText={setPriceMin}
-                            placeholder="Min"
+                            placeholder={t("sellerProducts.min")}
                             keyboardType="decimal-pad"
                             style={styles.sheetInput}
                             placeholderTextColor="#9ca3af"
@@ -636,7 +657,7 @@ export default function SellerProductsScreen({ navigation }) {
                           <TextInput
                             value={priceMax}
                             onChangeText={setPriceMax}
-                            placeholder="Max"
+                            placeholder={t("sellerProducts.max")}
                             keyboardType="decimal-pad"
                             style={styles.sheetInput}
                             placeholderTextColor="#9ca3af"
@@ -650,13 +671,13 @@ export default function SellerProductsScreen({ navigation }) {
                   {priceMode === "min" && (
                     <View>
                       <Text style={styles.sheetLabel}>
-                        Prix supérieur ou égal à (CAD $)
+                        {t("sellerProducts.priceMin")}
                       </Text>
                       <View style={styles.inputCard}>
                         <TextInput
                           value={priceGte}
                           onChangeText={setPriceGte}
-                          placeholder="Entrez un montant"
+                          placeholder={t("sellerProducts.enterAmount")}
                           keyboardType="decimal-pad"
                           style={styles.sheetInput}
                           placeholderTextColor="#9ca3af"
@@ -669,13 +690,13 @@ export default function SellerProductsScreen({ navigation }) {
                   {priceMode === "max" && (
                     <View>
                       <Text style={styles.sheetLabel}>
-                        Prix inférieur ou égal à (CAD $)
+                        {t("sellerProducts.priceMax")}
                       </Text>
                       <View style={styles.inputCard}>
                         <TextInput
                           value={priceLte}
                           onChangeText={setPriceLte}
-                          placeholder="Entrez un montant"
+                          placeholder={t("sellerProducts.enterAmount")}
                           keyboardType="decimal-pad"
                           style={styles.sheetInput}
                           placeholderTextColor="#9ca3af"
@@ -702,7 +723,7 @@ export default function SellerProductsScreen({ navigation }) {
                         size={18}
                         color={stockMode === "all" ? COLORS.primary : "#9ca3af"}
                       ></MaterialIcons>
-                      <Text style={styles.stockText}>Tous les articles</Text>
+                      <Text style={styles.stockText}>{t("sellerProducts.allItems")}</Text>
                     </View>
                     <View
                       style={[
@@ -729,7 +750,7 @@ export default function SellerProductsScreen({ navigation }) {
                         size={18}
                         color={stockMode === "in" ? "#16a34a" : "#9ca3af"}
                       ></MaterialIcons>
-                      <Text style={styles.stockText}>En stock</Text>
+                      <Text style={styles.stockText}>{t("common.inStock")}</Text>
                     </View>
                     <View
                       style={[
@@ -756,7 +777,7 @@ export default function SellerProductsScreen({ navigation }) {
                         size={18}
                         color={stockMode === "out" ? "#6b7280" : "#9ca3af"}
                       ></MaterialIcons>
-                      <Text style={styles.stockText}>En rupture de stock</Text>
+                      <Text style={styles.stockText}>{t("common.outOfStock")}</Text>
                     </View>
                     <View
                       style={[
@@ -789,7 +810,7 @@ export default function SellerProductsScreen({ navigation }) {
                   pressed && styles.filterBtnPressed,
                 ]}
               >
-                <Text style={styles.resetText}>Réinitialiser</Text>
+                <Text style={styles.resetText}>{t("sellerProducts.reset")}</Text>
               </Pressable>
 
               <Pressable
@@ -799,7 +820,7 @@ export default function SellerProductsScreen({ navigation }) {
                   pressed && styles.filterBtnPressed,
                 ]}
               >
-                <Text style={styles.applyText}>Appliquer</Text>
+                <Text style={styles.applyText}>{t("sellerProducts.apply")}</Text>
               </Pressable>
             </View>
           </View>

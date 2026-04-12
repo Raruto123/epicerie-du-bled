@@ -4,6 +4,7 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
+import i18next from "i18next";
 
 // Firestore shape (users/{uid})
 // {
@@ -63,30 +64,30 @@ function mapFirebaseAuthError(error, context) {
   // Messages courts, humains
   switch (code) {
     case "auth/invalid-email":
-      return "Veuillez entrer une adresse e-mail valide.";
+      return i18next.t("authErrors.invalidEmail");
     case "auth/network-request-failed":
-      return "Problème de connexion. Vérifiez Internet puis réessayez.";
+      return i18next.t("auhErrors.networkRequestFailed");
     case "auth/too-many-requests":
-      return "Trop de tentatives. Réessayez dans quelques minutes.";
+      return i18next.t("authErrors.tooManyRequests");
 
     //signup
     case "auth/email-already-in-use":
-      return "Cet e-mail est déjà utilisé. Essayez de vous connecter.";
+      return i18next.t("authErrors.emailAlreadyInUse");
     case "auth/weak-password":
-      return "Le mot de passe est trop faible. Minimum 6 caractères.";
+      return i18next.t("authErrors.weakPassword");
 
     //Login
     case "auth/user-not-found":
     case "auth/wrong-password":
     case "auth/invalid-credential":
       return context === "login"
-        ? "E-mail ou mot de passe incorrect."
-        : "Identifiants incorrects.";
+        ? i18next.t("authErrors.invalidCredentialsLogin")
+        : i18next.t("authErrors.invalidCredentials");
 
     //default
     default:
       // fallback propre (au lieu du message brut firebase)
-      return "Une erreur est survenue. Veuillez réessayer";
+      return i18next.t("authErrors.generic");
   }
 }
 
@@ -101,19 +102,19 @@ export async function signUpWithSellerFlag({
   const cleanMail = cleanEmail(email);
   const cleanPwd = String(password || "");
 
-  if (!cleanName) throwFieldError({ name: "Veuillez entrer votre nom." });
+  if (!cleanName) throwFieldError({ name: i18next.t("authErrors.nameRequired") });
   if (cleanName.length < 4)
-    throwFieldError({ name: "Le nom doit contenir au moins 4 caractères." });
+    throwFieldError({ name: i18next.t("authErrors.nameMinLength") });
 
-  if (!cleanMail) throwFieldError({ email: "Veuillez entrer votre e-mail." });
+  if (!cleanMail) throwFieldError({ email: i18next.t("authErrors.emailRequired") });
   if (!isValidEmail(cleanMail))
-    throwFieldError({ email: "Veuillez entrer une adresse e-mail valide." });
+    throwFieldError({ email: i18next.t("authErrors.invalidEmail") });
 
   if (!cleanPwd)
-    throwFieldError({ password: "Veuillez entrer un mot de passe." });
+    throwFieldError({ password: i18next.t("authErrors.passwordRequired") });
   if (cleanPwd.length < 6)
     throwFieldError({
-      password: "Le mot de passe doit contenir au moins 6 caractères.",
+      password: i18next.t("authErrors.passwordMinLength"),
     });
 
   try {
@@ -171,12 +172,12 @@ export async function signIn({ email, password }) {
   // ✅ Validations UI
   const cleanMail = cleanEmail(email);
   const cleanPwd = String(password || "");
-  if (!cleanMail) throwFieldError({ email: "Veuillez entrer votre e-mail." });
+  if (!cleanMail) throwFieldError({ email: i18next.t("authErrors.emailRequired") });
   if (!isValidEmail(cleanMail))
-    throwFieldError({ email: "Veuillez entrer une adresse e-mail valide." });
+    throwFieldError({ email: i18next.t("authErrors.invalidEmail") });
 
   if (!cleanPwd)
-    throwFieldError({ password: "Veuillez entrer votre mot de passe." });
+    throwFieldError({ password: i18next.t("authErrors.passwordRequired") });
 
   try {
     const credential = await signInWithEmailAndPassword(auth, email, password);

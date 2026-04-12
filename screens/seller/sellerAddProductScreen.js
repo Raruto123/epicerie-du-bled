@@ -26,10 +26,12 @@ import {
   uploadProductImage,
 } from "../../services/sellerAddProductService";
 import { PRODUCT_CATEGORIES } from "../../constants/productCategories";
+import { useTranslation } from "react-i18next";
 
 export default function SellerAddProductScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const scrollRef = useRef(null);
+  const {t} = useTranslation();
 
   const categories = useMemo(() => PRODUCT_CATEGORIES, [])
 
@@ -43,7 +45,7 @@ export default function SellerAddProductScreen({ navigation }) {
   };
 
   const [name, setName] = useState("");
-  const [cat, setCat] = useState("Tubercules");
+  const [cat, setCat] = useState("tubercules");
   const [price, setPrice] = useState("");
   const [inStock, setInStock] = useState(true);
   const [desc, setDesc] = useState("");
@@ -63,13 +65,13 @@ export default function SellerAddProductScreen({ navigation }) {
     const productPrice = Number(rawPrice);
 
     if (!productName) {
-      nextErrors.name = "Le nom du produit est obligatoire.";
+      nextErrors.name = t("sellerAddProduct.errors.nameRequired");
     }
 
     if (!rawPrice) {
-      nextErrors.price = "Le prix est obligatoire.";
+      nextErrors.price = t("sellerAddProduct.errors.priceRequired");
     } else if (!Number.isFinite(productPrice) || productPrice <= 0) {
-      nextErrors.price = "Entrez un prix valide supérieur à 0.";
+      nextErrors.price = t("sellerAddProduct.errors.priceInvalid");
     }
 
     setErrors(nextErrors);
@@ -86,7 +88,7 @@ export default function SellerAddProductScreen({ navigation }) {
     if (!isValid) return;
 
     const productName = name.trim();
-    const productCat = (cat ?? "").toString();
+    const productCat = categories.find((item) => item.key === cat).label ?? (cat ?? "").toString();
     const productDesc = desc.trim();
     // const productPicture = pictureUri.trim();
 
@@ -121,7 +123,7 @@ export default function SellerAddProductScreen({ navigation }) {
       setName("");
       setPrice("");
       setDesc("");
-      setCat("Tubercules");
+      setCat("tubercules");
       setInStock(true);
       setPictureUri("");
       setErrors({ name: "", price: "" });
@@ -184,7 +186,7 @@ export default function SellerAddProductScreen({ navigation }) {
                 color={COLORS.text}
               ></MaterialIcons>
             </Pressable>
-            <Text style={styles.title}>Ajouter un produit</Text>
+            <Text style={styles.title}>{t("sellerAddProduct.title")}</Text>
             <View style={styles.backBtnGhost}></View>
           </View>
 
@@ -215,18 +217,18 @@ export default function SellerAddProductScreen({ navigation }) {
                       color={COLORS.primary}
                     ></MaterialIcons>
                   </View>
-                  <Text style={styles.photoTitle}>Photo du produit</Text>
+                  <Text style={styles.photoTitle}>{t("sellerAddProduct.productPhoto")}</Text>
                   <Text style={styles.photoSub}>
-                    Haute résolution recommandée
+                    {t("sellerAddProduct.highResolutionRecommended")}
                   </Text>
                 </>
               )}
             </Pressable>
 
             {/* Details */}
-            <Text style={styles.h3}>Détails de l'ingrédient</Text>
+            <Text style={styles.h3}>{t("sellerAddProduct.productDetails")}</Text>
             <View style={styles.field}>
-              <Text style={styles.label}>Nom du produit</Text>
+              <Text style={styles.label}>{t("sellerAddProduct.productName")}</Text>
               <TextInput
                 value={name}
                 onFocus={() => scrollToField(120)}
@@ -237,7 +239,7 @@ export default function SellerAddProductScreen({ navigation }) {
                   }
                 }}
                 style={[styles.input, errors.name && styles.inputError]}
-                placeholder="Ex: Igname, Piment oiseau, Attieké..."
+                placeholder={t("sellerAddProduct.productNamePlaceholder")}
               ></TextInput>
               {!!errors.name && (
                 <Text style={styles.errorText}>{errors.name}</Text>
@@ -245,7 +247,7 @@ export default function SellerAddProductScreen({ navigation }) {
             </View>
 
             {/* Category */}
-            <Text style={styles.h3}>Catégorie</Text>
+            <Text style={styles.h3}>{t("sellerAddProduct.category")}</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -273,7 +275,7 @@ export default function SellerAddProductScreen({ navigation }) {
                         active ? styles.catTextActive : styles.catTextIdle,
                       ]}
                     >
-                      {c.key}
+                      {t(`categories.${c.key}`)}
                     </Text>
                   </Pressable>
                 );
@@ -283,7 +285,7 @@ export default function SellerAddProductScreen({ navigation }) {
             {/* Price + stock */}
             <View style={styles.row2}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.label}>Prix (CAD $)</Text>
+                <Text style={styles.label}>{t("sellerAddProduct.priceCad")}</Text>
                 <View style={styles.priceWrap}>
                   <TextInput
                     value={price}
@@ -310,11 +312,11 @@ export default function SellerAddProductScreen({ navigation }) {
               </View>
 
               <View style={{ flex: 1 }}>
-                <Text style={styles.label}>État du stock</Text>
+                <Text style={styles.label}>{t("sellerAddProduct.stockStatus")}</Text>
 
                 <View style={styles.stockBox}>
                   <Text style={styles.stockLabel}>
-                    {inStock ? "En stock" : "Rupture"}
+                    {inStock ? t("common.inStock") : t("common.outOfStock")}
                   </Text>
                   <Switch
                     style={{ alignSelf: "center" }}
@@ -330,13 +332,13 @@ export default function SellerAddProductScreen({ navigation }) {
 
             {/* Description */}
             <View style={styles.field}>
-              <Text style={styles.label}>Description (Optionnel)</Text>
+              <Text style={styles.label}>{t("sellerAddProduct.descriptionOptional")}</Text>
               <TextInput
                 value={desc}
                 onFocus={() => scrollToField(420)}
                 onChangeText={setDesc}
                 style={[styles.input, styles.textarea]}
-                placeholder="Origine du produit, conseils de conservation..."
+                placeholder={t("sellerAddProduct.descriptionPlaceholder")}
                 multiline
                 textAlignVertical="top"
               ></TextInput>
@@ -366,7 +368,7 @@ export default function SellerAddProductScreen({ navigation }) {
                       size={20}
                       color="white"
                     ></MaterialIcons>
-                    <Text style={styles.publishText}>Publier le produit</Text>
+                    <Text style={styles.publishText}>{t("sellerAddProduct.publishProduct")}</Text>
                   </>
                 )}
               </Pressable>
