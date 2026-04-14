@@ -50,10 +50,12 @@ export default function GroceriesListScreen({
 
   const loadGroceries = useCallback(
     async ({ soft = false } = {}) => {
-      if (locationStatus !== "granted" || !userLocation) {
-        if (!soft) setLoading(false);
-        return;
-      }
+      // if (locationStatus !== "granted" || !userLocation) {
+      //   if (!soft) setLoading(false);
+      //   return;
+      // }
+      const effectiveUserLocation =
+        locationStatus === "granted" && userLocation ? userLocation : null;
 
       // ✅ 1ère fois = loader plein écran
       // ✅ soft = on ne touche pas loading, on garde l’UI
@@ -63,7 +65,7 @@ export default function GroceriesListScreen({
       try {
         const list = await fetchGroceriesList({
           pageSize: 50,
-          userLocation,
+          userLocation: effectiveUserLocation,
         });
         setGroceries(list);
       } catch (e) {
@@ -163,9 +165,11 @@ export default function GroceriesListScreen({
             color={COLORS.primary}
           ></MaterialIcons>
           <Text style={styles.distText}>
-            {item.distanceKm == null
-              ? t("groceries.distanceUnknown")
-              : `${Number(item.distanceKm).toFixed(1)} km`}
+            {locationStatus !== "granted" || !userLocation
+              ? t("groceries.enableLocationForDistance")
+              : item.distanceKm == null
+                ? t("groceries.distanceUnknown")
+                : `${Number(item.distanceKm).toFixed(1)} km`}
           </Text>
         </View>
       </View>
@@ -188,10 +192,10 @@ export default function GroceriesListScreen({
             data={filtered}
             keyExtractor={(x) => x.id}
             renderItem={renderItem}
-            numColumns={2}
-            columnWrapperStyle={styles.colWrap}
+            numColumns={1}
+            // columnWrapperStyle={styles.colWrap}
             ListHeaderComponent={headerEl}
-            contentContainerStyle={{ paddingBottom: insets.bottom + 18 }}
+            contentContainerStyle={{ paddingBottom: insets.bottom + 18, paddingHorizontal:16 }}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}

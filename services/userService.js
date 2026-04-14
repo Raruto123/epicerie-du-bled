@@ -122,22 +122,28 @@ export async function fetchGroceriesList({
 
   const snap = await getDocs(q);
 
-  return snap.docs.map((d) => {
-    const u = d.data() || {};
+const docs = snap.docs
+  .map((d) => ({ id: d.id, ...d.data() }))
+  .filter((u) => {
     const seller = u.seller || {};
-    const gps = seller.gps ?? null;
-
-    const distanceKm =
-      userLocation && gps ? distanceKmBetween(userLocation, gps) : null;
-    return {
-      id: d.id,
-      name: seller.storeName ?? u.name ?? "Épicerie",
-      address:
-        seller.addressText ?? null,
-      photoURL: seller.logoURL ?? null,
-      gps,
-      distanceKm,
-      description : seller.description
-    };
+    const storeName = String(seller.storeName || "").trim();
+    return storeName.length > 0;
   });
+
+return docs.map((u) => {
+  const seller = u.seller || {};
+  const gps = seller.gps ?? null;
+  const distanceKm =
+    userLocation && gps ? distanceKmBetween(userLocation, gps) : null;
+
+  return {
+    id: u.id,
+    name: seller.storeName,
+    address: seller.addressText ?? null,
+    photoURL: seller.logoURL ?? null,
+    gps,
+    distanceKm,
+    description: seller.description ?? "",
+  };
+});
 }

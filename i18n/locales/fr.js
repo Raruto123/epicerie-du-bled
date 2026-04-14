@@ -113,6 +113,7 @@ export default {
     distanceUnknown: "Distance inconnue",
     emptyTitle: "Aucune épicerie trouvée",
     emptySubtitle: "Essaie avec un autre mot-clé",
+      enableLocationForDistance: "Activez la localisation pour voir la distance",
     filters: {
       title: "Trier par",
       active: "Filtres actifs",

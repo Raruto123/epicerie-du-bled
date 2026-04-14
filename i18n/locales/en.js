@@ -111,6 +111,7 @@ export default {
     distanceUnknown: "Distance unknown",
     emptyTitle: "No grocery stores found",
     emptySubtitle: "Try another keyword",
+    enableLocationForDistance: "Enable location to see distance",
     filters: {
       title: "Sort by",
       active: "Active filters",
@@ -442,53 +443,52 @@ export default {
     accountCreated: "Account created! Sign in.",
     genericError: "Something went wrong",
   },
-    // AUTH ERRORS MESSAGE
-    authErrors: {
-  nameRequired: "Please enter your name.",
-  nameMinLength: "Name must contain at least 4 characters.",
+  // AUTH ERRORS MESSAGE
+  authErrors: {
+    nameRequired: "Please enter your name.",
+    nameMinLength: "Name must contain at least 4 characters.",
 
-  emailRequired: "Please enter your email.",
-  invalidEmail: "Please enter a valid email address.",
+    emailRequired: "Please enter your email.",
+    invalidEmail: "Please enter a valid email address.",
 
-  passwordRequired: "Please enter a password.",
-  passwordMinLength: "Password must contain at least 6 characters.",
+    passwordRequired: "Please enter a password.",
+    passwordMinLength: "Password must contain at least 6 characters.",
 
-  networkRequestFailed:
-    "Connection problem. Check your internet and try again.",
-  tooManyRequests: "Too many attempts. Please try again in a few minutes.",
-  emailAlreadyInUse:
-    "This email is already in use. Try signing in instead.",
-  weakPassword: "Password is too weak. Minimum 6 characters.",
-  invalidCredentialsLogin: "Incorrect email or password.",
-  invalidCredentials: "Incorrect credentials.",
-  generic: "Something went wrong. Please try again.",
-},
+    networkRequestFailed:
+      "Connection problem. Check your internet and try again.",
+    tooManyRequests: "Too many attempts. Please try again in a few minutes.",
+    emailAlreadyInUse: "This email is already in use. Try signing in instead.",
+    weakPassword: "Password is too weak. Minimum 6 characters.",
+    invalidCredentialsLogin: "Incorrect email or password.",
+    invalidCredentials: "Incorrect credentials.",
+    generic: "Something went wrong. Please try again.",
+  },
 
- // --------
+  // --------
   // USER APP JS
   // --------
-userApp: {
-  loadingLocation: "Loading...",
-  noLocation: "No location",
-  location: "Location...",
-  detectedPosition: "Position detected",
-  locationSaved: "Location saved",
-},
+  userApp: {
+    loadingLocation: "Loading...",
+    noLocation: "No location",
+    location: "Location...",
+    detectedPosition: "Position detected",
+    locationSaved: "Location saved",
+  },
 
-tabs: {
-  home: "HOME",
-  groceries: "GROCERIES",
-  favorites: "FAVORITES",
-  profile: "PROFILE",
-},
+  tabs: {
+    home: "HOME",
+    groceries: "GROCERIES",
+    favorites: "FAVORITES",
+    profile: "PROFILE",
+  },
 
- // --------
+  // --------
   // SELLER BOARD JS
   // --------
   sellerBoard: {
-  overviewTab: "OVERVIEW",
-  productsTab: "PRODUCTS",
-},
+    overviewTab: "OVERVIEW",
+    productsTab: "PRODUCTS",
+  },
 
   languages: {
     fr: "French",

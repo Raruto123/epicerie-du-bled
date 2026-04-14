@@ -139,7 +139,7 @@ export async function signUpWithSellerFlag({
     const sellerProfile = !!isSeller
       ? {
           seller: {
-            storeName: name, //default = user's name (you can change it)
+            storeName: "", //default = user's name (you can change it)
             description: "",
             logoURL: null,
             coverURL: null,
